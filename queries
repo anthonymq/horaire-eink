@@ -1,0 +1,1 @@
+.Siri.ServiceDelivery.StopMonitoringDelivery[].MonitoredStopVisit[].MonitoredVehicleJourney | select(.MonitoredCall.ArrivalPlatformName.value =="2B")
