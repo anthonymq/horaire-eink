@@ -1,0 +1,2019 @@
+{
+  "Siri": {
+    "ServiceDelivery": {
+      "ResponseTimestamp": "2024-11-19T12:34:01.885Z",
+      "ProducerRef": "IVTR_HET",
+      "ResponseMessageIdentifier": "IVTR_HET:ResponseMessage:2e7d2e74-194a-4f41-9285-000ceb1e87d7:LOC:",
+      "StopMonitoringDelivery": [
+        {
+          "ResponseTimestamp": "2024-11-19T12:34:01.979Z",
+          "Version": "2.0",
+          "Status": "true",
+          "MonitoredStopVisit": [
+            {
+              "RecordedAtTime": "2024-11-19T12:03:17.838Z",
+              "ItemIdentifier": "SNCF_ACCES_CLOUD:Item::41315_147107:LOC",
+              "MonitoringRef": {
+                "value": "STIF:StopPoint:Q:41315:"
+              },
+              "MonitoredVehicleJourney": {
+                "LineRef": {
+                  "value": "STIF:Line::C01727:"
+                },
+                "OperatorRef": {
+                  "value": "SNCF_ACCES_CLOUD:Operator::SNCF:"
+                },
+                "FramedVehicleJourneyRef": {
+                  "DataFrameRef": {
+                    "value": "any"
+                  },
+                  "DatedVehicleJourneyRef": "SNCF_ACCES_CLOUD:VehicleJourney::eef891e4-0324-490b-bdb9-83a63c2c0336:LOC"
+                },
+                "DirectionName": [],
+                "DestinationRef": {
+                  "value": "STIF:StopPoint:Q:41326:"
+                },
+                "DestinationName": [
+                  {
+                    "value": "Gare de Pont de Rungis"
+                  }
+                ],
+                "VehicleJourneyName": [],
+                "JourneyNote": [
+                  {
+                    "value": "ROMI"
+                  }
+                ],
+                "MonitoredCall": {
+                  "StopPointName": [
+                    {
+                      "value": "Gare d'Ivry-sur-Seine"
+                    }
+                  ],
+                  "VehicleAtStop": true,
+                  "DestinationDisplay": [
+                    {
+                      "value": "Gare de Pont de Rungis"
+                    }
+                  ],
+                  "ExpectedArrivalTime": "2024-11-19T12:03:35.000Z",
+                  "ExpectedDepartureTime": "2024-11-19T12:04:25.000Z",
+                  "DepartureStatus": "onTime",
+                  "Order": 24,
+                  "AimedArrivalTime": "2024-11-19T12:03:10.000Z",
+                  "ArrivalPlatformName": {
+                    "value": "1B"
+                  },
+                  "AimedDepartureTime": "2024-11-19T12:04:00.000Z",
+                  "ArrivalStatus": "onTime"
+                },
+                "TrainNumbers": {
+                  "TrainNumberRef": [
+                    {
+                      "value": "147107"
+                    }
+                  ]
+                },
+                "VehicleFeatureRef": [
+                  "longTrain"
+                ]
+              }
+            },
+            {
+              "RecordedAtTime": "2024-11-19T12:12:30.655Z",
+              "ItemIdentifier": "SNCF_ACCES_CLOUD:Item::41315_148512:LOC",
+              "MonitoringRef": {
+                "value": "STIF:StopPoint:Q:41315:"
+              },
+              "MonitoredVehicleJourney": {
+                "LineRef": {
+                  "value": "STIF:Line::C01727:"
+                },
+                "OperatorRef": {
+                  "value": "SNCF_ACCES_CLOUD:Operator::SNCF:"
+                },
+                "FramedVehicleJourneyRef": {
+                  "DataFrameRef": {
+                    "value": "any"
+                  },
+                  "DatedVehicleJourneyRef": "SNCF_ACCES_CLOUD:VehicleJourney::72ea55d6-e291-428c-8470-a780b8867c8b:LOC"
+                },
+                "DirectionName": [],
+                "DestinationRef": {
+                  "value": "STIF:StopPoint:Q:41091:"
+                },
+                "DestinationName": [
+                  {
+                    "value": "Gare de Pontoise"
+                  }
+                ],
+                "VehicleJourneyName": [],
+                "JourneyNote": [
+                  {
+                    "value": "NORA"
+                  }
+                ],
+                "MonitoredCall": {
+                  "StopPointName": [
+                    {
+                      "value": "Gare d'Ivry-sur-Seine"
+                    }
+                  ],
+                  "VehicleAtStop": true,
+                  "DestinationDisplay": [
+                    {
+                      "value": "Gare de Pontoise"
+                    }
+                  ],
+                  "ExpectedArrivalTime": "2024-11-19T12:12:30.000Z",
+                  "ExpectedDepartureTime": "2024-11-19T12:13:20.000Z",
+                  "DepartureStatus": "onTime",
+                  "Order": 11,
+                  "AimedArrivalTime": "2024-11-19T12:11:40.000Z",
+                  "ArrivalPlatformName": {
+                    "value": "2B"
+                  },
+                  "AimedDepartureTime": "2024-11-19T12:12:30.000Z",
+                  "ArrivalStatus": "onTime"
+                },
+                "TrainNumbers": {
+                  "TrainNumberRef": [
+                    {
+                      "value": "148512"
+                    }
+                  ]
+                },
+                "VehicleFeatureRef": [
+                  "longTrain"
+                ]
+              }
+            },
+            {
+              "RecordedAtTime": "2024-11-19T12:18:41.181Z",
+              "ItemIdentifier": "SNCF_ACCES_CLOUD:Item::41315_147509:LOC",
+              "MonitoringRef": {
+                "value": "STIF:StopPoint:Q:41315:"
+              },
+              "MonitoredVehicleJourney": {
+                "LineRef": {
+                  "value": "STIF:Line::C01727:"
+                },
+                "OperatorRef": {
+                  "value": "SNCF_ACCES_CLOUD:Operator::SNCF:"
+                },
+                "FramedVehicleJourneyRef": {
+                  "DataFrameRef": {
+                    "value": "any"
+                  },
+                  "DatedVehicleJourneyRef": "SNCF_ACCES_CLOUD:VehicleJourney::5c4d0ff8-4d87-46e3-a016-da3f1828a947:LOC"
+                },
+                "DirectionName": [],
+                "DestinationRef": {
+                  "value": "STIF:StopPoint:Q:412833:"
+                },
+                "DestinationName": [
+                  {
+                    "value": "Massy-Palaiseau"
+                  }
+                ],
+                "VehicleJourneyName": [],
+                "JourneyNote": [
+                  {
+                    "value": "MONA"
+                  }
+                ],
+                "MonitoredCall": {
+                  "StopPointName": [
+                    {
+                      "value": "Gare d'Ivry-sur-Seine"
+                    }
+                  ],
+                  "VehicleAtStop": true,
+                  "DestinationDisplay": [
+                    {
+                      "value": "Massy-Palaiseau"
+                    }
+                  ],
+                  "ExpectedArrivalTime": "2024-11-19T12:18:51.000Z",
+                  "ExpectedDepartureTime": "2024-11-19T12:19:31.000Z",
+                  "DepartureStatus": "onTime",
+                  "Order": 28,
+                  "AimedArrivalTime": "2024-11-19T12:18:30.000Z",
+                  "ArrivalPlatformName": {
+                    "value": "1B"
+                  },
+                  "AimedDepartureTime": "2024-11-19T12:19:10.000Z",
+                  "ArrivalStatus": "onTime"
+                },
+                "TrainNumbers": {
+                  "TrainNumberRef": [
+                    {
+                      "value": "147509"
+                    }
+                  ]
+                },
+                "VehicleFeatureRef": [
+                  "longTrain"
+                ]
+              }
+            },
+            {
+              "RecordedAtTime": "2024-11-19T12:26:55.474Z",
+              "ItemIdentifier": "SNCF_ACCES_CLOUD:Item::41315_148114:LOC",
+              "MonitoringRef": {
+                "value": "STIF:StopPoint:Q:41315:"
+              },
+              "MonitoredVehicleJourney": {
+                "LineRef": {
+                  "value": "STIF:Line::C01727:"
+                },
+                "OperatorRef": {
+                  "value": "SNCF_ACCES_CLOUD:Operator::SNCF:"
+                },
+                "FramedVehicleJourneyRef": {
+                  "DataFrameRef": {
+                    "value": "any"
+                  },
+                  "DatedVehicleJourneyRef": "SNCF_ACCES_CLOUD:VehicleJourney::a3b3d599-964f-417b-8270-66eb9dfe7112:LOC"
+                },
+                "DirectionName": [],
+                "DestinationRef": {
+                  "value": "STIF:StopPoint:Q:41088:"
+                },
+                "DestinationName": [
+                  {
+                    "value": "Gare de Montigny Beauchamp"
+                  }
+                ],
+                "VehicleJourneyName": [],
+                "JourneyNote": [
+                  {
+                    "value": "GOTA"
+                  }
+                ],
+                "MonitoredCall": {
+                  "StopPointName": [
+                    {
+                      "value": "Gare d'Ivry-sur-Seine"
+                    }
+                  ],
+                  "VehicleAtStop": true,
+                  "DestinationDisplay": [
+                    {
+                      "value": "Gare de Montigny Beauchamp"
+                    }
+                  ],
+                  "ExpectedArrivalTime": "2024-11-19T12:27:17.000Z",
+                  "ExpectedDepartureTime": "2024-11-19T12:28:07.000Z",
+                  "DepartureStatus": "onTime",
+                  "Order": 7,
+                  "AimedArrivalTime": "2024-11-19T12:27:10.000Z",
+                  "ArrivalPlatformName": {
+                    "value": "2B"
+                  },
+                  "AimedDepartureTime": "2024-11-19T12:28:00.000Z",
+                  "ArrivalStatus": "onTime"
+                },
+                "TrainNumbers": {
+                  "TrainNumberRef": [
+                    {
+                      "value": "148114"
+                    }
+                  ]
+                },
+                "VehicleFeatureRef": [
+                  "longTrain"
+                ]
+              }
+            },
+            {
+              "RecordedAtTime": "2024-11-19T12:33:10.100Z",
+              "ItemIdentifier": "SNCF_ACCES_CLOUD:Item::41315_147111:LOC",
+              "MonitoringRef": {
+                "value": "STIF:StopPoint:Q:41315:"
+              },
+              "MonitoredVehicleJourney": {
+                "LineRef": {
+                  "value": "STIF:Line::C01727:"
+                },
+                "OperatorRef": {
+                  "value": "SNCF_ACCES_CLOUD:Operator::SNCF:"
+                },
+                "FramedVehicleJourneyRef": {
+                  "DataFrameRef": {
+                    "value": "any"
+                  },
+                  "DatedVehicleJourneyRef": "SNCF_ACCES_CLOUD:VehicleJourney::e5be47f8-b42e-4aa8-9b68-9db767e3b0a3:LOC"
+                },
+                "DirectionName": [],
+                "DestinationRef": {
+                  "value": "STIF:StopPoint:Q:41326:"
+                },
+                "DestinationName": [
+                  {
+                    "value": "Gare de Pont de Rungis"
+                  }
+                ],
+                "VehicleJourneyName": [],
+                "JourneyNote": [
+                  {
+                    "value": "ROMI"
+                  }
+                ],
+                "MonitoredCall": {
+                  "StopPointName": [
+                    {
+                      "value": "Gare d'Ivry-sur-Seine"
+                    }
+                  ],
+                  "VehicleAtStop": false,
+                  "DestinationDisplay": [
+                    {
+                      "value": "Gare de Pont de Rungis"
+                    }
+                  ],
+                  "ExpectedArrivalTime": "2024-11-19T12:35:02.000Z",
+                  "ExpectedDepartureTime": "2024-11-19T12:35:52.000Z",
+                  "DepartureStatus": "onTime",
+                  "Order": 24,
+                  "AimedArrivalTime": "2024-11-19T12:33:10.000Z",
+                  "ArrivalPlatformName": {
+                    "value": "1B"
+                  },
+                  "AimedDepartureTime": "2024-11-19T12:34:00.000Z",
+                  "ArrivalStatus": "onTime"
+                },
+                "TrainNumbers": {
+                  "TrainNumberRef": [
+                    {
+                      "value": "147111"
+                    }
+                  ]
+                },
+                "VehicleFeatureRef": [
+                  "longTrain"
+                ]
+              }
+            },
+            {
+              "RecordedAtTime": "2024-11-19T12:33:32.920Z",
+              "ItemIdentifier": "SNCF_ACCES_CLOUD:Item::41315_147513:LOC",
+              "MonitoringRef": {
+                "value": "STIF:StopPoint:Q:41315:"
+              },
+              "MonitoredVehicleJourney": {
+                "LineRef": {
+                  "value": "STIF:Line::C01727:"
+                },
+                "OperatorRef": {
+                  "value": "SNCF_ACCES_CLOUD:Operator::SNCF:"
+                },
+                "FramedVehicleJourneyRef": {
+                  "DataFrameRef": {
+                    "value": "any"
+                  },
+                  "DatedVehicleJourneyRef": "SNCF_ACCES_CLOUD:VehicleJourney::58183a72-8c05-4d74-b508-8d0169978781:LOC"
+                },
+                "DirectionName": [],
+                "DestinationRef": {
+                  "value": "STIF:StopPoint:Q:412833:"
+                },
+                "DestinationName": [
+                  {
+                    "value": "Massy-Palaiseau"
+                  }
+                ],
+                "VehicleJourneyName": [],
+                "JourneyNote": [
+                  {
+                    "value": "MONA"
+                  }
+                ],
+                "MonitoredCall": {
+                  "StopPointName": [
+                    {
+                      "value": "Gare d'Ivry-sur-Seine"
+                    }
+                  ],
+                  "VehicleAtStop": false,
+                  "DestinationDisplay": [
+                    {
+                      "value": "Massy-Palaiseau"
+                    }
+                  ],
+                  "ExpectedArrivalTime": "2024-11-19T12:48:40.000Z",
+                  "ExpectedDepartureTime": "2024-11-19T12:49:20.000Z",
+                  "DepartureStatus": "onTime",
+                  "Order": 28,
+                  "AimedArrivalTime": "2024-11-19T12:48:30.000Z",
+                  "ArrivalPlatformName": {
+                    "value": "1B"
+                  },
+                  "AimedDepartureTime": "2024-11-19T12:49:10.000Z",
+                  "ArrivalStatus": "onTime"
+                },
+                "TrainNumbers": {
+                  "TrainNumberRef": [
+                    {
+                      "value": "147513"
+                    }
+                  ]
+                },
+                "VehicleFeatureRef": [
+                  "longTrain"
+                ]
+              }
+            },
+            {
+              "RecordedAtTime": "2024-11-19T02:09:59.476Z",
+              "ItemIdentifier": "SNCF_ACCES_CLOUD:Item::41315_148118:LOC",
+              "MonitoringRef": {
+                "value": "STIF:StopPoint:Q:41315:"
+              },
+              "MonitoredVehicleJourney": {
+                "LineRef": {
+                  "value": "STIF:Line::C01727:"
+                },
+                "OperatorRef": {
+                  "value": "SNCF_ACCES_CLOUD:Operator::SNCF:"
+                },
+                "FramedVehicleJourneyRef": {
+                  "DataFrameRef": {
+                    "value": "any"
+                  },
+                  "DatedVehicleJourneyRef": "SNCF_ACCES_CLOUD:VehicleJourney::8561642c-ae83-45e3-89f7-17dcb730a605:LOC"
+                },
+                "DirectionName": [],
+                "DestinationRef": {
+                  "value": "STIF:StopPoint:Q:41088:"
+                },
+                "DestinationName": [
+                  {
+                    "value": "Gare de Montigny Beauchamp"
+                  }
+                ],
+                "VehicleJourneyName": [],
+                "JourneyNote": [
+                  {
+                    "value": "GOTA"
+                  }
+                ],
+                "MonitoredCall": {
+                  "StopPointName": [
+                    {
+                      "value": "Gare d'Ivry-sur-Seine"
+                    }
+                  ],
+                  "VehicleAtStop": false,
+                  "DestinationDisplay": [
+                    {
+                      "value": "Gare de Montigny Beauchamp"
+                    }
+                  ],
+                  "ExpectedArrivalTime": "2024-11-19T12:57:10.000Z",
+                  "ExpectedDepartureTime": "2024-11-19T12:58:00.000Z",
+                  "DepartureStatus": "onTime",
+                  "Order": 7,
+                  "AimedArrivalTime": "2024-11-19T12:57:10.000Z",
+                  "ArrivalPlatformName": {
+                    "value": "2B"
+                  },
+                  "AimedDepartureTime": "2024-11-19T12:58:00.000Z",
+                  "ArrivalStatus": "onTime"
+                },
+                "TrainNumbers": {
+                  "TrainNumberRef": [
+                    {
+                      "value": "148118"
+                    }
+                  ]
+                },
+                "VehicleFeatureRef": [
+                  "longTrain"
+                ]
+              }
+            },
+            {
+              "RecordedAtTime": "2024-11-19T12:33:34.065Z",
+              "ItemIdentifier": "SNCF_ACCES_CLOUD:Item::41315_148516:LOC",
+              "MonitoringRef": {
+                "value": "STIF:StopPoint:Q:41315:"
+              },
+              "MonitoredVehicleJourney": {
+                "LineRef": {
+                  "value": "STIF:Line::C01727:"
+                },
+                "OperatorRef": {
+                  "value": "SNCF_ACCES_CLOUD:Operator::SNCF:"
+                },
+                "FramedVehicleJourneyRef": {
+                  "DataFrameRef": {
+                    "value": "any"
+                  },
+                  "DatedVehicleJourneyRef": "SNCF_ACCES_CLOUD:VehicleJourney::6dd07c5a-a613-4d00-a05f-71bbc36a1ac8:LOC"
+                },
+                "DirectionName": [],
+                "DestinationRef": {
+                  "value": "STIF:StopPoint:Q:41091:"
+                },
+                "DestinationName": [
+                  {
+                    "value": "Gare de Pontoise"
+                  }
+                ],
+                "VehicleJourneyName": [],
+                "JourneyNote": [
+                  {
+                    "value": "NORA"
+                  }
+                ],
+                "MonitoredCall": {
+                  "StopPointName": [
+                    {
+                      "value": "Gare d'Ivry-sur-Seine"
+                    }
+                  ],
+                  "VehicleAtStop": false,
+                  "DestinationDisplay": [
+                    {
+                      "value": "Gare de Pontoise"
+                    }
+                  ],
+                  "ExpectedArrivalTime": "2024-11-19T13:03:00.000Z",
+                  "ExpectedDepartureTime": "2024-11-19T13:03:50.000Z",
+                  "DepartureStatus": "onTime",
+                  "Order": 11,
+                  "AimedArrivalTime": "2024-11-19T12:41:40.000Z",
+                  "ArrivalPlatformName": {
+                    "value": "2B"
+                  },
+                  "AimedDepartureTime": "2024-11-19T12:42:30.000Z",
+                  "ArrivalStatus": "onTime"
+                },
+                "TrainNumbers": {
+                  "TrainNumberRef": [
+                    {
+                      "value": "148516"
+                    }
+                  ]
+                },
+                "VehicleFeatureRef": [
+                  "longTrain"
+                ]
+              }
+            },
+            {
+              "RecordedAtTime": "2024-11-19T12:32:02.472Z",
+              "ItemIdentifier": "SNCF_ACCES_CLOUD:Item::41315_147115:LOC",
+              "MonitoringRef": {
+                "value": "STIF:StopPoint:Q:41315:"
+              },
+              "MonitoredVehicleJourney": {
+                "LineRef": {
+                  "value": "STIF:Line::C01727:"
+                },
+                "OperatorRef": {
+                  "value": "SNCF_ACCES_CLOUD:Operator::SNCF:"
+                },
+                "FramedVehicleJourneyRef": {
+                  "DataFrameRef": {
+                    "value": "any"
+                  },
+                  "DatedVehicleJourneyRef": "SNCF_ACCES_CLOUD:VehicleJourney::8855da93-d697-4536-b8fb-0eccf6b081ee:LOC"
+                },
+                "DirectionName": [],
+                "DestinationRef": {
+                  "value": "STIF:StopPoint:Q:41326:"
+                },
+                "DestinationName": [
+                  {
+                    "value": "Gare de Pont de Rungis"
+                  }
+                ],
+                "VehicleJourneyName": [],
+                "JourneyNote": [
+                  {
+                    "value": "ROMI"
+                  }
+                ],
+                "MonitoredCall": {
+                  "StopPointName": [
+                    {
+                      "value": "Gare d'Ivry-sur-Seine"
+                    }
+                  ],
+                  "VehicleAtStop": false,
+                  "DestinationDisplay": [
+                    {
+                      "value": "Gare de Pont de Rungis"
+                    }
+                  ],
+                  "ExpectedArrivalTime": "2024-11-19T13:05:22.000Z",
+                  "ExpectedDepartureTime": "2024-11-19T13:06:12.000Z",
+                  "DepartureStatus": "onTime",
+                  "Order": 24,
+                  "AimedArrivalTime": "2024-11-19T13:03:10.000Z",
+                  "ArrivalPlatformName": {
+                    "value": "1B"
+                  },
+                  "AimedDepartureTime": "2024-11-19T13:04:00.000Z",
+                  "ArrivalStatus": "onTime"
+                },
+                "TrainNumbers": {
+                  "TrainNumberRef": [
+                    {
+                      "value": "147115"
+                    }
+                  ]
+                },
+                "VehicleFeatureRef": [
+                  "longTrain"
+                ]
+              }
+            },
+            {
+              "RecordedAtTime": "2024-11-19T12:26:55.420Z",
+              "ItemIdentifier": "SNCF_ACCES_CLOUD:Item::41315_148520:LOC",
+              "MonitoringRef": {
+                "value": "STIF:StopPoint:Q:41315:"
+              },
+              "MonitoredVehicleJourney": {
+                "LineRef": {
+                  "value": "STIF:Line::C01727:"
+                },
+                "OperatorRef": {
+                  "value": "SNCF_ACCES_CLOUD:Operator::SNCF:"
+                },
+                "FramedVehicleJourneyRef": {
+                  "DataFrameRef": {
+                    "value": "any"
+                  },
+                  "DatedVehicleJourneyRef": "SNCF_ACCES_CLOUD:VehicleJourney::ff22794b-7754-4529-90ba-fd0a667bfb7e:LOC"
+                },
+                "DirectionName": [],
+                "DestinationRef": {
+                  "value": "STIF:StopPoint:Q:41091:"
+                },
+                "DestinationName": [
+                  {
+                    "value": "Gare de Pontoise"
+                  }
+                ],
+                "VehicleJourneyName": [],
+                "JourneyNote": [
+                  {
+                    "value": "NORA"
+                  }
+                ],
+                "MonitoredCall": {
+                  "StopPointName": [
+                    {
+                      "value": "Gare d'Ivry-sur-Seine"
+                    }
+                  ],
+                  "VehicleAtStop": false,
+                  "DestinationDisplay": [
+                    {
+                      "value": "Gare de Pontoise"
+                    }
+                  ],
+                  "ExpectedArrivalTime": "2024-11-19T13:11:40.000Z",
+                  "ExpectedDepartureTime": "2024-11-19T13:12:30.000Z",
+                  "DepartureStatus": "onTime",
+                  "Order": 11,
+                  "AimedArrivalTime": "2024-11-19T13:11:40.000Z",
+                  "ArrivalPlatformName": {
+                    "value": "2B"
+                  },
+                  "AimedDepartureTime": "2024-11-19T13:12:30.000Z",
+                  "ArrivalStatus": "onTime"
+                },
+                "TrainNumbers": {
+                  "TrainNumberRef": [
+                    {
+                      "value": "148520"
+                    }
+                  ]
+                },
+                "VehicleFeatureRef": [
+                  "longTrain"
+                ]
+              }
+            },
+            {
+              "RecordedAtTime": "2024-11-19T12:33:15.422Z",
+              "ItemIdentifier": "SNCF_ACCES_CLOUD:Item::41315_147517:LOC",
+              "MonitoringRef": {
+                "value": "STIF:StopPoint:Q:41315:"
+              },
+              "MonitoredVehicleJourney": {
+                "LineRef": {
+                  "value": "STIF:Line::C01727:"
+                },
+                "OperatorRef": {
+                  "value": "SNCF_ACCES_CLOUD:Operator::SNCF:"
+                },
+                "FramedVehicleJourneyRef": {
+                  "DataFrameRef": {
+                    "value": "any"
+                  },
+                  "DatedVehicleJourneyRef": "SNCF_ACCES_CLOUD:VehicleJourney::14e96c51-661f-4a77-abd5-5cba5f418169:LOC"
+                },
+                "DirectionName": [],
+                "DestinationRef": {
+                  "value": "STIF:StopPoint:Q:412833:"
+                },
+                "DestinationName": [
+                  {
+                    "value": "Massy-Palaiseau"
+                  }
+                ],
+                "VehicleJourneyName": [],
+                "JourneyNote": [
+                  {
+                    "value": "MONA"
+                  }
+                ],
+                "MonitoredCall": {
+                  "StopPointName": [
+                    {
+                      "value": "Gare d'Ivry-sur-Seine"
+                    }
+                  ],
+                  "VehicleAtStop": false,
+                  "DestinationDisplay": [
+                    {
+                      "value": "Massy-Palaiseau"
+                    }
+                  ],
+                  "ExpectedArrivalTime": "2024-11-19T13:20:08.000Z",
+                  "ExpectedDepartureTime": "2024-11-19T13:20:48.000Z",
+                  "DepartureStatus": "onTime",
+                  "Order": 28,
+                  "AimedArrivalTime": "2024-11-19T13:18:30.000Z",
+                  "ArrivalPlatformName": {
+                    "value": "1B"
+                  },
+                  "AimedDepartureTime": "2024-11-19T13:19:10.000Z",
+                  "ArrivalStatus": "onTime"
+                },
+                "TrainNumbers": {
+                  "TrainNumberRef": [
+                    {
+                      "value": "147517"
+                    }
+                  ]
+                },
+                "VehicleFeatureRef": [
+                  "longTrain"
+                ]
+              }
+            },
+            {
+              "RecordedAtTime": "2024-11-19T02:09:57.925Z",
+              "ItemIdentifier": "SNCF_ACCES_CLOUD:Item::41315_148122:LOC",
+              "MonitoringRef": {
+                "value": "STIF:StopPoint:Q:41315:"
+              },
+              "MonitoredVehicleJourney": {
+                "LineRef": {
+                  "value": "STIF:Line::C01727:"
+                },
+                "OperatorRef": {
+                  "value": "SNCF_ACCES_CLOUD:Operator::SNCF:"
+                },
+                "FramedVehicleJourneyRef": {
+                  "DataFrameRef": {
+                    "value": "any"
+                  },
+                  "DatedVehicleJourneyRef": "SNCF_ACCES_CLOUD:VehicleJourney::bb81c5e4-456c-4d5a-9e62-3067e1f39b9a:LOC"
+                },
+                "DirectionName": [],
+                "DestinationRef": {
+                  "value": "STIF:StopPoint:Q:41088:"
+                },
+                "DestinationName": [
+                  {
+                    "value": "Gare de Montigny Beauchamp"
+                  }
+                ],
+                "VehicleJourneyName": [],
+                "JourneyNote": [
+                  {
+                    "value": "GOTA"
+                  }
+                ],
+                "MonitoredCall": {
+                  "StopPointName": [
+                    {
+                      "value": "Gare d'Ivry-sur-Seine"
+                    }
+                  ],
+                  "VehicleAtStop": false,
+                  "DestinationDisplay": [
+                    {
+                      "value": "Gare de Montigny Beauchamp"
+                    }
+                  ],
+                  "ExpectedArrivalTime": "2024-11-19T13:27:10.000Z",
+                  "ExpectedDepartureTime": "2024-11-19T13:28:00.000Z",
+                  "DepartureStatus": "onTime",
+                  "Order": 7,
+                  "AimedArrivalTime": "2024-11-19T13:27:10.000Z",
+                  "ArrivalPlatformName": {
+                    "value": "2B"
+                  },
+                  "AimedDepartureTime": "2024-11-19T13:28:00.000Z",
+                  "ArrivalStatus": "onTime"
+                },
+                "TrainNumbers": {
+                  "TrainNumberRef": [
+                    {
+                      "value": "148123"
+                    }
+                  ]
+                },
+                "VehicleFeatureRef": [
+                  "longTrain"
+                ]
+              }
+            },
+            {
+              "RecordedAtTime": "2024-11-19T12:33:11.996Z",
+              "ItemIdentifier": "SNCF_ACCES_CLOUD:Item::41315_147119:LOC",
+              "MonitoringRef": {
+                "value": "STIF:StopPoint:Q:41315:"
+              },
+              "MonitoredVehicleJourney": {
+                "LineRef": {
+                  "value": "STIF:Line::C01727:"
+                },
+                "OperatorRef": {
+                  "value": "SNCF_ACCES_CLOUD:Operator::SNCF:"
+                },
+                "FramedVehicleJourneyRef": {
+                  "DataFrameRef": {
+                    "value": "any"
+                  },
+                  "DatedVehicleJourneyRef": "SNCF_ACCES_CLOUD:VehicleJourney::16ec7e16-914f-4bd5-9882-c0583cd57236:LOC"
+                },
+                "DirectionName": [],
+                "DestinationRef": {
+                  "value": "STIF:StopPoint:Q:41326:"
+                },
+                "DestinationName": [
+                  {
+                    "value": "Gare de Pont de Rungis"
+                  }
+                ],
+                "VehicleJourneyName": [],
+                "JourneyNote": [
+                  {
+                    "value": "ROMI"
+                  }
+                ],
+                "MonitoredCall": {
+                  "StopPointName": [
+                    {
+                      "value": "Gare d'Ivry-sur-Seine"
+                    }
+                  ],
+                  "VehicleAtStop": false,
+                  "DestinationDisplay": [
+                    {
+                      "value": "Gare de Pont de Rungis"
+                    }
+                  ],
+                  "ExpectedArrivalTime": "2024-11-19T13:34:01.000Z",
+                  "ExpectedDepartureTime": "2024-11-19T13:34:51.000Z",
+                  "DepartureStatus": "onTime",
+                  "Order": 24,
+                  "AimedArrivalTime": "2024-11-19T13:33:10.000Z",
+                  "ArrivalPlatformName": {
+                    "value": "1B"
+                  },
+                  "AimedDepartureTime": "2024-11-19T13:34:00.000Z",
+                  "ArrivalStatus": "onTime"
+                },
+                "TrainNumbers": {
+                  "TrainNumberRef": [
+                    {
+                      "value": "147119"
+                    }
+                  ]
+                },
+                "VehicleFeatureRef": [
+                  "shortTrain"
+                ]
+              }
+            },
+            {
+              "RecordedAtTime": "2024-11-19T02:10:02.255Z",
+              "ItemIdentifier": "SNCF_ACCES_CLOUD:Item::41315_148524:LOC",
+              "MonitoringRef": {
+                "value": "STIF:StopPoint:Q:41315:"
+              },
+              "MonitoredVehicleJourney": {
+                "LineRef": {
+                  "value": "STIF:Line::C01727:"
+                },
+                "OperatorRef": {
+                  "value": "SNCF_ACCES_CLOUD:Operator::SNCF:"
+                },
+                "FramedVehicleJourneyRef": {
+                  "DataFrameRef": {
+                    "value": "any"
+                  },
+                  "DatedVehicleJourneyRef": "SNCF_ACCES_CLOUD:VehicleJourney::ec11b809-4ec2-4fe1-8167-a0e26d4d9c6f:LOC"
+                },
+                "DirectionName": [],
+                "DestinationRef": {
+                  "value": "STIF:StopPoint:Q:41091:"
+                },
+                "DestinationName": [
+                  {
+                    "value": "Gare de Pontoise"
+                  }
+                ],
+                "VehicleJourneyName": [],
+                "JourneyNote": [
+                  {
+                    "value": "NORA"
+                  }
+                ],
+                "MonitoredCall": {
+                  "StopPointName": [
+                    {
+                      "value": "Gare d'Ivry-sur-Seine"
+                    }
+                  ],
+                  "VehicleAtStop": false,
+                  "DestinationDisplay": [
+                    {
+                      "value": "Gare de Pontoise"
+                    }
+                  ],
+                  "ExpectedArrivalTime": "2024-11-19T13:41:40.000Z",
+                  "ExpectedDepartureTime": "2024-11-19T13:42:30.000Z",
+                  "DepartureStatus": "onTime",
+                  "Order": 11,
+                  "AimedArrivalTime": "2024-11-19T13:41:40.000Z",
+                  "ArrivalPlatformName": {
+                    "value": "2B"
+                  },
+                  "AimedDepartureTime": "2024-11-19T13:42:30.000Z",
+                  "ArrivalStatus": "onTime"
+                },
+                "TrainNumbers": {
+                  "TrainNumberRef": [
+                    {
+                      "value": "148524"
+                    }
+                  ]
+                },
+                "VehicleFeatureRef": [
+                  "longTrain"
+                ]
+              }
+            },
+            {
+              "RecordedAtTime": "2024-11-19T12:33:37.381Z",
+              "ItemIdentifier": "SNCF_ACCES_CLOUD:Item::41315_147521:LOC",
+              "MonitoringRef": {
+                "value": "STIF:StopPoint:Q:41315:"
+              },
+              "MonitoredVehicleJourney": {
+                "LineRef": {
+                  "value": "STIF:Line::C01727:"
+                },
+                "OperatorRef": {
+                  "value": "SNCF_ACCES_CLOUD:Operator::SNCF:"
+                },
+                "FramedVehicleJourneyRef": {
+                  "DataFrameRef": {
+                    "value": "any"
+                  },
+                  "DatedVehicleJourneyRef": "SNCF_ACCES_CLOUD:VehicleJourney::8d1de665-bab8-421c-880b-bf67f3b2c583:LOC"
+                },
+                "DirectionName": [],
+                "DestinationRef": {
+                  "value": "STIF:StopPoint:Q:412833:"
+                },
+                "DestinationName": [
+                  {
+                    "value": "Massy-Palaiseau"
+                  }
+                ],
+                "VehicleJourneyName": [],
+                "JourneyNote": [
+                  {
+                    "value": "MONA"
+                  }
+                ],
+                "MonitoredCall": {
+                  "StopPointName": [
+                    {
+                      "value": "Gare d'Ivry-sur-Seine"
+                    }
+                  ],
+                  "VehicleAtStop": false,
+                  "DestinationDisplay": [
+                    {
+                      "value": "Massy-Palaiseau"
+                    }
+                  ],
+                  "ExpectedArrivalTime": "2024-11-19T13:49:32.000Z",
+                  "ExpectedDepartureTime": "2024-11-19T13:50:12.000Z",
+                  "DepartureStatus": "onTime",
+                  "Order": 28,
+                  "AimedArrivalTime": "2024-11-19T13:48:30.000Z",
+                  "ArrivalPlatformName": {
+                    "value": "1B"
+                  },
+                  "AimedDepartureTime": "2024-11-19T13:49:10.000Z",
+                  "ArrivalStatus": "onTime"
+                },
+                "TrainNumbers": {
+                  "TrainNumberRef": [
+                    {
+                      "value": "147521"
+                    }
+                  ]
+                },
+                "VehicleFeatureRef": [
+                  "longTrain"
+                ]
+              }
+            },
+            {
+              "RecordedAtTime": "2024-11-19T02:10:06.644Z",
+              "ItemIdentifier": "SNCF_ACCES_CLOUD:Item::41315_148126:LOC",
+              "MonitoringRef": {
+                "value": "STIF:StopPoint:Q:41315:"
+              },
+              "MonitoredVehicleJourney": {
+                "LineRef": {
+                  "value": "STIF:Line::C01727:"
+                },
+                "OperatorRef": {
+                  "value": "SNCF_ACCES_CLOUD:Operator::SNCF:"
+                },
+                "FramedVehicleJourneyRef": {
+                  "DataFrameRef": {
+                    "value": "any"
+                  },
+                  "DatedVehicleJourneyRef": "SNCF_ACCES_CLOUD:VehicleJourney::545a3093-566d-43b6-be18-01fbebafcdb7:LOC"
+                },
+                "DirectionName": [],
+                "DestinationRef": {
+                  "value": "STIF:StopPoint:Q:41088:"
+                },
+                "DestinationName": [
+                  {
+                    "value": "Gare de Montigny Beauchamp"
+                  }
+                ],
+                "VehicleJourneyName": [],
+                "JourneyNote": [
+                  {
+                    "value": "GOTA"
+                  }
+                ],
+                "MonitoredCall": {
+                  "StopPointName": [
+                    {
+                      "value": "Gare d'Ivry-sur-Seine"
+                    }
+                  ],
+                  "VehicleAtStop": false,
+                  "DestinationDisplay": [
+                    {
+                      "value": "Gare de Montigny Beauchamp"
+                    }
+                  ],
+                  "ExpectedArrivalTime": "2024-11-19T13:57:10.000Z",
+                  "ExpectedDepartureTime": "2024-11-19T13:58:00.000Z",
+                  "DepartureStatus": "onTime",
+                  "Order": 7,
+                  "AimedArrivalTime": "2024-11-19T13:57:10.000Z",
+                  "ArrivalPlatformName": {
+                    "value": "2B"
+                  },
+                  "AimedDepartureTime": "2024-11-19T13:58:00.000Z",
+                  "ArrivalStatus": "onTime"
+                },
+                "TrainNumbers": {
+                  "TrainNumberRef": [
+                    {
+                      "value": "148126"
+                    }
+                  ]
+                },
+                "VehicleFeatureRef": [
+                  "longTrain"
+                ]
+              }
+            },
+            {
+              "RecordedAtTime": "2024-11-19T02:09:59.723Z",
+              "ItemIdentifier": "SNCF_ACCES_CLOUD:Item::41315_147123:LOC",
+              "MonitoringRef": {
+                "value": "STIF:StopPoint:Q:41315:"
+              },
+              "MonitoredVehicleJourney": {
+                "LineRef": {
+                  "value": "STIF:Line::C01727:"
+                },
+                "OperatorRef": {
+                  "value": "SNCF_ACCES_CLOUD:Operator::SNCF:"
+                },
+                "FramedVehicleJourneyRef": {
+                  "DataFrameRef": {
+                    "value": "any"
+                  },
+                  "DatedVehicleJourneyRef": "SNCF_ACCES_CLOUD:VehicleJourney::d89487a6-7139-4264-858f-76d6ac40e431:LOC"
+                },
+                "DirectionName": [],
+                "DestinationRef": {
+                  "value": "STIF:StopPoint:Q:41326:"
+                },
+                "DestinationName": [
+                  {
+                    "value": "Gare de Pont de Rungis"
+                  }
+                ],
+                "VehicleJourneyName": [],
+                "JourneyNote": [
+                  {
+                    "value": "ROMI"
+                  }
+                ],
+                "MonitoredCall": {
+                  "StopPointName": [
+                    {
+                      "value": "Gare d'Ivry-sur-Seine"
+                    }
+                  ],
+                  "VehicleAtStop": false,
+                  "DestinationDisplay": [
+                    {
+                      "value": "Gare de Pont de Rungis"
+                    }
+                  ],
+                  "ExpectedArrivalTime": "2024-11-19T14:03:10.000Z",
+                  "ExpectedDepartureTime": "2024-11-19T14:04:00.000Z",
+                  "DepartureStatus": "onTime",
+                  "Order": 24,
+                  "AimedArrivalTime": "2024-11-19T14:03:10.000Z",
+                  "ArrivalPlatformName": {
+                    "value": "1B"
+                  },
+                  "AimedDepartureTime": "2024-11-19T14:04:00.000Z",
+                  "ArrivalStatus": "onTime"
+                },
+                "TrainNumbers": {
+                  "TrainNumberRef": [
+                    {
+                      "value": "147122"
+                    }
+                  ]
+                },
+                "VehicleFeatureRef": [
+                  "longTrain"
+                ]
+              }
+            },
+            {
+              "RecordedAtTime": "2024-11-19T02:10:06.911Z",
+              "ItemIdentifier": "SNCF_ACCES_CLOUD:Item::41315_148528:LOC",
+              "MonitoringRef": {
+                "value": "STIF:StopPoint:Q:41315:"
+              },
+              "MonitoredVehicleJourney": {
+                "LineRef": {
+                  "value": "STIF:Line::C01727:"
+                },
+                "OperatorRef": {
+                  "value": "SNCF_ACCES_CLOUD:Operator::SNCF:"
+                },
+                "FramedVehicleJourneyRef": {
+                  "DataFrameRef": {
+                    "value": "any"
+                  },
+                  "DatedVehicleJourneyRef": "SNCF_ACCES_CLOUD:VehicleJourney::38736bf0-d17f-4602-9ead-35acc9cecf03:LOC"
+                },
+                "DirectionName": [],
+                "DestinationRef": {
+                  "value": "STIF:StopPoint:Q:41091:"
+                },
+                "DestinationName": [
+                  {
+                    "value": "Gare de Pontoise"
+                  }
+                ],
+                "VehicleJourneyName": [],
+                "JourneyNote": [
+                  {
+                    "value": "NORA"
+                  }
+                ],
+                "MonitoredCall": {
+                  "StopPointName": [
+                    {
+                      "value": "Gare d'Ivry-sur-Seine"
+                    }
+                  ],
+                  "VehicleAtStop": false,
+                  "DestinationDisplay": [
+                    {
+                      "value": "Gare de Pontoise"
+                    }
+                  ],
+                  "ExpectedArrivalTime": "2024-11-19T14:11:40.000Z",
+                  "ExpectedDepartureTime": "2024-11-19T14:12:30.000Z",
+                  "DepartureStatus": "onTime",
+                  "Order": 11,
+                  "AimedArrivalTime": "2024-11-19T14:11:40.000Z",
+                  "ArrivalPlatformName": {
+                    "value": "2B"
+                  },
+                  "AimedDepartureTime": "2024-11-19T14:12:30.000Z",
+                  "ArrivalStatus": "onTime"
+                },
+                "TrainNumbers": {
+                  "TrainNumberRef": [
+                    {
+                      "value": "148529"
+                    }
+                  ]
+                },
+                "VehicleFeatureRef": [
+                  "longTrain"
+                ]
+              }
+            },
+            {
+              "RecordedAtTime": "2024-11-19T02:09:58.388Z",
+              "ItemIdentifier": "SNCF_ACCES_CLOUD:Item::41315_147525:LOC",
+              "MonitoringRef": {
+                "value": "STIF:StopPoint:Q:41315:"
+              },
+              "MonitoredVehicleJourney": {
+                "LineRef": {
+                  "value": "STIF:Line::C01727:"
+                },
+                "OperatorRef": {
+                  "value": "SNCF_ACCES_CLOUD:Operator::SNCF:"
+                },
+                "FramedVehicleJourneyRef": {
+                  "DataFrameRef": {
+                    "value": "any"
+                  },
+                  "DatedVehicleJourneyRef": "SNCF_ACCES_CLOUD:VehicleJourney::7850075f-38d1-405c-92ee-c5728cd355ad:LOC"
+                },
+                "DirectionName": [],
+                "DestinationRef": {
+                  "value": "STIF:StopPoint:Q:412833:"
+                },
+                "DestinationName": [
+                  {
+                    "value": "Massy-Palaiseau"
+                  }
+                ],
+                "VehicleJourneyName": [],
+                "JourneyNote": [
+                  {
+                    "value": "MONA"
+                  }
+                ],
+                "MonitoredCall": {
+                  "StopPointName": [
+                    {
+                      "value": "Gare d'Ivry-sur-Seine"
+                    }
+                  ],
+                  "VehicleAtStop": false,
+                  "DestinationDisplay": [
+                    {
+                      "value": "Massy-Palaiseau"
+                    }
+                  ],
+                  "ExpectedArrivalTime": "2024-11-19T14:18:30.000Z",
+                  "ExpectedDepartureTime": "2024-11-19T14:19:10.000Z",
+                  "DepartureStatus": "onTime",
+                  "Order": 28,
+                  "AimedArrivalTime": "2024-11-19T14:18:30.000Z",
+                  "ArrivalPlatformName": {
+                    "value": "1B"
+                  },
+                  "AimedDepartureTime": "2024-11-19T14:19:10.000Z",
+                  "ArrivalStatus": "onTime"
+                },
+                "TrainNumbers": {
+                  "TrainNumberRef": [
+                    {
+                      "value": "147524"
+                    }
+                  ]
+                },
+                "VehicleFeatureRef": [
+                  "longTrain"
+                ]
+              }
+            },
+            {
+              "RecordedAtTime": "2024-11-19T02:10:06.536Z",
+              "ItemIdentifier": "SNCF_ACCES_CLOUD:Item::41315_148130:LOC",
+              "MonitoringRef": {
+                "value": "STIF:StopPoint:Q:41315:"
+              },
+              "MonitoredVehicleJourney": {
+                "LineRef": {
+                  "value": "STIF:Line::C01727:"
+                },
+                "OperatorRef": {
+                  "value": "SNCF_ACCES_CLOUD:Operator::SNCF:"
+                },
+                "FramedVehicleJourneyRef": {
+                  "DataFrameRef": {
+                    "value": "any"
+                  },
+                  "DatedVehicleJourneyRef": "SNCF_ACCES_CLOUD:VehicleJourney::d1e2d58c-017b-46af-9ff2-f670aca8ffe4:LOC"
+                },
+                "DirectionName": [],
+                "DestinationRef": {
+                  "value": "STIF:StopPoint:Q:41088:"
+                },
+                "DestinationName": [
+                  {
+                    "value": "Gare de Montigny Beauchamp"
+                  }
+                ],
+                "VehicleJourneyName": [],
+                "JourneyNote": [
+                  {
+                    "value": "GOTA"
+                  }
+                ],
+                "MonitoredCall": {
+                  "StopPointName": [
+                    {
+                      "value": "Gare d'Ivry-sur-Seine"
+                    }
+                  ],
+                  "VehicleAtStop": false,
+                  "DestinationDisplay": [
+                    {
+                      "value": "Gare de Montigny Beauchamp"
+                    }
+                  ],
+                  "ExpectedArrivalTime": "2024-11-19T14:27:10.000Z",
+                  "ExpectedDepartureTime": "2024-11-19T14:28:00.000Z",
+                  "DepartureStatus": "onTime",
+                  "Order": 7,
+                  "AimedArrivalTime": "2024-11-19T14:27:10.000Z",
+                  "ArrivalPlatformName": {
+                    "value": "2B"
+                  },
+                  "AimedDepartureTime": "2024-11-19T14:28:00.000Z",
+                  "ArrivalStatus": "onTime"
+                },
+                "TrainNumbers": {
+                  "TrainNumberRef": [
+                    {
+                      "value": "148130"
+                    }
+                  ]
+                },
+                "VehicleFeatureRef": [
+                  "shortTrain"
+                ]
+              }
+            },
+            {
+              "RecordedAtTime": "2024-11-19T02:10:05.889Z",
+              "ItemIdentifier": "SNCF_ACCES_CLOUD:Item::41315_147127:LOC",
+              "MonitoringRef": {
+                "value": "STIF:StopPoint:Q:41315:"
+              },
+              "MonitoredVehicleJourney": {
+                "LineRef": {
+                  "value": "STIF:Line::C01727:"
+                },
+                "OperatorRef": {
+                  "value": "SNCF_ACCES_CLOUD:Operator::SNCF:"
+                },
+                "FramedVehicleJourneyRef": {
+                  "DataFrameRef": {
+                    "value": "any"
+                  },
+                  "DatedVehicleJourneyRef": "SNCF_ACCES_CLOUD:VehicleJourney::ff54f792-27b3-4e08-9954-3f99a717ad66:LOC"
+                },
+                "DirectionName": [],
+                "DestinationRef": {
+                  "value": "STIF:StopPoint:Q:41326:"
+                },
+                "DestinationName": [
+                  {
+                    "value": "Gare de Pont de Rungis"
+                  }
+                ],
+                "VehicleJourneyName": [],
+                "JourneyNote": [
+                  {
+                    "value": "ROMI"
+                  }
+                ],
+                "MonitoredCall": {
+                  "StopPointName": [
+                    {
+                      "value": "Gare d'Ivry-sur-Seine"
+                    }
+                  ],
+                  "VehicleAtStop": false,
+                  "DestinationDisplay": [
+                    {
+                      "value": "Gare de Pont de Rungis"
+                    }
+                  ],
+                  "ExpectedArrivalTime": "2024-11-19T14:33:10.000Z",
+                  "ExpectedDepartureTime": "2024-11-19T14:34:00.000Z",
+                  "DepartureStatus": "onTime",
+                  "Order": 24,
+                  "AimedArrivalTime": "2024-11-19T14:33:10.000Z",
+                  "ArrivalPlatformName": {
+                    "value": "1B"
+                  },
+                  "AimedDepartureTime": "2024-11-19T14:34:00.000Z",
+                  "ArrivalStatus": "onTime"
+                },
+                "TrainNumbers": {
+                  "TrainNumberRef": [
+                    {
+                      "value": "147127"
+                    }
+                  ]
+                },
+                "VehicleFeatureRef": [
+                  "longTrain"
+                ]
+              }
+            },
+            {
+              "RecordedAtTime": "2024-11-19T02:10:00.117Z",
+              "ItemIdentifier": "SNCF_ACCES_CLOUD:Item::41315_148532:LOC",
+              "MonitoringRef": {
+                "value": "STIF:StopPoint:Q:41315:"
+              },
+              "MonitoredVehicleJourney": {
+                "LineRef": {
+                  "value": "STIF:Line::C01727:"
+                },
+                "OperatorRef": {
+                  "value": "SNCF_ACCES_CLOUD:Operator::SNCF:"
+                },
+                "FramedVehicleJourneyRef": {
+                  "DataFrameRef": {
+                    "value": "any"
+                  },
+                  "DatedVehicleJourneyRef": "SNCF_ACCES_CLOUD:VehicleJourney::2186bd20-a812-4695-8fcb-4ec10e418662:LOC"
+                },
+                "DirectionName": [],
+                "DestinationRef": {
+                  "value": "STIF:StopPoint:Q:41091:"
+                },
+                "DestinationName": [
+                  {
+                    "value": "Gare de Pontoise"
+                  }
+                ],
+                "VehicleJourneyName": [],
+                "JourneyNote": [
+                  {
+                    "value": "NORA"
+                  }
+                ],
+                "MonitoredCall": {
+                  "StopPointName": [
+                    {
+                      "value": "Gare d'Ivry-sur-Seine"
+                    }
+                  ],
+                  "VehicleAtStop": false,
+                  "DestinationDisplay": [
+                    {
+                      "value": "Gare de Pontoise"
+                    }
+                  ],
+                  "ExpectedArrivalTime": "2024-11-19T14:41:40.000Z",
+                  "ExpectedDepartureTime": "2024-11-19T14:42:30.000Z",
+                  "DepartureStatus": "onTime",
+                  "Order": 11,
+                  "AimedArrivalTime": "2024-11-19T14:41:40.000Z",
+                  "ArrivalPlatformName": {
+                    "value": "2B"
+                  },
+                  "AimedDepartureTime": "2024-11-19T14:42:30.000Z",
+                  "ArrivalStatus": "onTime"
+                },
+                "TrainNumbers": {
+                  "TrainNumberRef": [
+                    {
+                      "value": "148532"
+                    }
+                  ]
+                },
+                "VehicleFeatureRef": [
+                  "longTrain"
+                ]
+              }
+            },
+            {
+              "RecordedAtTime": "2024-11-19T02:10:12.821Z",
+              "ItemIdentifier": "SNCF_ACCES_CLOUD:Item::41315_147529:LOC",
+              "MonitoringRef": {
+                "value": "STIF:StopPoint:Q:41315:"
+              },
+              "MonitoredVehicleJourney": {
+                "LineRef": {
+                  "value": "STIF:Line::C01727:"
+                },
+                "OperatorRef": {
+                  "value": "SNCF_ACCES_CLOUD:Operator::SNCF:"
+                },
+                "FramedVehicleJourneyRef": {
+                  "DataFrameRef": {
+                    "value": "any"
+                  },
+                  "DatedVehicleJourneyRef": "SNCF_ACCES_CLOUD:VehicleJourney::7b0b96af-0aba-4a82-a0a9-723be79a3b4a:LOC"
+                },
+                "DirectionName": [],
+                "DestinationRef": {
+                  "value": "STIF:StopPoint:Q:412833:"
+                },
+                "DestinationName": [
+                  {
+                    "value": "Massy-Palaiseau"
+                  }
+                ],
+                "VehicleJourneyName": [],
+                "JourneyNote": [
+                  {
+                    "value": "MONA"
+                  }
+                ],
+                "MonitoredCall": {
+                  "StopPointName": [
+                    {
+                      "value": "Gare d'Ivry-sur-Seine"
+                    }
+                  ],
+                  "VehicleAtStop": false,
+                  "DestinationDisplay": [
+                    {
+                      "value": "Massy-Palaiseau"
+                    }
+                  ],
+                  "ExpectedArrivalTime": "2024-11-19T14:48:30.000Z",
+                  "ExpectedDepartureTime": "2024-11-19T14:49:10.000Z",
+                  "DepartureStatus": "onTime",
+                  "Order": 28,
+                  "AimedArrivalTime": "2024-11-19T14:48:30.000Z",
+                  "ArrivalPlatformName": {
+                    "value": "1B"
+                  },
+                  "AimedDepartureTime": "2024-11-19T14:49:10.000Z",
+                  "ArrivalStatus": "onTime"
+                },
+                "TrainNumbers": {
+                  "TrainNumberRef": [
+                    {
+                      "value": "147529"
+                    }
+                  ]
+                },
+                "VehicleFeatureRef": [
+                  "longTrain"
+                ]
+              }
+            },
+            {
+              "RecordedAtTime": "2024-11-19T02:10:06.863Z",
+              "ItemIdentifier": "SNCF_ACCES_CLOUD:Item::41315_148134:LOC",
+              "MonitoringRef": {
+                "value": "STIF:StopPoint:Q:41315:"
+              },
+              "MonitoredVehicleJourney": {
+                "LineRef": {
+                  "value": "STIF:Line::C01727:"
+                },
+                "OperatorRef": {
+                  "value": "SNCF_ACCES_CLOUD:Operator::SNCF:"
+                },
+                "FramedVehicleJourneyRef": {
+                  "DataFrameRef": {
+                    "value": "any"
+                  },
+                  "DatedVehicleJourneyRef": "SNCF_ACCES_CLOUD:VehicleJourney::d2c45da4-7163-47dc-87a2-7733bf7c2af4:LOC"
+                },
+                "DirectionName": [],
+                "DestinationRef": {
+                  "value": "STIF:StopPoint:Q:41091:"
+                },
+                "DestinationName": [
+                  {
+                    "value": "Gare de Pontoise"
+                  }
+                ],
+                "VehicleJourneyName": [],
+                "JourneyNote": [
+                  {
+                    "value": "NORA"
+                  }
+                ],
+                "MonitoredCall": {
+                  "StopPointName": [
+                    {
+                      "value": "Gare d'Ivry-sur-Seine"
+                    }
+                  ],
+                  "VehicleAtStop": false,
+                  "DestinationDisplay": [
+                    {
+                      "value": "Gare de Pontoise"
+                    }
+                  ],
+                  "ExpectedArrivalTime": "2024-11-19T14:56:30.000Z",
+                  "ExpectedDepartureTime": "2024-11-19T14:57:20.000Z",
+                  "DepartureStatus": "onTime",
+                  "Order": 7,
+                  "AimedArrivalTime": "2024-11-19T14:56:30.000Z",
+                  "ArrivalPlatformName": {
+                    "value": "2B"
+                  },
+                  "AimedDepartureTime": "2024-11-19T14:57:20.000Z",
+                  "ArrivalStatus": "onTime"
+                },
+                "TrainNumbers": {
+                  "TrainNumberRef": [
+                    {
+                      "value": "148134"
+                    }
+                  ]
+                },
+                "VehicleFeatureRef": [
+                  "longTrain"
+                ]
+              }
+            },
+            {
+              "RecordedAtTime": "2024-11-19T02:10:05.681Z",
+              "ItemIdentifier": "SNCF_ACCES_CLOUD:Item::41315_147131:LOC",
+              "MonitoringRef": {
+                "value": "STIF:StopPoint:Q:41315:"
+              },
+              "MonitoredVehicleJourney": {
+                "LineRef": {
+                  "value": "STIF:Line::C01727:"
+                },
+                "OperatorRef": {
+                  "value": "SNCF_ACCES_CLOUD:Operator::SNCF:"
+                },
+                "FramedVehicleJourneyRef": {
+                  "DataFrameRef": {
+                    "value": "any"
+                  },
+                  "DatedVehicleJourneyRef": "SNCF_ACCES_CLOUD:VehicleJourney::b82b8bcb-38ad-4cc5-8af9-befc42300c3c:LOC"
+                },
+                "DirectionName": [],
+                "DestinationRef": {
+                  "value": "STIF:StopPoint:Q:41326:"
+                },
+                "DestinationName": [
+                  {
+                    "value": "Gare de Pont de Rungis"
+                  }
+                ],
+                "VehicleJourneyName": [],
+                "JourneyNote": [
+                  {
+                    "value": "ROMI"
+                  }
+                ],
+                "MonitoredCall": {
+                  "StopPointName": [
+                    {
+                      "value": "Gare d'Ivry-sur-Seine"
+                    }
+                  ],
+                  "VehicleAtStop": false,
+                  "DestinationDisplay": [
+                    {
+                      "value": "Gare de Pont de Rungis"
+                    }
+                  ],
+                  "ExpectedArrivalTime": "2024-11-19T15:03:10.000Z",
+                  "ExpectedDepartureTime": "2024-11-19T15:04:00.000Z",
+                  "DepartureStatus": "onTime",
+                  "Order": 24,
+                  "AimedArrivalTime": "2024-11-19T15:03:10.000Z",
+                  "ArrivalPlatformName": {
+                    "value": "1B"
+                  },
+                  "AimedDepartureTime": "2024-11-19T15:04:00.000Z",
+                  "ArrivalStatus": "onTime"
+                },
+                "TrainNumbers": {
+                  "TrainNumberRef": [
+                    {
+                      "value": "147131"
+                    }
+                  ]
+                },
+                "VehicleFeatureRef": [
+                  "longTrain"
+                ]
+              }
+            },
+            {
+              "RecordedAtTime": "2024-11-19T02:10:07.109Z",
+              "ItemIdentifier": "SNCF_ACCES_CLOUD:Item::41315_148536:LOC",
+              "MonitoringRef": {
+                "value": "STIF:StopPoint:Q:41315:"
+              },
+              "MonitoredVehicleJourney": {
+                "LineRef": {
+                  "value": "STIF:Line::C01727:"
+                },
+                "OperatorRef": {
+                  "value": "SNCF_ACCES_CLOUD:Operator::SNCF:"
+                },
+                "FramedVehicleJourneyRef": {
+                  "DataFrameRef": {
+                    "value": "any"
+                  },
+                  "DatedVehicleJourneyRef": "SNCF_ACCES_CLOUD:VehicleJourney::f2c97d2e-8ab3-4d6c-94ee-c1f7790763c7:LOC"
+                },
+                "DirectionName": [],
+                "DestinationRef": {
+                  "value": "STIF:StopPoint:Q:41091:"
+                },
+                "DestinationName": [
+                  {
+                    "value": "Gare de Pontoise"
+                  }
+                ],
+                "VehicleJourneyName": [],
+                "JourneyNote": [
+                  {
+                    "value": "NORA"
+                  }
+                ],
+                "MonitoredCall": {
+                  "StopPointName": [
+                    {
+                      "value": "Gare d'Ivry-sur-Seine"
+                    }
+                  ],
+                  "VehicleAtStop": false,
+                  "DestinationDisplay": [
+                    {
+                      "value": "Gare de Pontoise"
+                    }
+                  ],
+                  "ExpectedArrivalTime": "2024-11-19T15:11:40.000Z",
+                  "ExpectedDepartureTime": "2024-11-19T15:12:30.000Z",
+                  "DepartureStatus": "onTime",
+                  "Order": 11,
+                  "AimedArrivalTime": "2024-11-19T15:11:40.000Z",
+                  "ArrivalPlatformName": {
+                    "value": "2B"
+                  },
+                  "AimedDepartureTime": "2024-11-19T15:12:30.000Z",
+                  "ArrivalStatus": "onTime"
+                },
+                "TrainNumbers": {
+                  "TrainNumberRef": [
+                    {
+                      "value": "148536"
+                    }
+                  ]
+                },
+                "VehicleFeatureRef": [
+                  "longTrain"
+                ]
+              }
+            },
+            {
+              "RecordedAtTime": "2024-11-19T02:09:57.477Z",
+              "ItemIdentifier": "SNCF_ACCES_CLOUD:Item::41315_147533:LOC",
+              "MonitoringRef": {
+                "value": "STIF:StopPoint:Q:41315:"
+              },
+              "MonitoredVehicleJourney": {
+                "LineRef": {
+                  "value": "STIF:Line::C01727:"
+                },
+                "OperatorRef": {
+                  "value": "SNCF_ACCES_CLOUD:Operator::SNCF:"
+                },
+                "FramedVehicleJourneyRef": {
+                  "DataFrameRef": {
+                    "value": "any"
+                  },
+                  "DatedVehicleJourneyRef": "SNCF_ACCES_CLOUD:VehicleJourney::c31f969a-5fc6-405c-98ae-b6c4f1d06dbd:LOC"
+                },
+                "DirectionName": [],
+                "DestinationRef": {
+                  "value": "STIF:StopPoint:Q:412833:"
+                },
+                "DestinationName": [
+                  {
+                    "value": "Massy-Palaiseau"
+                  }
+                ],
+                "VehicleJourneyName": [],
+                "JourneyNote": [
+                  {
+                    "value": "MONA"
+                  }
+                ],
+                "MonitoredCall": {
+                  "StopPointName": [
+                    {
+                      "value": "Gare d'Ivry-sur-Seine"
+                    }
+                  ],
+                  "VehicleAtStop": false,
+                  "DestinationDisplay": [
+                    {
+                      "value": "Massy-Palaiseau"
+                    }
+                  ],
+                  "ExpectedArrivalTime": "2024-11-19T15:18:30.000Z",
+                  "ExpectedDepartureTime": "2024-11-19T15:19:10.000Z",
+                  "DepartureStatus": "onTime",
+                  "Order": 28,
+                  "AimedArrivalTime": "2024-11-19T15:18:30.000Z",
+                  "ArrivalPlatformName": {
+                    "value": "1B"
+                  },
+                  "AimedDepartureTime": "2024-11-19T15:19:10.000Z",
+                  "ArrivalStatus": "onTime"
+                },
+                "TrainNumbers": {
+                  "TrainNumberRef": [
+                    {
+                      "value": "147532"
+                    }
+                  ]
+                },
+                "VehicleFeatureRef": [
+                  "longTrain"
+                ]
+              }
+            },
+            {
+              "RecordedAtTime": "2024-11-19T02:10:04.847Z",
+              "ItemIdentifier": "SNCF_ACCES_CLOUD:Item::41315_148138:LOC",
+              "MonitoringRef": {
+                "value": "STIF:StopPoint:Q:41315:"
+              },
+              "MonitoredVehicleJourney": {
+                "LineRef": {
+                  "value": "STIF:Line::C01727:"
+                },
+                "OperatorRef": {
+                  "value": "SNCF_ACCES_CLOUD:Operator::SNCF:"
+                },
+                "FramedVehicleJourneyRef": {
+                  "DataFrameRef": {
+                    "value": "any"
+                  },
+                  "DatedVehicleJourneyRef": "SNCF_ACCES_CLOUD:VehicleJourney::dfcfafcf-809c-4a1b-86f3-c5a6f61bdb32:LOC"
+                },
+                "DirectionName": [],
+                "DestinationRef": {
+                  "value": "STIF:StopPoint:Q:41091:"
+                },
+                "DestinationName": [
+                  {
+                    "value": "Gare de Pontoise"
+                  }
+                ],
+                "VehicleJourneyName": [],
+                "JourneyNote": [
+                  {
+                    "value": "NORA"
+                  }
+                ],
+                "MonitoredCall": {
+                  "StopPointName": [
+                    {
+                      "value": "Gare d'Ivry-sur-Seine"
+                    }
+                  ],
+                  "VehicleAtStop": false,
+                  "DestinationDisplay": [
+                    {
+                      "value": "Gare de Pontoise"
+                    }
+                  ],
+                  "ExpectedArrivalTime": "2024-11-19T15:26:30.000Z",
+                  "ExpectedDepartureTime": "2024-11-19T15:27:20.000Z",
+                  "DepartureStatus": "onTime",
+                  "Order": 7,
+                  "AimedArrivalTime": "2024-11-19T15:26:30.000Z",
+                  "ArrivalPlatformName": {
+                    "value": "2B"
+                  },
+                  "AimedDepartureTime": "2024-11-19T15:27:20.000Z",
+                  "ArrivalStatus": "onTime"
+                },
+                "TrainNumbers": {
+                  "TrainNumberRef": [
+                    {
+                      "value": "148138"
+                    }
+                  ]
+                },
+                "VehicleFeatureRef": [
+                  "longTrain"
+                ]
+              }
+            },
+            {
+              "RecordedAtTime": "2024-11-19T02:10:03.012Z",
+              "ItemIdentifier": "SNCF_ACCES_CLOUD:Item::41315_147135:LOC",
+              "MonitoringRef": {
+                "value": "STIF:StopPoint:Q:41315:"
+              },
+              "MonitoredVehicleJourney": {
+                "LineRef": {
+                  "value": "STIF:Line::C01727:"
+                },
+                "OperatorRef": {
+                  "value": "SNCF_ACCES_CLOUD:Operator::SNCF:"
+                },
+                "FramedVehicleJourneyRef": {
+                  "DataFrameRef": {
+                    "value": "any"
+                  },
+                  "DatedVehicleJourneyRef": "SNCF_ACCES_CLOUD:VehicleJourney::21a4ac7b-722e-45f1-8abf-ff84f8d8bc3b:LOC"
+                },
+                "DirectionName": [],
+                "DestinationRef": {
+                  "value": "STIF:StopPoint:Q:41326:"
+                },
+                "DestinationName": [
+                  {
+                    "value": "Gare de Pont de Rungis"
+                  }
+                ],
+                "VehicleJourneyName": [],
+                "JourneyNote": [
+                  {
+                    "value": "ROMI"
+                  }
+                ],
+                "MonitoredCall": {
+                  "StopPointName": [
+                    {
+                      "value": "Gare d'Ivry-sur-Seine"
+                    }
+                  ],
+                  "VehicleAtStop": false,
+                  "DestinationDisplay": [
+                    {
+                      "value": "Gare de Pont de Rungis"
+                    }
+                  ],
+                  "ExpectedArrivalTime": "2024-11-19T15:33:10.000Z",
+                  "ExpectedDepartureTime": "2024-11-19T15:34:00.000Z",
+                  "DepartureStatus": "onTime",
+                  "Order": 24,
+                  "AimedArrivalTime": "2024-11-19T15:33:10.000Z",
+                  "ArrivalPlatformName": {
+                    "value": "1B"
+                  },
+                  "AimedDepartureTime": "2024-11-19T15:34:00.000Z",
+                  "ArrivalStatus": "onTime"
+                },
+                "TrainNumbers": {
+                  "TrainNumberRef": [
+                    {
+                      "value": "147135"
+                    }
+                  ]
+                },
+                "VehicleFeatureRef": [
+                  "longTrain"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

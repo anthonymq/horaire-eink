@@ -13,7 +13,8 @@ extern GxEPD2_BW<GxEPD2_420_GDEY042T81, GxEPD2_420_GDEY042T81::HEIGHT> display;
 
 void displayBanner(int posx, int posy, int height, int width, String text);
 void displayDepartureBoard(int posx, int posy, int height, int width, std::vector<departureType> departures, bool showNames, String banner);
-void drawScreen(std::vector<std::vector<departureType>> allDepartures, bool fullRefresh);
+void drawScreen(std::vector<std::vector<departureType>> allDepartures, weatherType weather, bool fullRefresh);
+void displayWeather(int posx, int posy, int width, int height, weatherType weather);
 void displayLoader(String message);
 void displayDataFreshness(bool success, long lastSuccess, long currentEpoch);
 

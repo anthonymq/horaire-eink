@@ -3,3 +3,9 @@
 .vscode/c_cpp_properties.json
 .vscode/launch.json
 .vscode/ipch
+.vscode/
+.DS_Store
+src/build/
+
+# Config with secrets - use config.h.example as template
+include/config.h

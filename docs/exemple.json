@@ -1,0 +1,2656 @@
+{
+  "Siri": {
+    "ServiceDelivery": {
+      "ResponseTimestamp": "2025-03-21T13:52:47.505Z",
+      "ProducerRef": "IVTR_HET",
+      "ResponseMessageIdentifier": "IVTR_HET:ResponseMessage:19a32919-1114-4ba3-a055-3ccdb6272a9b:LOC:",
+      "StopMonitoringDelivery": [
+        {
+          "ResponseTimestamp": "2025-03-21T13:52:47.533Z",
+          "Version": "2.0",
+          "Status": "true",
+          "MonitoredStopVisit": [
+            {
+              "RecordedAtTime": "2025-03-21T13:39:50.401Z",
+              "ItemIdentifier": "RATP-SIV:Item::20250321.48.R.C01287.PALS.IDFM.C01287.R.RATP.3625:LOC",
+              "MonitoringRef": {
+                "value": "STIF:StopPoint:Q:16918:"
+              },
+              "MonitoredVehicleJourney": {
+                "LineRef": {
+                  "value": "STIF:Line::C01287:"
+                },
+                "OperatorRef": {
+                  "value": "RATP-SIV:Operator::RATP.SAE-BUS.323:"
+                },
+                "FramedVehicleJourneyRef": {
+                  "DataFrameRef": {
+                    "value": "any"
+                  },
+                  "DatedVehicleJourneyRef": "RATP-SIV:VehicleJourney::20250321.48.R.C01287:LOC"
+                },
+                "DirectionName": [
+                  {
+                    "value": "Issy - Val de Seine RER"
+                  }
+                ],
+                "DestinationRef": {
+                  "value": "STIF:StopPoint:Q:22559:"
+                },
+                "DestinationName": [
+                  {
+                    "value": "Chatillon-Monrouge <METRO>"
+                  }
+                ],
+                "VehicleJourneyName": [],
+                "JourneyNote": [],
+                "MonitoredCall": {
+                  "StopPointName": [
+                    {
+                      "value": "Ivry-sur-Seine RER"
+                    }
+                  ],
+                  "VehicleAtStop": false,
+                  "DestinationDisplay": [
+                    {
+                      "value": "Chatillon-Monrouge <METRO>"
+                    }
+                  ],
+                  "ExpectedDepartureTime": "2025-03-21T13:58:55.000Z",
+                  "DepartureStatus": "onTime",
+                  "ArrivalStatus": ""
+                },
+                "TrainNumbers": {
+                  "TrainNumberRef": []
+                },
+                "VehicleFeatureRef": [],
+                "DirectionRef": {
+                  "value": "DIR:IDFM:C01287:R"
+                }
+              }
+            },
+            {
+              "RecordedAtTime": "2025-03-21T13:51:29.317Z",
+              "ItemIdentifier": "RATP-SIV:Item::20250321.44.R.C01154.PALS.IDFM.C01154.R.RATP.3625:LOC",
+              "MonitoringRef": {
+                "value": "STIF:StopPoint:Q:16918:"
+              },
+              "MonitoredVehicleJourney": {
+                "LineRef": {
+                  "value": "STIF:Line::C01154:"
+                },
+                "OperatorRef": {
+                  "value": "RATP-SIV:Operator::RATP.SAE-BUS.125:"
+                },
+                "FramedVehicleJourneyRef": {
+                  "DataFrameRef": {
+                    "value": "any"
+                  },
+                  "DatedVehicleJourneyRef": "RATP-SIV:VehicleJourney::20250321.44.R.C01154:LOC"
+                },
+                "DirectionName": [
+                  {
+                    "value": "Porte d'Orléans"
+                  }
+                ],
+                "DestinationRef": {
+                  "value": "STIF:StopPoint:Q:22421:"
+                },
+                "DestinationName": [
+                  {
+                    "value": "Porte d'Orleans"
+                  }
+                ],
+                "VehicleJourneyName": [],
+                "JourneyNote": [],
+                "MonitoredCall": {
+                  "StopPointName": [
+                    {
+                      "value": "Ivry-sur-Seine RER"
+                    }
+                  ],
+                  "VehicleAtStop": false,
+                  "DestinationDisplay": [
+                    {
+                      "value": "Porte d'Orleans"
+                    }
+                  ],
+                  "ExpectedDepartureTime": "2025-03-21T14:00:30.000Z",
+                  "DepartureStatus": "onTime",
+                  "ArrivalStatus": ""
+                },
+                "TrainNumbers": {
+                  "TrainNumberRef": []
+                },
+                "VehicleFeatureRef": [],
+                "DirectionRef": {
+                  "value": "DIR:IDFM:C01154:R"
+                }
+              }
+            },
+            {
+              "RecordedAtTime": "2025-03-21T13:49:22.531Z",
+              "ItemIdentifier": "RATP-SIV:Item::20250321.49.R.C01287.PALS.IDFM.C01287.R.RATP.3625:LOC",
+              "MonitoringRef": {
+                "value": "STIF:StopPoint:Q:16918:"
+              },
+              "MonitoredVehicleJourney": {
+                "LineRef": {
+                  "value": "STIF:Line::C01287:"
+                },
+                "OperatorRef": {
+                  "value": "RATP-SIV:Operator::RATP.SAE-BUS.323:"
+                },
+                "FramedVehicleJourneyRef": {
+                  "DataFrameRef": {
+                    "value": "any"
+                  },
+                  "DatedVehicleJourneyRef": "RATP-SIV:VehicleJourney::20250321.49.R.C01287:LOC"
+                },
+                "DirectionName": [
+                  {
+                    "value": "Issy - Val de Seine RER"
+                  }
+                ],
+                "DestinationRef": {
+                  "value": "STIF:StopPoint:Q:22559:"
+                },
+                "DestinationName": [
+                  {
+                    "value": "Chatillon-Monrouge <METRO>"
+                  }
+                ],
+                "VehicleJourneyName": [],
+                "JourneyNote": [],
+                "MonitoredCall": {
+                  "StopPointName": [
+                    {
+                      "value": "Ivry-sur-Seine RER"
+                    }
+                  ],
+                  "VehicleAtStop": false,
+                  "DestinationDisplay": [
+                    {
+                      "value": "Chatillon-Monrouge <METRO>"
+                    }
+                  ],
+                  "ExpectedDepartureTime": "2025-03-21T14:08:13.000Z",
+                  "DepartureStatus": "onTime",
+                  "ArrivalStatus": ""
+                },
+                "TrainNumbers": {
+                  "TrainNumberRef": []
+                },
+                "VehicleFeatureRef": [],
+                "DirectionRef": {
+                  "value": "DIR:IDFM:C01287:R"
+                }
+              }
+            },
+            {
+              "RecordedAtTime": "2025-03-21T13:52:28.402Z",
+              "ItemIdentifier": "RATP-SIV:Item::20250321.45.R.C01154.PALS.IDFM.C01154.R.RATP.3625:LOC",
+              "MonitoringRef": {
+                "value": "STIF:StopPoint:Q:16918:"
+              },
+              "MonitoredVehicleJourney": {
+                "LineRef": {
+                  "value": "STIF:Line::C01154:"
+                },
+                "OperatorRef": {
+                  "value": "RATP-SIV:Operator::RATP.SAE-BUS.125:"
+                },
+                "FramedVehicleJourneyRef": {
+                  "DataFrameRef": {
+                    "value": "any"
+                  },
+                  "DatedVehicleJourneyRef": "RATP-SIV:VehicleJourney::20250321.45.R.C01154:LOC"
+                },
+                "DirectionName": [
+                  {
+                    "value": "Porte d'Orléans"
+                  }
+                ],
+                "DestinationRef": {
+                  "value": "STIF:StopPoint:Q:22421:"
+                },
+                "DestinationName": [
+                  {
+                    "value": "Porte d'Orleans"
+                  }
+                ],
+                "VehicleJourneyName": [],
+                "JourneyNote": [],
+                "MonitoredCall": {
+                  "StopPointName": [
+                    {
+                      "value": "Ivry-sur-Seine RER"
+                    }
+                  ],
+                  "VehicleAtStop": false,
+                  "DestinationDisplay": [
+                    {
+                      "value": "Porte d'Orleans"
+                    }
+                  ],
+                  "ExpectedDepartureTime": "2025-03-21T14:08:26.000Z",
+                  "DepartureStatus": "onTime",
+                  "ArrivalStatus": ""
+                },
+                "TrainNumbers": {
+                  "TrainNumberRef": []
+                },
+                "VehicleFeatureRef": [],
+                "DirectionRef": {
+                  "value": "DIR:IDFM:C01154:R"
+                }
+              }
+            },
+            {
+              "RecordedAtTime": "2025-03-21T13:52:33.422Z",
+              "ItemIdentifier": "SNCF_MAGENTA_PRD:Item::46366-10-accfcbb8-f951-489f-8259-87660de6fc9a:",
+              "MonitoringRef": {
+                "value": "STIF:StopArea:SP:46366:"
+              },
+              "MonitoredVehicleJourney": {
+                "LineRef": {
+                  "value": "STIF:Line::C01727:"
+                },
+                "OperatorRef": {},
+                "FramedVehicleJourneyRef": {
+                  "DataFrameRef": {
+                    "value": "any"
+                  },
+                  "DatedVehicleJourneyRef": "SNCF_MAGENTA_PRD:VehicleJourney::accfcbb8-f951-489f-8259-87660de6fc9a:LOC"
+                },
+                "DirectionName": [],
+                "DestinationRef": {
+                  "value": "STIF:StopArea:SP:43166:"
+                },
+                "DestinationName": [
+                  {
+                    "value": "Montigny - Beauchamp"
+                  }
+                ],
+                "VehicleJourneyName": [
+                  {
+                    "value": "148126-148127"
+                  }
+                ],
+                "JourneyNote": [
+                  {
+                    "value": "GOTA"
+                  }
+                ],
+                "MonitoredCall": {
+                  "StopPointName": [
+                    {
+                      "value": "Ivry-sur-Seine"
+                    }
+                  ],
+                  "VehicleAtStop": false,
+                  "DestinationDisplay": [
+                    {
+                      "value": "Montigny - Beauchamp"
+                    }
+                  ],
+                  "ArrivalStopAssignment": {
+                    "ExpectedQuayRef": {
+                      "value": "STIF:StopPoint:Q:471391:"
+                    }
+                  },
+                  "DepartureStopAssignment": {
+                    "ExpectedQuayRef": {
+                      "value": "STIF:StopPoint:Q:471391:"
+                    }
+                  },
+                  "ExpectedArrivalTime": "2025-03-21T13:57:50.000Z",
+                  "ExpectedDepartureTime": "2025-03-21T13:58:40.000Z",
+                  "DepartureStatus": "onTime",
+                  "Order": 10,
+                  "AimedArrivalTime": "2025-03-21T13:57:10.000Z",
+                  "ArrivalPlatformName": {
+                    "value": "2B"
+                  },
+                  "AimedDepartureTime": "2025-03-21T13:58:00.000Z",
+                  "ArrivalStatus": "onTime"
+                },
+                "TrainNumbers": {
+                  "TrainNumberRef": [
+                    {
+                      "value": "148126"
+                    },
+                    {
+                      "value": "148127"
+                    }
+                  ]
+                },
+                "VehicleFeatureRef": [
+                  "longTrain"
+                ],
+                "DirectionRef": {
+                  "value": "Aller"
+                }
+              }
+            },
+            {
+              "RecordedAtTime": "2025-03-21T13:52:42.823Z",
+              "ItemIdentifier": "SNCF_MAGENTA_PRD:Item::46366-14-6fdca742-e01b-4593-8eec-e510ace21f01:",
+              "MonitoringRef": {
+                "value": "STIF:StopArea:SP:46366:"
+              },
+              "MonitoredVehicleJourney": {
+                "LineRef": {
+                  "value": "STIF:Line::C01727:"
+                },
+                "OperatorRef": {},
+                "FramedVehicleJourneyRef": {
+                  "DataFrameRef": {
+                    "value": "any"
+                  },
+                  "DatedVehicleJourneyRef": "SNCF_MAGENTA_PRD:VehicleJourney::6fdca742-e01b-4593-8eec-e510ace21f01:LOC"
+                },
+                "DirectionName": [],
+                "DestinationRef": {
+                  "value": "STIF:StopArea:SP:44411:"
+                },
+                "DestinationName": [
+                  {
+                    "value": "Pontoise"
+                  }
+                ],
+                "VehicleJourneyName": [
+                  {
+                    "value": "148528-148529"
+                  }
+                ],
+                "JourneyNote": [
+                  {
+                    "value": "NORA"
+                  }
+                ],
+                "MonitoredCall": {
+                  "StopPointName": [
+                    {
+                      "value": "Ivry-sur-Seine"
+                    }
+                  ],
+                  "VehicleAtStop": false,
+                  "DestinationDisplay": [
+                    {
+                      "value": "Pontoise"
+                    }
+                  ],
+                  "ArrivalStopAssignment": {
+                    "ExpectedQuayRef": {
+                      "value": "STIF:StopPoint:Q:471391:"
+                    }
+                  },
+                  "DepartureStopAssignment": {
+                    "ExpectedQuayRef": {
+                      "value": "STIF:StopPoint:Q:471391:"
+                    }
+                  },
+                  "ExpectedArrivalTime": "2025-03-21T14:12:10.000Z",
+                  "ExpectedDepartureTime": "2025-03-21T14:13:00.000Z",
+                  "DepartureStatus": "onTime",
+                  "Order": 14,
+                  "AimedArrivalTime": "2025-03-21T14:12:10.000Z",
+                  "ArrivalPlatformName": {
+                    "value": "2B"
+                  },
+                  "AimedDepartureTime": "2025-03-21T14:13:00.000Z",
+                  "ArrivalStatus": "onTime"
+                },
+                "TrainNumbers": {
+                  "TrainNumberRef": [
+                    {
+                      "value": "148528"
+                    },
+                    {
+                      "value": "148529"
+                    }
+                  ]
+                },
+                "VehicleFeatureRef": [
+                  "longTrain"
+                ],
+                "DirectionRef": {
+                  "value": "Aller"
+                }
+              }
+            },
+            {
+              "RecordedAtTime": "2025-03-21T13:52:22.982Z",
+              "ItemIdentifier": "SNCF_MAGENTA_PRD:Item::46366-27-bd9b716f-2c3b-4b42-806c-c7cd9f0a54d0:",
+              "MonitoringRef": {
+                "value": "STIF:StopArea:SP:46366:"
+              },
+              "MonitoredVehicleJourney": {
+                "LineRef": {
+                  "value": "STIF:Line::C01727:"
+                },
+                "OperatorRef": {},
+                "FramedVehicleJourneyRef": {
+                  "DataFrameRef": {
+                    "value": "any"
+                  },
+                  "DatedVehicleJourneyRef": "SNCF_MAGENTA_PRD:VehicleJourney::bd9b716f-2c3b-4b42-806c-c7cd9f0a54d0:LOC"
+                },
+                "DirectionName": [],
+                "DestinationRef": {
+                  "value": "STIF:StopArea:SP:47907:"
+                },
+                "DestinationName": [
+                  {
+                    "value": "Pont de Rungis Aéroport d'Orly"
+                  }
+                ],
+                "VehicleJourneyName": [
+                  {
+                    "value": "147122-147123"
+                  }
+                ],
+                "JourneyNote": [
+                  {
+                    "value": "ROMI"
+                  }
+                ],
+                "MonitoredCall": {
+                  "StopPointName": [
+                    {
+                      "value": "Ivry-sur-Seine"
+                    }
+                  ],
+                  "VehicleAtStop": false,
+                  "DestinationDisplay": [
+                    {
+                      "value": "Pont de Rungis Aéroport d'Orly"
+                    }
+                  ],
+                  "ArrivalStopAssignment": {
+                    "ExpectedQuayRef": {
+                      "value": "STIF:StopPoint:Q:471945:"
+                    }
+                  },
+                  "DepartureStopAssignment": {
+                    "ExpectedQuayRef": {
+                      "value": "STIF:StopPoint:Q:471945:"
+                    }
+                  },
+                  "ExpectedArrivalTime": "2025-03-21T14:14:10.000Z",
+                  "ExpectedDepartureTime": "2025-03-21T14:15:00.000Z",
+                  "DepartureStatus": "onTime",
+                  "Order": 27,
+                  "AimedArrivalTime": "2025-03-21T14:03:10.000Z",
+                  "ArrivalPlatformName": {
+                    "value": "1B"
+                  },
+                  "AimedDepartureTime": "2025-03-21T14:04:00.000Z",
+                  "ArrivalStatus": "onTime"
+                },
+                "TrainNumbers": {
+                  "TrainNumberRef": [
+                    {
+                      "value": "147122"
+                    },
+                    {
+                      "value": "147123"
+                    }
+                  ]
+                },
+                "VehicleFeatureRef": [
+                  "longTrain"
+                ],
+                "DirectionRef": {
+                  "value": "Aller"
+                }
+              }
+            },
+            {
+              "RecordedAtTime": "2025-03-21T13:52:00.390Z",
+              "ItemIdentifier": "SNCF_MAGENTA_PRD:Item::46366-31-5c7d9765-a6c0-4e20-88af-95a9b912a361:",
+              "MonitoringRef": {
+                "value": "STIF:StopArea:SP:46366:"
+              },
+              "MonitoredVehicleJourney": {
+                "LineRef": {
+                  "value": "STIF:Line::C01727:"
+                },
+                "OperatorRef": {},
+                "FramedVehicleJourneyRef": {
+                  "DataFrameRef": {
+                    "value": "any"
+                  },
+                  "DatedVehicleJourneyRef": "SNCF_MAGENTA_PRD:VehicleJourney::5c7d9765-a6c0-4e20-88af-95a9b912a361:LOC"
+                },
+                "DirectionName": [],
+                "DestinationRef": {
+                  "value": "STIF:StopArea:SP:58774:"
+                },
+                "DestinationName": [
+                  {
+                    "value": "Massy-Palaiseau"
+                  }
+                ],
+                "VehicleJourneyName": [
+                  {
+                    "value": "147524-147525"
+                  }
+                ],
+                "JourneyNote": [
+                  {
+                    "value": "MONA"
+                  }
+                ],
+                "MonitoredCall": {
+                  "StopPointName": [
+                    {
+                      "value": "Ivry-sur-Seine"
+                    }
+                  ],
+                  "VehicleAtStop": false,
+                  "DestinationDisplay": [
+                    {
+                      "value": "Massy-Palaiseau"
+                    }
+                  ],
+                  "ArrivalStopAssignment": {
+                    "ExpectedQuayRef": {
+                      "value": "STIF:StopPoint:Q:471945:"
+                    }
+                  },
+                  "DepartureStopAssignment": {
+                    "ExpectedQuayRef": {
+                      "value": "STIF:StopPoint:Q:471945:"
+                    }
+                  },
+                  "ExpectedArrivalTime": "2025-03-21T14:21:27.000Z",
+                  "ExpectedDepartureTime": "2025-03-21T14:22:17.000Z",
+                  "DepartureStatus": "onTime",
+                  "Order": 31,
+                  "AimedArrivalTime": "2025-03-21T14:18:00.000Z",
+                  "ArrivalPlatformName": {
+                    "value": "1B"
+                  },
+                  "AimedDepartureTime": "2025-03-21T14:18:50.000Z",
+                  "ArrivalStatus": "onTime"
+                },
+                "TrainNumbers": {
+                  "TrainNumberRef": [
+                    {
+                      "value": "147524"
+                    },
+                    {
+                      "value": "147525"
+                    }
+                  ]
+                },
+                "VehicleFeatureRef": [
+                  "longTrain"
+                ],
+                "DirectionRef": {
+                  "value": "Aller"
+                }
+              }
+            },
+            {
+              "RecordedAtTime": "2025-03-21T02:08:45.597Z",
+              "ItemIdentifier": "SNCF_MAGENTA_PRD:Item::46366-37-187f0edb-1521-4b9e-a17f-940123ea4ba2:",
+              "MonitoringRef": {
+                "value": "STIF:StopArea:SP:46366:"
+              },
+              "MonitoredVehicleJourney": {
+                "LineRef": {
+                  "value": "STIF:Line::C01727:"
+                },
+                "OperatorRef": {},
+                "FramedVehicleJourneyRef": {
+                  "DataFrameRef": {
+                    "value": "any"
+                  },
+                  "DatedVehicleJourneyRef": "SNCF_MAGENTA_PRD:VehicleJourney::187f0edb-1521-4b9e-a17f-940123ea4ba2:LOC"
+                },
+                "DirectionName": [],
+                "DestinationRef": {
+                  "value": "STIF:StopArea:SP:43166:"
+                },
+                "DestinationName": [
+                  {
+                    "value": "Montigny - Beauchamp"
+                  }
+                ],
+                "VehicleJourneyName": [
+                  {
+                    "value": "148130-148131"
+                  }
+                ],
+                "JourneyNote": [
+                  {
+                    "value": "GOTA"
+                  }
+                ],
+                "MonitoredCall": {
+                  "StopPointName": [
+                    {
+                      "value": "Ivry-sur-Seine"
+                    }
+                  ],
+                  "VehicleAtStop": false,
+                  "DestinationDisplay": [
+                    {
+                      "value": "Montigny - Beauchamp"
+                    }
+                  ],
+                  "ArrivalStopAssignment": {
+                    "ExpectedQuayRef": {
+                      "value": "STIF:StopPoint:Q:471391:"
+                    }
+                  },
+                  "DepartureStopAssignment": {
+                    "ExpectedQuayRef": {
+                      "value": "STIF:StopPoint:Q:471391:"
+                    }
+                  },
+                  "ExpectedArrivalTime": "2025-03-21T14:27:10.000Z",
+                  "ExpectedDepartureTime": "2025-03-21T14:28:00.000Z",
+                  "DepartureStatus": "onTime",
+                  "Order": 37,
+                  "AimedArrivalTime": "2025-03-21T14:27:10.000Z",
+                  "ArrivalPlatformName": {
+                    "value": "2B"
+                  },
+                  "AimedDepartureTime": "2025-03-21T14:28:00.000Z",
+                  "ArrivalStatus": "onTime"
+                },
+                "TrainNumbers": {
+                  "TrainNumberRef": [
+                    {
+                      "value": "148130"
+                    },
+                    {
+                      "value": "148131"
+                    }
+                  ]
+                },
+                "VehicleFeatureRef": [
+                  "longTrain"
+                ],
+                "DirectionRef": {
+                  "value": "Aller"
+                }
+              }
+            },
+            {
+              "RecordedAtTime": "2025-03-21T13:52:13.882Z",
+              "ItemIdentifier": "SNCF_MAGENTA_PRD:Item::46366-27-6c49d022-c2af-438c-9877-2dd84e3f7031:",
+              "MonitoringRef": {
+                "value": "STIF:StopArea:SP:46366:"
+              },
+              "MonitoredVehicleJourney": {
+                "LineRef": {
+                  "value": "STIF:Line::C01727:"
+                },
+                "OperatorRef": {},
+                "FramedVehicleJourneyRef": {
+                  "DataFrameRef": {
+                    "value": "any"
+                  },
+                  "DatedVehicleJourneyRef": "SNCF_MAGENTA_PRD:VehicleJourney::6c49d022-c2af-438c-9877-2dd84e3f7031:LOC"
+                },
+                "DirectionName": [],
+                "DestinationRef": {
+                  "value": "STIF:StopArea:SP:47907:"
+                },
+                "DestinationName": [
+                  {
+                    "value": "Pont de Rungis Aéroport d'Orly"
+                  }
+                ],
+                "VehicleJourneyName": [
+                  {
+                    "value": "147126-147127"
+                  }
+                ],
+                "JourneyNote": [
+                  {
+                    "value": "ROMI"
+                  }
+                ],
+                "MonitoredCall": {
+                  "StopPointName": [
+                    {
+                      "value": "Ivry-sur-Seine"
+                    }
+                  ],
+                  "VehicleAtStop": false,
+                  "DestinationDisplay": [
+                    {
+                      "value": "Pont de Rungis Aéroport d'Orly"
+                    }
+                  ],
+                  "ArrivalStopAssignment": {
+                    "ExpectedQuayRef": {
+                      "value": "STIF:StopPoint:Q:471945:"
+                    }
+                  },
+                  "DepartureStopAssignment": {
+                    "ExpectedQuayRef": {
+                      "value": "STIF:StopPoint:Q:471945:"
+                    }
+                  },
+                  "ExpectedArrivalTime": "2025-03-21T14:33:58.000Z",
+                  "ExpectedDepartureTime": "2025-03-21T14:34:48.000Z",
+                  "DepartureStatus": "onTime",
+                  "Order": 27,
+                  "AimedArrivalTime": "2025-03-21T14:33:10.000Z",
+                  "ArrivalPlatformName": {
+                    "value": "1B"
+                  },
+                  "AimedDepartureTime": "2025-03-21T14:34:00.000Z",
+                  "ArrivalStatus": "onTime"
+                },
+                "TrainNumbers": {
+                  "TrainNumberRef": [
+                    {
+                      "value": "147126"
+                    },
+                    {
+                      "value": "147127"
+                    }
+                  ]
+                },
+                "VehicleFeatureRef": [
+                  "longTrain"
+                ],
+                "DirectionRef": {
+                  "value": "Aller"
+                }
+              }
+            },
+            {
+              "RecordedAtTime": "2025-03-21T02:08:42.636Z",
+              "ItemIdentifier": "SNCF_MAGENTA_PRD:Item::46366-49-12148448-0329-4ed6-a4a4-cee20ee9e0cb:",
+              "MonitoringRef": {
+                "value": "STIF:StopArea:SP:46366:"
+              },
+              "MonitoredVehicleJourney": {
+                "LineRef": {
+                  "value": "STIF:Line::C01727:"
+                },
+                "OperatorRef": {},
+                "FramedVehicleJourneyRef": {
+                  "DataFrameRef": {
+                    "value": "any"
+                  },
+                  "DatedVehicleJourneyRef": "SNCF_MAGENTA_PRD:VehicleJourney::12148448-0329-4ed6-a4a4-cee20ee9e0cb:LOC"
+                },
+                "DirectionName": [],
+                "DestinationRef": {
+                  "value": "STIF:StopArea:SP:44411:"
+                },
+                "DestinationName": [
+                  {
+                    "value": "Pontoise"
+                  }
+                ],
+                "VehicleJourneyName": [
+                  {
+                    "value": "148532-148533"
+                  }
+                ],
+                "JourneyNote": [
+                  {
+                    "value": "NORA"
+                  }
+                ],
+                "MonitoredCall": {
+                  "StopPointName": [
+                    {
+                      "value": "Ivry-sur-Seine"
+                    }
+                  ],
+                  "VehicleAtStop": false,
+                  "DestinationDisplay": [
+                    {
+                      "value": "Pontoise"
+                    }
+                  ],
+                  "ArrivalStopAssignment": {
+                    "ExpectedQuayRef": {
+                      "value": "STIF:StopPoint:Q:471391:"
+                    }
+                  },
+                  "DepartureStopAssignment": {
+                    "ExpectedQuayRef": {
+                      "value": "STIF:StopPoint:Q:471391:"
+                    }
+                  },
+                  "ExpectedArrivalTime": "2025-03-21T14:42:10.000Z",
+                  "ExpectedDepartureTime": "2025-03-21T14:43:00.000Z",
+                  "DepartureStatus": "onTime",
+                  "Order": 49,
+                  "AimedArrivalTime": "2025-03-21T14:42:10.000Z",
+                  "ArrivalPlatformName": {
+                    "value": "2B"
+                  },
+                  "AimedDepartureTime": "2025-03-21T14:43:00.000Z",
+                  "ArrivalStatus": "onTime"
+                },
+                "TrainNumbers": {
+                  "TrainNumberRef": [
+                    {
+                      "value": "148532"
+                    },
+                    {
+                      "value": "148533"
+                    }
+                  ]
+                },
+                "VehicleFeatureRef": [
+                  "longTrain"
+                ],
+                "DirectionRef": {
+                  "value": "Aller"
+                }
+              }
+            },
+            {
+              "RecordedAtTime": "2025-03-21T13:52:02.522Z",
+              "ItemIdentifier": "SNCF_MAGENTA_PRD:Item::46366-31-f7ab110f-ae1a-4725-8787-077f9637d017:",
+              "MonitoringRef": {
+                "value": "STIF:StopArea:SP:46366:"
+              },
+              "MonitoredVehicleJourney": {
+                "LineRef": {
+                  "value": "STIF:Line::C01727:"
+                },
+                "OperatorRef": {},
+                "FramedVehicleJourneyRef": {
+                  "DataFrameRef": {
+                    "value": "any"
+                  },
+                  "DatedVehicleJourneyRef": "SNCF_MAGENTA_PRD:VehicleJourney::f7ab110f-ae1a-4725-8787-077f9637d017:LOC"
+                },
+                "DirectionName": [],
+                "DestinationRef": {
+                  "value": "STIF:StopArea:SP:58774:"
+                },
+                "DestinationName": [
+                  {
+                    "value": "Massy-Palaiseau"
+                  }
+                ],
+                "VehicleJourneyName": [
+                  {
+                    "value": "147528-147529"
+                  }
+                ],
+                "JourneyNote": [
+                  {
+                    "value": "MONA"
+                  }
+                ],
+                "MonitoredCall": {
+                  "StopPointName": [
+                    {
+                      "value": "Ivry-sur-Seine"
+                    }
+                  ],
+                  "VehicleAtStop": false,
+                  "DestinationDisplay": [
+                    {
+                      "value": "Massy-Palaiseau"
+                    }
+                  ],
+                  "ArrivalStopAssignment": {
+                    "ExpectedQuayRef": {
+                      "value": "STIF:StopPoint:Q:471945:"
+                    }
+                  },
+                  "DepartureStopAssignment": {
+                    "ExpectedQuayRef": {
+                      "value": "STIF:StopPoint:Q:471945:"
+                    }
+                  },
+                  "ExpectedArrivalTime": "2025-03-21T14:50:50.000Z",
+                  "ExpectedDepartureTime": "2025-03-21T14:51:40.000Z",
+                  "DepartureStatus": "onTime",
+                  "Order": 31,
+                  "AimedArrivalTime": "2025-03-21T14:48:00.000Z",
+                  "ArrivalPlatformName": {
+                    "value": "1B"
+                  },
+                  "AimedDepartureTime": "2025-03-21T14:48:50.000Z",
+                  "ArrivalStatus": "onTime"
+                },
+                "TrainNumbers": {
+                  "TrainNumberRef": [
+                    {
+                      "value": "147528"
+                    },
+                    {
+                      "value": "147529"
+                    }
+                  ]
+                },
+                "VehicleFeatureRef": [
+                  "longTrain"
+                ],
+                "DirectionRef": {
+                  "value": "Aller"
+                }
+              }
+            },
+            {
+              "RecordedAtTime": "2025-03-21T02:08:44.554Z",
+              "ItemIdentifier": "SNCF_MAGENTA_PRD:Item::46366-41-2a53406c-c54e-43db-b8c3-2d9cee34eed5:",
+              "MonitoringRef": {
+                "value": "STIF:StopArea:SP:46366:"
+              },
+              "MonitoredVehicleJourney": {
+                "LineRef": {
+                  "value": "STIF:Line::C01727:"
+                },
+                "OperatorRef": {},
+                "FramedVehicleJourneyRef": {
+                  "DataFrameRef": {
+                    "value": "any"
+                  },
+                  "DatedVehicleJourneyRef": "SNCF_MAGENTA_PRD:VehicleJourney::2a53406c-c54e-43db-b8c3-2d9cee34eed5:LOC"
+                },
+                "DirectionName": [],
+                "DestinationRef": {
+                  "value": "STIF:StopArea:SP:44411:"
+                },
+                "DestinationName": [
+                  {
+                    "value": "Pontoise"
+                  }
+                ],
+                "VehicleJourneyName": [
+                  {
+                    "value": "148134-148135"
+                  }
+                ],
+                "JourneyNote": [
+                  {
+                    "value": "NORA"
+                  }
+                ],
+                "MonitoredCall": {
+                  "StopPointName": [
+                    {
+                      "value": "Ivry-sur-Seine"
+                    }
+                  ],
+                  "VehicleAtStop": false,
+                  "DestinationDisplay": [
+                    {
+                      "value": "Pontoise"
+                    }
+                  ],
+                  "ArrivalStopAssignment": {
+                    "ExpectedQuayRef": {
+                      "value": "STIF:StopPoint:Q:471391:"
+                    }
+                  },
+                  "DepartureStopAssignment": {
+                    "ExpectedQuayRef": {
+                      "value": "STIF:StopPoint:Q:471391:"
+                    }
+                  },
+                  "ExpectedArrivalTime": "2025-03-21T14:57:30.000Z",
+                  "ExpectedDepartureTime": "2025-03-21T14:58:20.000Z",
+                  "DepartureStatus": "onTime",
+                  "Order": 41,
+                  "AimedArrivalTime": "2025-03-21T14:57:30.000Z",
+                  "ArrivalPlatformName": {
+                    "value": "2B"
+                  },
+                  "AimedDepartureTime": "2025-03-21T14:58:20.000Z",
+                  "ArrivalStatus": "onTime"
+                },
+                "TrainNumbers": {
+                  "TrainNumberRef": [
+                    {
+                      "value": "148134"
+                    },
+                    {
+                      "value": "148135"
+                    }
+                  ]
+                },
+                "VehicleFeatureRef": [
+                  "longTrain"
+                ],
+                "DirectionRef": {
+                  "value": "Aller"
+                }
+              }
+            },
+            {
+              "RecordedAtTime": "2025-03-21T02:08:44.601Z",
+              "ItemIdentifier": "SNCF_MAGENTA_PRD:Item::46366-54-7624e309-b503-4629-8e7a-e967205412c0:",
+              "MonitoringRef": {
+                "value": "STIF:StopArea:SP:46366:"
+              },
+              "MonitoredVehicleJourney": {
+                "LineRef": {
+                  "value": "STIF:Line::C01727:"
+                },
+                "OperatorRef": {},
+                "FramedVehicleJourneyRef": {
+                  "DataFrameRef": {
+                    "value": "any"
+                  },
+                  "DatedVehicleJourneyRef": "SNCF_MAGENTA_PRD:VehicleJourney::7624e309-b503-4629-8e7a-e967205412c0:LOC"
+                },
+                "DirectionName": [],
+                "DestinationRef": {
+                  "value": "STIF:StopArea:SP:47907:"
+                },
+                "DestinationName": [
+                  {
+                    "value": "Pont de Rungis Aéroport d'Orly"
+                  }
+                ],
+                "VehicleJourneyName": [
+                  {
+                    "value": "147130-147131"
+                  }
+                ],
+                "JourneyNote": [
+                  {
+                    "value": "ROMI"
+                  }
+                ],
+                "MonitoredCall": {
+                  "StopPointName": [
+                    {
+                      "value": "Ivry-sur-Seine"
+                    }
+                  ],
+                  "VehicleAtStop": false,
+                  "DestinationDisplay": [
+                    {
+                      "value": "Pont de Rungis Aéroport d'Orly"
+                    }
+                  ],
+                  "ArrivalStopAssignment": {
+                    "ExpectedQuayRef": {
+                      "value": "STIF:StopPoint:Q:471945:"
+                    }
+                  },
+                  "DepartureStopAssignment": {
+                    "ExpectedQuayRef": {
+                      "value": "STIF:StopPoint:Q:471945:"
+                    }
+                  },
+                  "ExpectedArrivalTime": "2025-03-21T15:03:10.000Z",
+                  "ExpectedDepartureTime": "2025-03-21T15:04:00.000Z",
+                  "DepartureStatus": "onTime",
+                  "Order": 54,
+                  "AimedArrivalTime": "2025-03-21T15:03:10.000Z",
+                  "ArrivalPlatformName": {
+                    "value": "1B"
+                  },
+                  "AimedDepartureTime": "2025-03-21T15:04:00.000Z",
+                  "ArrivalStatus": "onTime"
+                },
+                "TrainNumbers": {
+                  "TrainNumberRef": [
+                    {
+                      "value": "147130"
+                    },
+                    {
+                      "value": "147131"
+                    }
+                  ]
+                },
+                "VehicleFeatureRef": [
+                  "longTrain"
+                ],
+                "DirectionRef": {
+                  "value": "Aller"
+                }
+              }
+            },
+            {
+              "RecordedAtTime": "2025-03-21T02:08:44.199Z",
+              "ItemIdentifier": "SNCF_MAGENTA_PRD:Item::46366-49-35152da1-7c25-45f7-ae9d-454995f241b9:",
+              "MonitoringRef": {
+                "value": "STIF:StopArea:SP:46366:"
+              },
+              "MonitoredVehicleJourney": {
+                "LineRef": {
+                  "value": "STIF:Line::C01727:"
+                },
+                "OperatorRef": {},
+                "FramedVehicleJourneyRef": {
+                  "DataFrameRef": {
+                    "value": "any"
+                  },
+                  "DatedVehicleJourneyRef": "SNCF_MAGENTA_PRD:VehicleJourney::35152da1-7c25-45f7-ae9d-454995f241b9:LOC"
+                },
+                "DirectionName": [],
+                "DestinationRef": {
+                  "value": "STIF:StopArea:SP:44411:"
+                },
+                "DestinationName": [
+                  {
+                    "value": "Pontoise"
+                  }
+                ],
+                "VehicleJourneyName": [
+                  {
+                    "value": "148536-148537"
+                  }
+                ],
+                "JourneyNote": [
+                  {
+                    "value": "NORA"
+                  }
+                ],
+                "MonitoredCall": {
+                  "StopPointName": [
+                    {
+                      "value": "Ivry-sur-Seine"
+                    }
+                  ],
+                  "VehicleAtStop": false,
+                  "DestinationDisplay": [
+                    {
+                      "value": "Pontoise"
+                    }
+                  ],
+                  "ArrivalStopAssignment": {
+                    "ExpectedQuayRef": {
+                      "value": "STIF:StopPoint:Q:471391:"
+                    }
+                  },
+                  "DepartureStopAssignment": {
+                    "ExpectedQuayRef": {
+                      "value": "STIF:StopPoint:Q:471391:"
+                    }
+                  },
+                  "ExpectedArrivalTime": "2025-03-21T15:11:30.000Z",
+                  "ExpectedDepartureTime": "2025-03-21T15:12:20.000Z",
+                  "DepartureStatus": "onTime",
+                  "Order": 49,
+                  "AimedArrivalTime": "2025-03-21T15:11:30.000Z",
+                  "ArrivalPlatformName": {
+                    "value": "2B"
+                  },
+                  "AimedDepartureTime": "2025-03-21T15:12:20.000Z",
+                  "ArrivalStatus": "onTime"
+                },
+                "TrainNumbers": {
+                  "TrainNumberRef": [
+                    {
+                      "value": "148536"
+                    },
+                    {
+                      "value": "148537"
+                    }
+                  ]
+                },
+                "VehicleFeatureRef": [
+                  "longTrain"
+                ],
+                "DirectionRef": {
+                  "value": "Aller"
+                }
+              }
+            },
+            {
+              "RecordedAtTime": "2025-03-21T02:08:42.382Z",
+              "ItemIdentifier": "SNCF_MAGENTA_PRD:Item::46366-66-4a6d61e2-6e1a-47f5-9e75-e7d17f385ce1:",
+              "MonitoringRef": {
+                "value": "STIF:StopArea:SP:46366:"
+              },
+              "MonitoredVehicleJourney": {
+                "LineRef": {
+                  "value": "STIF:Line::C01727:"
+                },
+                "OperatorRef": {},
+                "FramedVehicleJourneyRef": {
+                  "DataFrameRef": {
+                    "value": "any"
+                  },
+                  "DatedVehicleJourneyRef": "SNCF_MAGENTA_PRD:VehicleJourney::4a6d61e2-6e1a-47f5-9e75-e7d17f385ce1:LOC"
+                },
+                "DirectionName": [],
+                "DestinationRef": {
+                  "value": "STIF:StopArea:SP:58774:"
+                },
+                "DestinationName": [
+                  {
+                    "value": "Massy-Palaiseau"
+                  }
+                ],
+                "VehicleJourneyName": [
+                  {
+                    "value": "147532-147533"
+                  }
+                ],
+                "JourneyNote": [
+                  {
+                    "value": "MONA"
+                  }
+                ],
+                "MonitoredCall": {
+                  "StopPointName": [
+                    {
+                      "value": "Ivry-sur-Seine"
+                    }
+                  ],
+                  "VehicleAtStop": false,
+                  "DestinationDisplay": [
+                    {
+                      "value": "Massy-Palaiseau"
+                    }
+                  ],
+                  "ArrivalStopAssignment": {
+                    "ExpectedQuayRef": {
+                      "value": "STIF:StopPoint:Q:471945:"
+                    }
+                  },
+                  "DepartureStopAssignment": {
+                    "ExpectedQuayRef": {
+                      "value": "STIF:StopPoint:Q:471945:"
+                    }
+                  },
+                  "ExpectedArrivalTime": "2025-03-21T15:17:20.000Z",
+                  "ExpectedDepartureTime": "2025-03-21T15:18:00.000Z",
+                  "DepartureStatus": "onTime",
+                  "Order": 66,
+                  "AimedArrivalTime": "2025-03-21T15:17:20.000Z",
+                  "ArrivalPlatformName": {
+                    "value": "1B"
+                  },
+                  "AimedDepartureTime": "2025-03-21T15:18:00.000Z",
+                  "ArrivalStatus": "onTime"
+                },
+                "TrainNumbers": {
+                  "TrainNumberRef": [
+                    {
+                      "value": "147532"
+                    },
+                    {
+                      "value": "147533"
+                    }
+                  ]
+                },
+                "VehicleFeatureRef": [
+                  "longTrain"
+                ],
+                "DirectionRef": {
+                  "value": "Aller"
+                }
+              }
+            },
+            {
+              "RecordedAtTime": "2025-03-21T02:08:42.059Z",
+              "ItemIdentifier": "SNCF_MAGENTA_PRD:Item::46366-41-cdc8e002-0aa7-4077-9aac-667fbefc811a:",
+              "MonitoringRef": {
+                "value": "STIF:StopArea:SP:46366:"
+              },
+              "MonitoredVehicleJourney": {
+                "LineRef": {
+                  "value": "STIF:Line::C01727:"
+                },
+                "OperatorRef": {},
+                "FramedVehicleJourneyRef": {
+                  "DataFrameRef": {
+                    "value": "any"
+                  },
+                  "DatedVehicleJourneyRef": "SNCF_MAGENTA_PRD:VehicleJourney::cdc8e002-0aa7-4077-9aac-667fbefc811a:LOC"
+                },
+                "DirectionName": [],
+                "DestinationRef": {
+                  "value": "STIF:StopArea:SP:44411:"
+                },
+                "DestinationName": [
+                  {
+                    "value": "Pontoise"
+                  }
+                ],
+                "VehicleJourneyName": [
+                  {
+                    "value": "148138-148139"
+                  }
+                ],
+                "JourneyNote": [
+                  {
+                    "value": "NORA"
+                  }
+                ],
+                "MonitoredCall": {
+                  "StopPointName": [
+                    {
+                      "value": "Ivry-sur-Seine"
+                    }
+                  ],
+                  "VehicleAtStop": false,
+                  "DestinationDisplay": [
+                    {
+                      "value": "Pontoise"
+                    }
+                  ],
+                  "ArrivalStopAssignment": {
+                    "ExpectedQuayRef": {
+                      "value": "STIF:StopPoint:Q:471391:"
+                    }
+                  },
+                  "DepartureStopAssignment": {
+                    "ExpectedQuayRef": {
+                      "value": "STIF:StopPoint:Q:471391:"
+                    }
+                  },
+                  "ExpectedArrivalTime": "2025-03-21T15:27:30.000Z",
+                  "ExpectedDepartureTime": "2025-03-21T15:28:20.000Z",
+                  "DepartureStatus": "onTime",
+                  "Order": 41,
+                  "AimedArrivalTime": "2025-03-21T15:27:30.000Z",
+                  "ArrivalPlatformName": {
+                    "value": "2B"
+                  },
+                  "AimedDepartureTime": "2025-03-21T15:28:20.000Z",
+                  "ArrivalStatus": "onTime"
+                },
+                "TrainNumbers": {
+                  "TrainNumberRef": [
+                    {
+                      "value": "148138"
+                    },
+                    {
+                      "value": "148139"
+                    }
+                  ]
+                },
+                "VehicleFeatureRef": [
+                  "longTrain"
+                ],
+                "DirectionRef": {
+                  "value": "Aller"
+                }
+              }
+            },
+            {
+              "RecordedAtTime": "2025-03-21T02:08:38.477Z",
+              "ItemIdentifier": "SNCF_MAGENTA_PRD:Item::46366-54-c4e73804-a5af-4397-8020-faec8de5c3b5:",
+              "MonitoringRef": {
+                "value": "STIF:StopArea:SP:46366:"
+              },
+              "MonitoredVehicleJourney": {
+                "LineRef": {
+                  "value": "STIF:Line::C01727:"
+                },
+                "OperatorRef": {},
+                "FramedVehicleJourneyRef": {
+                  "DataFrameRef": {
+                    "value": "any"
+                  },
+                  "DatedVehicleJourneyRef": "SNCF_MAGENTA_PRD:VehicleJourney::c4e73804-a5af-4397-8020-faec8de5c3b5:LOC"
+                },
+                "DirectionName": [],
+                "DestinationRef": {
+                  "value": "STIF:StopArea:SP:47907:"
+                },
+                "DestinationName": [
+                  {
+                    "value": "Pont de Rungis Aéroport d'Orly"
+                  }
+                ],
+                "VehicleJourneyName": [
+                  {
+                    "value": "147134-147135"
+                  }
+                ],
+                "JourneyNote": [
+                  {
+                    "value": "ROMI"
+                  }
+                ],
+                "MonitoredCall": {
+                  "StopPointName": [
+                    {
+                      "value": "Ivry-sur-Seine"
+                    }
+                  ],
+                  "VehicleAtStop": false,
+                  "DestinationDisplay": [
+                    {
+                      "value": "Pont de Rungis Aéroport d'Orly"
+                    }
+                  ],
+                  "ArrivalStopAssignment": {
+                    "ExpectedQuayRef": {
+                      "value": "STIF:StopPoint:Q:471945:"
+                    }
+                  },
+                  "DepartureStopAssignment": {
+                    "ExpectedQuayRef": {
+                      "value": "STIF:StopPoint:Q:471945:"
+                    }
+                  },
+                  "ExpectedArrivalTime": "2025-03-21T15:33:10.000Z",
+                  "ExpectedDepartureTime": "2025-03-21T15:34:00.000Z",
+                  "DepartureStatus": "onTime",
+                  "Order": 54,
+                  "AimedArrivalTime": "2025-03-21T15:33:10.000Z",
+                  "ArrivalPlatformName": {
+                    "value": "1B"
+                  },
+                  "AimedDepartureTime": "2025-03-21T15:34:00.000Z",
+                  "ArrivalStatus": "onTime"
+                },
+                "TrainNumbers": {
+                  "TrainNumberRef": [
+                    {
+                      "value": "147134"
+                    },
+                    {
+                      "value": "147135"
+                    }
+                  ]
+                },
+                "VehicleFeatureRef": [
+                  "longTrain"
+                ],
+                "DirectionRef": {
+                  "value": "Aller"
+                }
+              }
+            },
+            {
+              "RecordedAtTime": "2025-03-21T02:08:40.407Z",
+              "ItemIdentifier": "SNCF_MAGENTA_PRD:Item::46366-49-602c7417-3031-4585-80e2-3ef79de56890:",
+              "MonitoringRef": {
+                "value": "STIF:StopArea:SP:46366:"
+              },
+              "MonitoredVehicleJourney": {
+                "LineRef": {
+                  "value": "STIF:Line::C01727:"
+                },
+                "OperatorRef": {},
+                "FramedVehicleJourneyRef": {
+                  "DataFrameRef": {
+                    "value": "any"
+                  },
+                  "DatedVehicleJourneyRef": "SNCF_MAGENTA_PRD:VehicleJourney::602c7417-3031-4585-80e2-3ef79de56890:LOC"
+                },
+                "DirectionName": [],
+                "DestinationRef": {
+                  "value": "STIF:StopArea:SP:44411:"
+                },
+                "DestinationName": [
+                  {
+                    "value": "Pontoise"
+                  }
+                ],
+                "VehicleJourneyName": [
+                  {
+                    "value": "148540-148541"
+                  }
+                ],
+                "JourneyNote": [
+                  {
+                    "value": "NORA"
+                  }
+                ],
+                "MonitoredCall": {
+                  "StopPointName": [
+                    {
+                      "value": "Ivry-sur-Seine"
+                    }
+                  ],
+                  "VehicleAtStop": false,
+                  "DestinationDisplay": [
+                    {
+                      "value": "Pontoise"
+                    }
+                  ],
+                  "ArrivalStopAssignment": {
+                    "ExpectedQuayRef": {
+                      "value": "STIF:StopPoint:Q:471391:"
+                    }
+                  },
+                  "DepartureStopAssignment": {
+                    "ExpectedQuayRef": {
+                      "value": "STIF:StopPoint:Q:471391:"
+                    }
+                  },
+                  "ExpectedArrivalTime": "2025-03-21T15:42:30.000Z",
+                  "ExpectedDepartureTime": "2025-03-21T15:43:20.000Z",
+                  "DepartureStatus": "onTime",
+                  "Order": 49,
+                  "AimedArrivalTime": "2025-03-21T15:42:30.000Z",
+                  "ArrivalPlatformName": {
+                    "value": "2B"
+                  },
+                  "AimedDepartureTime": "2025-03-21T15:43:20.000Z",
+                  "ArrivalStatus": "onTime"
+                },
+                "TrainNumbers": {
+                  "TrainNumberRef": [
+                    {
+                      "value": "148540"
+                    },
+                    {
+                      "value": "148541"
+                    }
+                  ]
+                },
+                "VehicleFeatureRef": [
+                  "longTrain"
+                ],
+                "DirectionRef": {
+                  "value": "Aller"
+                }
+              }
+            },
+            {
+              "RecordedAtTime": "2025-03-21T02:08:44.011Z",
+              "ItemIdentifier": "SNCF_MAGENTA_PRD:Item::46366-66-16269303-e039-4bda-a788-45d68f0ef78f:",
+              "MonitoringRef": {
+                "value": "STIF:StopArea:SP:46366:"
+              },
+              "MonitoredVehicleJourney": {
+                "LineRef": {
+                  "value": "STIF:Line::C01727:"
+                },
+                "OperatorRef": {},
+                "FramedVehicleJourneyRef": {
+                  "DataFrameRef": {
+                    "value": "any"
+                  },
+                  "DatedVehicleJourneyRef": "SNCF_MAGENTA_PRD:VehicleJourney::16269303-e039-4bda-a788-45d68f0ef78f:LOC"
+                },
+                "DirectionName": [],
+                "DestinationRef": {
+                  "value": "STIF:StopArea:SP:58774:"
+                },
+                "DestinationName": [
+                  {
+                    "value": "Massy-Palaiseau"
+                  }
+                ],
+                "VehicleJourneyName": [
+                  {
+                    "value": "147536-147537"
+                  }
+                ],
+                "JourneyNote": [
+                  {
+                    "value": "MONA"
+                  }
+                ],
+                "MonitoredCall": {
+                  "StopPointName": [
+                    {
+                      "value": "Ivry-sur-Seine"
+                    }
+                  ],
+                  "VehicleAtStop": false,
+                  "DestinationDisplay": [
+                    {
+                      "value": "Massy-Palaiseau"
+                    }
+                  ],
+                  "ArrivalStopAssignment": {
+                    "ExpectedQuayRef": {
+                      "value": "STIF:StopPoint:Q:471945:"
+                    }
+                  },
+                  "DepartureStopAssignment": {
+                    "ExpectedQuayRef": {
+                      "value": "STIF:StopPoint:Q:471945:"
+                    }
+                  },
+                  "ExpectedArrivalTime": "2025-03-21T15:48:00.000Z",
+                  "ExpectedDepartureTime": "2025-03-21T15:48:50.000Z",
+                  "DepartureStatus": "onTime",
+                  "Order": 66,
+                  "AimedArrivalTime": "2025-03-21T15:48:00.000Z",
+                  "ArrivalPlatformName": {
+                    "value": "1B"
+                  },
+                  "AimedDepartureTime": "2025-03-21T15:48:50.000Z",
+                  "ArrivalStatus": "onTime"
+                },
+                "TrainNumbers": {
+                  "TrainNumberRef": [
+                    {
+                      "value": "147536"
+                    },
+                    {
+                      "value": "147537"
+                    }
+                  ]
+                },
+                "VehicleFeatureRef": [
+                  "longTrain"
+                ],
+                "DirectionRef": {
+                  "value": "Aller"
+                }
+              }
+            },
+            {
+              "RecordedAtTime": "2025-03-21T02:08:43.483Z",
+              "ItemIdentifier": "SNCF_MAGENTA_PRD:Item::46366-24-ff00bd79-f306-4762-95b1-13da7d59c5fc:",
+              "MonitoringRef": {
+                "value": "STIF:StopArea:SP:46366:"
+              },
+              "MonitoredVehicleJourney": {
+                "LineRef": {
+                  "value": "STIF:Line::C01727:"
+                },
+                "OperatorRef": {},
+                "FramedVehicleJourneyRef": {
+                  "DataFrameRef": {
+                    "value": "any"
+                  },
+                  "DatedVehicleJourneyRef": "SNCF_MAGENTA_PRD:VehicleJourney::ff00bd79-f306-4762-95b1-13da7d59c5fc:LOC"
+                },
+                "DirectionName": [],
+                "DestinationRef": {
+                  "value": "STIF:StopArea:SP:43098:"
+                },
+                "DestinationName": [
+                  {
+                    "value": "Brétigny"
+                  }
+                ],
+                "VehicleJourneyName": [
+                  {
+                    "value": "147337"
+                  }
+                ],
+                "JourneyNote": [
+                  {
+                    "value": "BOBA"
+                  }
+                ],
+                "MonitoredCall": {
+                  "StopPointName": [
+                    {
+                      "value": "Ivry-sur-Seine"
+                    }
+                  ],
+                  "VehicleAtStop": false,
+                  "DestinationDisplay": [
+                    {
+                      "value": "Brétigny"
+                    }
+                  ],
+                  "ArrivalStopAssignment": {
+                    "ExpectedQuayRef": {
+                      "value": "STIF:StopPoint:Q:471945:"
+                    }
+                  },
+                  "DepartureStopAssignment": {
+                    "ExpectedQuayRef": {
+                      "value": "STIF:StopPoint:Q:471945:"
+                    }
+                  },
+                  "ExpectedArrivalTime": "2025-03-21T15:54:00.000Z",
+                  "ExpectedDepartureTime": "2025-03-21T15:54:50.000Z",
+                  "DepartureStatus": "onTime",
+                  "Order": 24,
+                  "AimedArrivalTime": "2025-03-21T15:54:00.000Z",
+                  "ArrivalPlatformName": {
+                    "value": "1B"
+                  },
+                  "AimedDepartureTime": "2025-03-21T15:54:50.000Z",
+                  "ArrivalStatus": "onTime"
+                },
+                "TrainNumbers": {
+                  "TrainNumberRef": [
+                    {
+                      "value": "147337"
+                    }
+                  ]
+                },
+                "VehicleFeatureRef": [
+                  "longTrain"
+                ],
+                "DirectionRef": {
+                  "value": "Aller"
+                }
+              }
+            },
+            {
+              "RecordedAtTime": "2025-03-21T02:08:35.925Z",
+              "ItemIdentifier": "SNCF_MAGENTA_PRD:Item::46366-41-a2a3a072-032c-42fe-8cef-a1ea06e28122:",
+              "MonitoringRef": {
+                "value": "STIF:StopArea:SP:46366:"
+              },
+              "MonitoredVehicleJourney": {
+                "LineRef": {
+                  "value": "STIF:Line::C01727:"
+                },
+                "OperatorRef": {},
+                "FramedVehicleJourneyRef": {
+                  "DataFrameRef": {
+                    "value": "any"
+                  },
+                  "DatedVehicleJourneyRef": "SNCF_MAGENTA_PRD:VehicleJourney::a2a3a072-032c-42fe-8cef-a1ea06e28122:LOC"
+                },
+                "DirectionName": [],
+                "DestinationRef": {
+                  "value": "STIF:StopArea:SP:44411:"
+                },
+                "DestinationName": [
+                  {
+                    "value": "Pontoise"
+                  }
+                ],
+                "VehicleJourneyName": [
+                  {
+                    "value": "148142-148143"
+                  }
+                ],
+                "JourneyNote": [
+                  {
+                    "value": "NORA"
+                  }
+                ],
+                "MonitoredCall": {
+                  "StopPointName": [
+                    {
+                      "value": "Ivry-sur-Seine"
+                    }
+                  ],
+                  "VehicleAtStop": false,
+                  "DestinationDisplay": [
+                    {
+                      "value": "Pontoise"
+                    }
+                  ],
+                  "ArrivalStopAssignment": {
+                    "ExpectedQuayRef": {
+                      "value": "STIF:StopPoint:Q:471391:"
+                    }
+                  },
+                  "DepartureStopAssignment": {
+                    "ExpectedQuayRef": {
+                      "value": "STIF:StopPoint:Q:471391:"
+                    }
+                  },
+                  "ExpectedArrivalTime": "2025-03-21T15:57:30.000Z",
+                  "ExpectedDepartureTime": "2025-03-21T15:58:20.000Z",
+                  "DepartureStatus": "onTime",
+                  "Order": 41,
+                  "AimedArrivalTime": "2025-03-21T15:57:30.000Z",
+                  "ArrivalPlatformName": {
+                    "value": "2B"
+                  },
+                  "AimedDepartureTime": "2025-03-21T15:58:20.000Z",
+                  "ArrivalStatus": "onTime"
+                },
+                "TrainNumbers": {
+                  "TrainNumberRef": [
+                    {
+                      "value": "148142"
+                    },
+                    {
+                      "value": "148143"
+                    }
+                  ]
+                },
+                "VehicleFeatureRef": [
+                  "longTrain"
+                ],
+                "DirectionRef": {
+                  "value": "Aller"
+                }
+              }
+            },
+            {
+              "RecordedAtTime": "2025-03-21T02:08:42.926Z",
+              "ItemIdentifier": "SNCF_MAGENTA_PRD:Item::46366-54-47e63702-4021-4567-bf25-2356ceb0193c:",
+              "MonitoringRef": {
+                "value": "STIF:StopArea:SP:46366:"
+              },
+              "MonitoredVehicleJourney": {
+                "LineRef": {
+                  "value": "STIF:Line::C01727:"
+                },
+                "OperatorRef": {},
+                "FramedVehicleJourneyRef": {
+                  "DataFrameRef": {
+                    "value": "any"
+                  },
+                  "DatedVehicleJourneyRef": "SNCF_MAGENTA_PRD:VehicleJourney::47e63702-4021-4567-bf25-2356ceb0193c:LOC"
+                },
+                "DirectionName": [],
+                "DestinationRef": {
+                  "value": "STIF:StopArea:SP:47907:"
+                },
+                "DestinationName": [
+                  {
+                    "value": "Pont de Rungis Aéroport d'Orly"
+                  }
+                ],
+                "VehicleJourneyName": [
+                  {
+                    "value": "147138-147139"
+                  }
+                ],
+                "JourneyNote": [
+                  {
+                    "value": "ROMI"
+                  }
+                ],
+                "MonitoredCall": {
+                  "StopPointName": [
+                    {
+                      "value": "Ivry-sur-Seine"
+                    }
+                  ],
+                  "VehicleAtStop": false,
+                  "DestinationDisplay": [
+                    {
+                      "value": "Pont de Rungis Aéroport d'Orly"
+                    }
+                  ],
+                  "ArrivalStopAssignment": {
+                    "ExpectedQuayRef": {
+                      "value": "STIF:StopPoint:Q:471945:"
+                    }
+                  },
+                  "DepartureStopAssignment": {
+                    "ExpectedQuayRef": {
+                      "value": "STIF:StopPoint:Q:471945:"
+                    }
+                  },
+                  "ExpectedArrivalTime": "2025-03-21T16:03:30.000Z",
+                  "ExpectedDepartureTime": "2025-03-21T16:04:10.000Z",
+                  "DepartureStatus": "onTime",
+                  "Order": 54,
+                  "AimedArrivalTime": "2025-03-21T16:03:30.000Z",
+                  "ArrivalPlatformName": {
+                    "value": "1B"
+                  },
+                  "AimedDepartureTime": "2025-03-21T16:04:10.000Z",
+                  "ArrivalStatus": "onTime"
+                },
+                "TrainNumbers": {
+                  "TrainNumberRef": [
+                    {
+                      "value": "147138"
+                    },
+                    {
+                      "value": "147139"
+                    }
+                  ]
+                },
+                "VehicleFeatureRef": [
+                  "longTrain"
+                ],
+                "DirectionRef": {
+                  "value": "Aller"
+                }
+              }
+            },
+            {
+              "RecordedAtTime": "2025-03-21T02:08:40.042Z",
+              "ItemIdentifier": "SNCF_MAGENTA_PRD:Item::46366-42-92d475e6-7616-429a-ae7f-10265d7cdbfa:",
+              "MonitoringRef": {
+                "value": "STIF:StopArea:SP:46366:"
+              },
+              "MonitoredVehicleJourney": {
+                "LineRef": {
+                  "value": "STIF:Line::C01727:"
+                },
+                "OperatorRef": {},
+                "FramedVehicleJourneyRef": {
+                  "DataFrameRef": {
+                    "value": "any"
+                  },
+                  "DatedVehicleJourneyRef": "SNCF_MAGENTA_PRD:VehicleJourney::92d475e6-7616-429a-ae7f-10265d7cdbfa:LOC"
+                },
+                "DirectionName": [],
+                "DestinationRef": {
+                  "value": "STIF:StopArea:SP:43098:"
+                },
+                "DestinationName": [
+                  {
+                    "value": "Brétigny"
+                  }
+                ],
+                "VehicleJourneyName": [
+                  {
+                    "value": "147339"
+                  }
+                ],
+                "JourneyNote": [
+                  {
+                    "value": "BOBA"
+                  }
+                ],
+                "MonitoredCall": {
+                  "StopPointName": [
+                    {
+                      "value": "Ivry-sur-Seine"
+                    }
+                  ],
+                  "VehicleAtStop": false,
+                  "DestinationDisplay": [
+                    {
+                      "value": "Brétigny"
+                    }
+                  ],
+                  "ArrivalStopAssignment": {
+                    "ExpectedQuayRef": {
+                      "value": "STIF:StopPoint:Q:471945:"
+                    }
+                  },
+                  "DepartureStopAssignment": {
+                    "ExpectedQuayRef": {
+                      "value": "STIF:StopPoint:Q:471945:"
+                    }
+                  },
+                  "ExpectedArrivalTime": "2025-03-21T16:09:00.000Z",
+                  "ExpectedDepartureTime": "2025-03-21T16:09:50.000Z",
+                  "DepartureStatus": "onTime",
+                  "Order": 42,
+                  "AimedArrivalTime": "2025-03-21T16:09:00.000Z",
+                  "ArrivalPlatformName": {
+                    "value": "1B"
+                  },
+                  "AimedDepartureTime": "2025-03-21T16:09:50.000Z",
+                  "ArrivalStatus": "onTime"
+                },
+                "TrainNumbers": {
+                  "TrainNumberRef": [
+                    {
+                      "value": "147339"
+                    }
+                  ]
+                },
+                "VehicleFeatureRef": [
+                  "longTrain"
+                ],
+                "DirectionRef": {
+                  "value": "Aller"
+                }
+              }
+            },
+            {
+              "RecordedAtTime": "2025-03-21T02:08:35.033Z",
+              "ItemIdentifier": "SNCF_MAGENTA_PRD:Item::46366-49-61d43c63-10b7-48ae-9940-018a09632980:",
+              "MonitoringRef": {
+                "value": "STIF:StopArea:SP:46366:"
+              },
+              "MonitoredVehicleJourney": {
+                "LineRef": {
+                  "value": "STIF:Line::C01727:"
+                },
+                "OperatorRef": {},
+                "FramedVehicleJourneyRef": {
+                  "DataFrameRef": {
+                    "value": "any"
+                  },
+                  "DatedVehicleJourneyRef": "SNCF_MAGENTA_PRD:VehicleJourney::61d43c63-10b7-48ae-9940-018a09632980:LOC"
+                },
+                "DirectionName": [],
+                "DestinationRef": {
+                  "value": "STIF:StopArea:SP:44411:"
+                },
+                "DestinationName": [
+                  {
+                    "value": "Pontoise"
+                  }
+                ],
+                "VehicleJourneyName": [
+                  {
+                    "value": "148544-148545"
+                  }
+                ],
+                "JourneyNote": [
+                  {
+                    "value": "NORA"
+                  }
+                ],
+                "MonitoredCall": {
+                  "StopPointName": [
+                    {
+                      "value": "Ivry-sur-Seine"
+                    }
+                  ],
+                  "VehicleAtStop": false,
+                  "DestinationDisplay": [
+                    {
+                      "value": "Pontoise"
+                    }
+                  ],
+                  "ArrivalStopAssignment": {
+                    "ExpectedQuayRef": {
+                      "value": "STIF:StopPoint:Q:471391:"
+                    }
+                  },
+                  "DepartureStopAssignment": {
+                    "ExpectedQuayRef": {
+                      "value": "STIF:StopPoint:Q:471391:"
+                    }
+                  },
+                  "ExpectedArrivalTime": "2025-03-21T16:12:30.000Z",
+                  "ExpectedDepartureTime": "2025-03-21T16:13:20.000Z",
+                  "DepartureStatus": "onTime",
+                  "Order": 49,
+                  "AimedArrivalTime": "2025-03-21T16:12:30.000Z",
+                  "ArrivalPlatformName": {
+                    "value": "2B"
+                  },
+                  "AimedDepartureTime": "2025-03-21T16:13:20.000Z",
+                  "ArrivalStatus": "onTime"
+                },
+                "TrainNumbers": {
+                  "TrainNumberRef": [
+                    {
+                      "value": "148544"
+                    },
+                    {
+                      "value": "148545"
+                    }
+                  ]
+                },
+                "VehicleFeatureRef": [
+                  "longTrain"
+                ],
+                "DirectionRef": {
+                  "value": "Aller"
+                }
+              }
+            },
+            {
+              "RecordedAtTime": "2025-03-21T02:08:38.541Z",
+              "ItemIdentifier": "SNCF_MAGENTA_PRD:Item::46366-66-b8e8d523-7dc1-4f0c-9130-f1c420e89cfa:",
+              "MonitoringRef": {
+                "value": "STIF:StopArea:SP:46366:"
+              },
+              "MonitoredVehicleJourney": {
+                "LineRef": {
+                  "value": "STIF:Line::C01727:"
+                },
+                "OperatorRef": {},
+                "FramedVehicleJourneyRef": {
+                  "DataFrameRef": {
+                    "value": "any"
+                  },
+                  "DatedVehicleJourneyRef": "SNCF_MAGENTA_PRD:VehicleJourney::b8e8d523-7dc1-4f0c-9130-f1c420e89cfa:LOC"
+                },
+                "DirectionName": [],
+                "DestinationRef": {
+                  "value": "STIF:StopArea:SP:58774:"
+                },
+                "DestinationName": [
+                  {
+                    "value": "Massy-Palaiseau"
+                  }
+                ],
+                "VehicleJourneyName": [
+                  {
+                    "value": "147540-147541"
+                  }
+                ],
+                "JourneyNote": [
+                  {
+                    "value": "MONA"
+                  }
+                ],
+                "MonitoredCall": {
+                  "StopPointName": [
+                    {
+                      "value": "Ivry-sur-Seine"
+                    }
+                  ],
+                  "VehicleAtStop": false,
+                  "DestinationDisplay": [
+                    {
+                      "value": "Massy-Palaiseau"
+                    }
+                  ],
+                  "ArrivalStopAssignment": {
+                    "ExpectedQuayRef": {
+                      "value": "STIF:StopPoint:Q:471945:"
+                    }
+                  },
+                  "DepartureStopAssignment": {
+                    "ExpectedQuayRef": {
+                      "value": "STIF:StopPoint:Q:471945:"
+                    }
+                  },
+                  "ExpectedArrivalTime": "2025-03-21T16:18:30.000Z",
+                  "ExpectedDepartureTime": "2025-03-21T16:19:10.000Z",
+                  "DepartureStatus": "onTime",
+                  "Order": 66,
+                  "AimedArrivalTime": "2025-03-21T16:18:30.000Z",
+                  "ArrivalPlatformName": {
+                    "value": "1B"
+                  },
+                  "AimedDepartureTime": "2025-03-21T16:19:10.000Z",
+                  "ArrivalStatus": "onTime"
+                },
+                "TrainNumbers": {
+                  "TrainNumberRef": [
+                    {
+                      "value": "147540"
+                    },
+                    {
+                      "value": "147541"
+                    }
+                  ]
+                },
+                "VehicleFeatureRef": [
+                  "longTrain"
+                ],
+                "DirectionRef": {
+                  "value": "Aller"
+                }
+              }
+            },
+            {
+              "RecordedAtTime": "2025-03-21T02:08:41.663Z",
+              "ItemIdentifier": "SNCF_MAGENTA_PRD:Item::46366-42-c90fc55c-3471-42a6-80f7-0f71ffb1d8ea:",
+              "MonitoringRef": {
+                "value": "STIF:StopArea:SP:46366:"
+              },
+              "MonitoredVehicleJourney": {
+                "LineRef": {
+                  "value": "STIF:Line::C01727:"
+                },
+                "OperatorRef": {},
+                "FramedVehicleJourneyRef": {
+                  "DataFrameRef": {
+                    "value": "any"
+                  },
+                  "DatedVehicleJourneyRef": "SNCF_MAGENTA_PRD:VehicleJourney::c90fc55c-3471-42a6-80f7-0f71ffb1d8ea:LOC"
+                },
+                "DirectionName": [],
+                "DestinationRef": {
+                  "value": "STIF:StopArea:SP:43098:"
+                },
+                "DestinationName": [
+                  {
+                    "value": "Brétigny"
+                  }
+                ],
+                "VehicleJourneyName": [
+                  {
+                    "value": "147341"
+                  }
+                ],
+                "JourneyNote": [
+                  {
+                    "value": "BOBA"
+                  }
+                ],
+                "MonitoredCall": {
+                  "StopPointName": [
+                    {
+                      "value": "Ivry-sur-Seine"
+                    }
+                  ],
+                  "VehicleAtStop": false,
+                  "DestinationDisplay": [
+                    {
+                      "value": "Brétigny"
+                    }
+                  ],
+                  "ArrivalStopAssignment": {
+                    "ExpectedQuayRef": {
+                      "value": "STIF:StopPoint:Q:471945:"
+                    }
+                  },
+                  "DepartureStopAssignment": {
+                    "ExpectedQuayRef": {
+                      "value": "STIF:StopPoint:Q:471945:"
+                    }
+                  },
+                  "ExpectedArrivalTime": "2025-03-21T16:24:00.000Z",
+                  "ExpectedDepartureTime": "2025-03-21T16:24:50.000Z",
+                  "DepartureStatus": "onTime",
+                  "Order": 42,
+                  "AimedArrivalTime": "2025-03-21T16:24:00.000Z",
+                  "ArrivalPlatformName": {
+                    "value": "1B"
+                  },
+                  "AimedDepartureTime": "2025-03-21T16:24:50.000Z",
+                  "ArrivalStatus": "onTime"
+                },
+                "TrainNumbers": {
+                  "TrainNumberRef": [
+                    {
+                      "value": "147341"
+                    }
+                  ]
+                },
+                "VehicleFeatureRef": [
+                  "longTrain"
+                ],
+                "DirectionRef": {
+                  "value": "Aller"
+                }
+              }
+            },
+            {
+              "RecordedAtTime": "2025-03-21T02:08:41.351Z",
+              "ItemIdentifier": "SNCF_MAGENTA_PRD:Item::46366-60-9fbaffc7-c0d5-4101-a456-b85b7a57e58e:",
+              "MonitoringRef": {
+                "value": "STIF:StopArea:SP:46366:"
+              },
+              "MonitoredVehicleJourney": {
+                "LineRef": {
+                  "value": "STIF:Line::C01727:"
+                },
+                "OperatorRef": {},
+                "FramedVehicleJourneyRef": {
+                  "DataFrameRef": {
+                    "value": "any"
+                  },
+                  "DatedVehicleJourneyRef": "SNCF_MAGENTA_PRD:VehicleJourney::9fbaffc7-c0d5-4101-a456-b85b7a57e58e:LOC"
+                },
+                "DirectionName": [],
+                "DestinationRef": {
+                  "value": "STIF:StopArea:SP:43098:"
+                },
+                "DestinationName": [
+                  {
+                    "value": "Brétigny"
+                  }
+                ],
+                "VehicleJourneyName": [
+                  {
+                    "value": "147342-147343"
+                  }
+                ],
+                "JourneyNote": [
+                  {
+                    "value": "BOBA"
+                  }
+                ],
+                "MonitoredCall": {
+                  "StopPointName": [
+                    {
+                      "value": "Ivry-sur-Seine"
+                    }
+                  ],
+                  "VehicleAtStop": false,
+                  "DestinationDisplay": [
+                    {
+                      "value": "Brétigny"
+                    }
+                  ],
+                  "ArrivalStopAssignment": {
+                    "ExpectedQuayRef": {
+                      "value": "STIF:StopPoint:Q:471945:"
+                    }
+                  },
+                  "DepartureStopAssignment": {
+                    "ExpectedQuayRef": {
+                      "value": "STIF:StopPoint:Q:471945:"
+                    }
+                  },
+                  "ExpectedArrivalTime": "2025-03-21T16:39:00.000Z",
+                  "ExpectedDepartureTime": "2025-03-21T16:39:50.000Z",
+                  "DepartureStatus": "onTime",
+                  "Order": 60,
+                  "AimedArrivalTime": "2025-03-21T16:39:00.000Z",
+                  "ArrivalPlatformName": {
+                    "value": "1B"
+                  },
+                  "AimedDepartureTime": "2025-03-21T16:39:50.000Z",
+                  "ArrivalStatus": "onTime"
+                },
+                "TrainNumbers": {
+                  "TrainNumberRef": [
+                    {
+                      "value": "147342"
+                    },
+                    {
+                      "value": "147343"
+                    }
+                  ]
+                },
+                "VehicleFeatureRef": [
+                  "longTrain"
+                ],
+                "DirectionRef": {
+                  "value": "Aller"
+                }
+              }
+            },
+            {
+              "RecordedAtTime": "2025-03-21T02:08:38.903Z",
+              "ItemIdentifier": "SNCF_MAGENTA_PRD:Item::46366-49-522bbc12-46e5-4502-829d-9f8705c810e9:",
+              "MonitoringRef": {
+                "value": "STIF:StopArea:SP:46366:"
+              },
+              "MonitoredVehicleJourney": {
+                "LineRef": {
+                  "value": "STIF:Line::C01727:"
+                },
+                "OperatorRef": {},
+                "FramedVehicleJourneyRef": {
+                  "DataFrameRef": {
+                    "value": "any"
+                  },
+                  "DatedVehicleJourneyRef": "SNCF_MAGENTA_PRD:VehicleJourney::522bbc12-46e5-4502-829d-9f8705c810e9:LOC"
+                },
+                "DirectionName": [],
+                "DestinationRef": {
+                  "value": "STIF:StopArea:SP:44411:"
+                },
+                "DestinationName": [
+                  {
+                    "value": "Pontoise"
+                  }
+                ],
+                "VehicleJourneyName": [
+                  {
+                    "value": "148548-148549"
+                  }
+                ],
+                "JourneyNote": [
+                  {
+                    "value": "NORA"
+                  }
+                ],
+                "MonitoredCall": {
+                  "StopPointName": [
+                    {
+                      "value": "Ivry-sur-Seine"
+                    }
+                  ],
+                  "VehicleAtStop": false,
+                  "DestinationDisplay": [
+                    {
+                      "value": "Pontoise"
+                    }
+                  ],
+                  "ArrivalStopAssignment": {
+                    "ExpectedQuayRef": {
+                      "value": "STIF:StopPoint:Q:471391:"
+                    }
+                  },
+                  "DepartureStopAssignment": {
+                    "ExpectedQuayRef": {
+                      "value": "STIF:StopPoint:Q:471391:"
+                    }
+                  },
+                  "ExpectedArrivalTime": "2025-03-21T16:42:10.000Z",
+                  "ExpectedDepartureTime": "2025-03-21T16:43:00.000Z",
+                  "DepartureStatus": "onTime",
+                  "Order": 49,
+                  "AimedArrivalTime": "2025-03-21T16:42:10.000Z",
+                  "ArrivalPlatformName": {
+                    "value": "2B"
+                  },
+                  "AimedDepartureTime": "2025-03-21T16:43:00.000Z",
+                  "ArrivalStatus": "onTime"
+                },
+                "TrainNumbers": {
+                  "TrainNumberRef": [
+                    {
+                      "value": "148548"
+                    },
+                    {
+                      "value": "148549"
+                    }
+                  ]
+                },
+                "VehicleFeatureRef": [
+                  "longTrain"
+                ],
+                "DirectionRef": {
+                  "value": "Aller"
+                }
+              }
+            },
+            {
+              "RecordedAtTime": "2025-03-21T13:46:42.112Z",
+              "ItemIdentifier": "RATP-SIV:Item::20250321.51.A.C01287.PALS.IDFM.C01287.A.RATP.37302:LOC",
+              "MonitoringRef": {
+                "value": "STIF:StopPoint:Q:15122:"
+              },
+              "MonitoredVehicleJourney": {
+                "LineRef": {
+                  "value": "STIF:Line::C01287:"
+                },
+                "OperatorRef": {
+                  "value": "RATP-SIV:Operator::RATP.SAE-BUS.323:"
+                },
+                "FramedVehicleJourneyRef": {
+                  "DataFrameRef": {
+                    "value": "any"
+                  },
+                  "DatedVehicleJourneyRef": "RATP-SIV:VehicleJourney::20250321.51.A.C01287:LOC"
+                },
+                "DirectionName": [
+                  {
+                    "value": "Gambetta"
+                  }
+                ],
+                "DestinationRef": {
+                  "value": "STIF:StopPoint:Q:479951:"
+                },
+                "DestinationName": [
+                  {
+                    "value": "Ivry Gambetta"
+                  }
+                ],
+                "VehicleJourneyName": [],
+                "JourneyNote": [],
+                "MonitoredCall": {
+                  "StopPointName": [
+                    {
+                      "value": "Ivry-sur-Seine RER"
+                    }
+                  ],
+                  "VehicleAtStop": false,
+                  "DestinationDisplay": [
+                    {
+                      "value": "Ivry Gambetta"
+                    }
+                  ],
+                  "ExpectedDepartureTime": "2025-03-21T13:58:23.000Z",
+                  "DepartureStatus": "onTime",
+                  "ArrivalStatus": ""
+                },
+                "TrainNumbers": {
+                  "TrainNumberRef": []
+                },
+                "VehicleFeatureRef": [],
+                "DirectionRef": {
+                  "value": "DIR:IDFM:C01287:A"
+                }
+              }
+            },
+            {
+              "RecordedAtTime": "2025-03-21T13:51:58.735Z",
+              "ItemIdentifier": "RATP-SIV:Item::20250321.53.A.C01154.PALS.IDFM.C01154.A.RATP.37302:LOC",
+              "MonitoringRef": {
+                "value": "STIF:StopPoint:Q:15122:"
+              },
+              "MonitoredVehicleJourney": {
+                "LineRef": {
+                  "value": "STIF:Line::C01154:"
+                },
+                "OperatorRef": {
+                  "value": "RATP-SIV:Operator::RATP.SAE-BUS.125:"
+                },
+                "FramedVehicleJourneyRef": {
+                  "DataFrameRef": {
+                    "value": "any"
+                  },
+                  "DatedVehicleJourneyRef": "RATP-SIV:VehicleJourney::20250321.53.A.C01154:LOC"
+                },
+                "DirectionName": [
+                  {
+                    "value": "École Vétérinaire"
+                  }
+                ],
+                "DestinationRef": {
+                  "value": "STIF:StopPoint:Q:39343:"
+                },
+                "DestinationName": [
+                  {
+                    "value": "Ecole Veterinaire"
+                  }
+                ],
+                "VehicleJourneyName": [],
+                "JourneyNote": [],
+                "MonitoredCall": {
+                  "StopPointName": [
+                    {
+                      "value": "Ivry-sur-Seine RER"
+                    }
+                  ],
+                  "VehicleAtStop": false,
+                  "DestinationDisplay": [
+                    {
+                      "value": "Ecole Veterinaire"
+                    }
+                  ],
+                  "ExpectedDepartureTime": "2025-03-21T13:59:22.000Z",
+                  "DepartureStatus": "onTime",
+                  "ArrivalStatus": ""
+                },
+                "TrainNumbers": {
+                  "TrainNumberRef": []
+                },
+                "VehicleFeatureRef": [],
+                "DirectionRef": {
+                  "value": "DIR:IDFM:C01154:A"
+                }
+              }
+            },
+            {
+              "RecordedAtTime": "2025-03-21T13:51:50.441Z",
+              "ItemIdentifier": "RATP-SIV:Item::20250321.52.A.C01287.PALS.IDFM.C01287.A.RATP.37302:LOC",
+              "MonitoringRef": {
+                "value": "STIF:StopPoint:Q:15122:"
+              },
+              "MonitoredVehicleJourney": {
+                "LineRef": {
+                  "value": "STIF:Line::C01287:"
+                },
+                "OperatorRef": {
+                  "value": "RATP-SIV:Operator::RATP.SAE-BUS.323:"
+                },
+                "FramedVehicleJourneyRef": {
+                  "DataFrameRef": {
+                    "value": "any"
+                  },
+                  "DatedVehicleJourneyRef": "RATP-SIV:VehicleJourney::20250321.52.A.C01287:LOC"
+                },
+                "DirectionName": [
+                  {
+                    "value": "Gambetta"
+                  }
+                ],
+                "DestinationRef": {
+                  "value": "STIF:StopPoint:Q:479951:"
+                },
+                "DestinationName": [
+                  {
+                    "value": "Ivry Gambetta"
+                  }
+                ],
+                "VehicleJourneyName": [],
+                "JourneyNote": [],
+                "MonitoredCall": {
+                  "StopPointName": [
+                    {
+                      "value": "Ivry-sur-Seine RER"
+                    }
+                  ],
+                  "VehicleAtStop": false,
+                  "DestinationDisplay": [
+                    {
+                      "value": "Ivry Gambetta"
+                    }
+                  ],
+                  "ExpectedDepartureTime": "2025-03-21T14:03:36.000Z",
+                  "DepartureStatus": "onTime",
+                  "ArrivalStatus": ""
+                },
+                "TrainNumbers": {
+                  "TrainNumberRef": []
+                },
+                "VehicleFeatureRef": [],
+                "DirectionRef": {
+                  "value": "DIR:IDFM:C01287:A"
+                }
+              }
+            },
+            {
+              "RecordedAtTime": "2025-03-21T13:51:29.317Z",
+              "ItemIdentifier": "RATP-SIV:Item::20250321.54.A.C01154.PALS.IDFM.C01154.A.RATP.37302:LOC",
+              "MonitoringRef": {
+                "value": "STIF:StopPoint:Q:15122:"
+              },
+              "MonitoredVehicleJourney": {
+                "LineRef": {
+                  "value": "STIF:Line::C01154:"
+                },
+                "OperatorRef": {
+                  "value": "RATP-SIV:Operator::RATP.SAE-BUS.125:"
+                },
+                "FramedVehicleJourneyRef": {
+                  "DataFrameRef": {
+                    "value": "any"
+                  },
+                  "DatedVehicleJourneyRef": "RATP-SIV:VehicleJourney::20250321.54.A.C01154:LOC"
+                },
+                "DirectionName": [
+                  {
+                    "value": "École Vétérinaire"
+                  }
+                ],
+                "DestinationRef": {
+                  "value": "STIF:StopPoint:Q:39343:"
+                },
+                "DestinationName": [
+                  {
+                    "value": "Ecole Veterinaire"
+                  }
+                ],
+                "VehicleJourneyName": [],
+                "JourneyNote": [],
+                "MonitoredCall": {
+                  "StopPointName": [
+                    {
+                      "value": "Ivry-sur-Seine RER"
+                    }
+                  ],
+                  "VehicleAtStop": false,
+                  "DestinationDisplay": [
+                    {
+                      "value": "Ecole Veterinaire"
+                    }
+                  ],
+                  "ExpectedDepartureTime": "2025-03-21T14:09:57.000Z",
+                  "DepartureStatus": "onTime",
+                  "ArrivalStatus": ""
+                },
+                "TrainNumbers": {
+                  "TrainNumberRef": []
+                },
+                "VehicleFeatureRef": [],
+                "DirectionRef": {
+                  "value": "DIR:IDFM:C01154:A"
+                }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

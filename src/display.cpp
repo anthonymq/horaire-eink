@@ -1,4 +1,5 @@
 #include "display.h"
+#include "weathericons.h"
 #define USE_SERIAL Serial
 
 void displayBanner(int posx, int posy, int height, int width, String text)
@@ -26,7 +27,39 @@ void displayBanner(int posx, int posy, int height, int width, String text)
     } while (display.nextPage());
 }
 
-void drawScreen(std::vector<std::vector<departureType>> allDepartures, bool fullRefresh)
+// Add this new function to display.cpp
+
+void displayWeather(int posx, int posy, int width, int height, weatherType weather) {
+    // Draw a box for the weather information
+    display.drawRect(posx, posy, width, height, GxEPD_BLACK);
+    
+    // Set font and color
+    display.setFont(&FreeSansBold9pt7b);
+    display.setTextColor(GxEPD_BLACK);
+    
+    // Display city name
+    display.setCursor(posx + 5, posy + 20);
+    display.print("Ivry-sur-Seine");
+    
+    // Display temperature
+    display.setCursor(posx + 5, posy + 40);
+    display.print(String(weather.temperature, 1) + "C");
+    
+    // Display feels like
+    display.setCursor(posx + 5, posy + 60);
+    display.print("Ressenti: " + String(weather.feels_like, 1) + "C");
+    
+    // Display humidity
+    display.setCursor(posx + 5, posy + 80);
+    display.print("Humidite: " + String(weather.humidity) + "%");
+    
+    // Display description
+    display.setCursor(posx + 5, posy + 100);
+    display.print(weather.description);
+}
+
+// Modify the drawScreen function to include weather display
+void drawScreen(std::vector<std::vector<departureType>> allDepartures, weatherType weather, bool fullRefresh)
 {
     display.setRotation(3);
 
@@ -46,18 +79,42 @@ void drawScreen(std::vector<std::vector<departureType>> allDepartures, bool full
     {
         // Constants for departure board display
         const int BANNER_HEIGHT = 44;
-        const int ROWS = 6;
+        const int WEATHER_HEIGHT = 22;
+        const int ROWS = 5;
         const int PADDING = 5;
         
         // Clear the screen with white background
         display.fillScreen(GxEPD_WHITE);
         
+        // Display weather information at the top
+        display.setFont(&FreeSansBold9pt7b);
+        display.setTextColor(GxEPD_BLACK);
+        
+        // Create weather string
+        String weatherInfo =  String(weather.temperature, 1) + "°C, " + 
+                           weather.icon + ", " + String(weather.humidity) + "% hum";
+                           // Draw the weather icon
+                           int iconX = PADDING;
+                           int iconY = 0;
+                           int iconWidth = 100; // The icons are 50x50 pixels
+                           int iconHeight = 100;
+                           display.drawBitmap(iconX, iconY, 
+                                           (uint8_t*) getMiniMeteoconIconFromProgmem(weather.icon),
+                                           iconWidth, iconHeight, GxEPD_BLACK);
+        
+        // Position the weather text at the top of the screen
+        display.setCursor(PADDING+50, WEATHER_HEIGHT - 5);
+        display.print(weatherInfo);
+        
+        // Draw a separator line
+        display.drawFastHLine(0, WEATHER_HEIGHT, display.width(), GxEPD_BLACK);
+        
         // Draw main board (top half)
         {
             // Main board parameters
             int posx = 0;
-            int posy = 0;
-            int height = display.height() / 2;
+            int posy = WEATHER_HEIGHT; // Start after weather info
+            int height = (display.height() / 2) - WEATHER_HEIGHT;
             int width = display.width();
             String banner = "RER C";
             bool showNames = true;
@@ -69,7 +126,8 @@ void drawScreen(std::vector<std::vector<departureType>> allDepartures, bool full
             display.getTextBounds(banner.c_str(), 0, 0, &tbx, &tby, &tbw, &tbh);
             uint16_t x = posx + ((width - tbw) / 2);
             
-            display.fillRect(posx, posy, width, BANNER_HEIGHT, GxEPD_BLACK);
+
+            // display.fillRect(posx, posy, width, BANNER_HEIGHT, GxEPD_BLACK);
             display.setCursor(x, posy + 30);
             display.setTextColor(GxEPD_WHITE);
             display.setFont(&FreeSansBold12pt7b);

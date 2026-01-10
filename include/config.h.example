@@ -1,0 +1,59 @@
+#ifndef CONFIG_H
+#define CONFIG_H
+
+#include <map>
+#include <string>
+
+// API Configuration
+#define API_URL "https://prim.iledefrance-mobilites.fr/marketplace/stop-monitoring?MonitoringRef=STIF:StopArea:SP:46366:"
+#define API_TOKEN "YOUR_IDFM_API_TOKEN"
+#define API_URL_323 "https://prim.iledefrance-mobilites.fr/marketplace/stop-monitoring?MonitoringRef=STIF:StopPoint:Q:39570:"
+#define API_URL_323_JULES_FERRY "https://prim.iledefrance-mobilites.fr/marketplace/stop-monitoring?MonitoringRef=STIF:StopPoint:Q:39571:"
+
+// OpenWeatherMap API Configuration
+#define WEATHER_API_KEY "YOUR_OPENWEATHERMAP_API_KEY"
+#define WEATHER_API_URL "https://api.openweathermap.org/data/2.5/weather"
+#define WEATHER_CITY "Ivry-sur-Seine"
+#define WEATHER_UNITS "metric" // Use metric units (Celsius)
+
+// Map of station names to their API endpoints
+// Instead of a map, use a vector of pairs to maintain order
+const std::vector<std::pair<std::string, std::string>> STATION_ENDPOINTS = {
+    {"RER C", "https://prim.iledefrance-mobilites.fr/marketplace/stop-monitoring?MonitoringRef=STIF:StopArea:SP:46366:"},
+    {"323 Moliere", "https://prim.iledefrance-mobilites.fr/marketplace/stop-monitoring?MonitoringRef=STIF:StopPoint:Q:39570:"},
+    {"323 Jules Ferry", "https://prim.iledefrance-mobilites.fr/marketplace/stop-monitoring?MonitoringRef=STIF:StopPoint:Q:39571:"}
+};
+
+// Map of station names to their filter settings
+const std::map<std::string, std::string> STATION_TYPES = {
+    {"RER C", "RER"},
+    {"323 Moliere", "BUS"},
+    {"323 Jules Ferry", "BUS"}
+};
+// Map of station names to their filter settings
+const std::map<std::string, std::string> STATION_FILTERS = {
+    {"RER C", "2B"},
+    {"323 Moliere", "MeC_Bus_PC:Operator::100:"},
+    {"323 Jules Ferry", "MeC_Bus_PC:Operator::100:"}
+};
+
+// Map of station names to their display settings
+struct DisplaySettings {
+    bool showNames;
+    int maxEntries;
+    std::string displayName;
+};
+
+const std::map<std::string, DisplaySettings> STATION_DISPLAY_SETTINGS = {
+    {"RER C", {true, 6, "RER C"}},
+    {"323 Moliere", {false, 6, "323 Moliere"}},
+    {"323 Jules Ferry", {false, 6, "323 Jules F"}}
+};
+
+// WiFi credentials
+const std::map<std::string, std::string> WIFI_CREDENTIALS = {
+    {"YOUR_WIFI_SSID", "YOUR_WIFI_PASSWORD"}
+    // Add more WiFi networks as needed
+};
+
+#endif // CONFIG_H

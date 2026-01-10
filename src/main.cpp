@@ -94,6 +94,14 @@ void setup()
     lastSuccessfullCallEpoch = rtc.getEpoch();
 }
 
+// Add this include at the top with other includes
+#include <weather_api.h>
+
+// Modify the loop function to fetch weather data
+// Add at the top with other global variables
+long lastWeatherCallEpoch = 0;
+#define WEATHER_CALL_INTERVAL 1800; // 30 minutes in seconds
+
 void loop()
 {
     buttonState = digitalRead(BUTTON_PIN);
@@ -114,13 +122,24 @@ void loop()
                 std::string type = STATION_TYPES.at(stationName);
                 std::string filter = STATION_FILTERS.at(stationName);
                 
-                std::vector<departureType> departures = fetchDepartures(endpoint, type,filter);
+                std::vector<departureType> departures = fetchDepartures(endpoint, type, filter);
                 // Process departures...
                 allDepartures.push_back(departures);
             }
+            
+            // Static weather data that persists between calls
+            static weatherType currentWeather = {};
+            
+            // Fetch weather data only every 30 minutes
+            if ((rtc.getEpoch() - lastWeatherCallEpoch) > 1800 || lastWeatherCallEpoch == 0)
+            {
+                USE_SERIAL.println("Fetching weather data...");
+                currentWeather = fetchWeather(WEATHER_CITY);
+                lastWeatherCallEpoch = rtc.getEpoch();
+            }
 
             bool fullScreenRefresh = (rtc.getEpoch() - lastScreenRefreshEpoch) > 300 || lastScreenRefreshEpoch == 0;
-            drawScreen(allDepartures, fullScreenRefresh);  // Pass the array of vectors
+            drawScreen(allDepartures, currentWeather, fullScreenRefresh);  // Pass the array of vectors and weather data
             lastSuccessfullCallEpoch = rtc.getEpoch();
             // @TODO fix data freshness
             displayDataFreshness(true, lastSuccessfullCallEpoch, rtc.getEpoch());

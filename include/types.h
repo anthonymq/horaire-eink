@@ -9,4 +9,13 @@ struct departureType {
     int delay;
 };
 
+struct weatherType {
+    float temperature;
+    float feels_like;
+    int humidity;
+    String description;
+    String icon;
+    float wind_speed;
+};
+
 #endif
