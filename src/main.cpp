@@ -159,7 +159,14 @@ void loop()
             int batteryLevel = M5.Power.getBatteryLevel();
             bool isCharging = M5.Power.isCharging();
             
-            drawScreen(allDepartures, currentWeather, fullScreenRefresh, timeStr, batteryLevel, isCharging);
+            // Calculate data age (seconds since last successful call)
+            int dataAgeSecs = (int)(rtc.getEpoch() - lastSuccessfullCallEpoch);
+            if (dataAgeSecs < 0) dataAgeSecs = 0;  // Handle edge case
+            
+            // Get WiFi signal strength
+            int wifiRssi = WiFi.RSSI();
+            
+            drawScreen(allDepartures, currentWeather, fullScreenRefresh, timeStr, batteryLevel, isCharging, dataAgeSecs, wifiRssi);
             lastSuccessfullCallEpoch = rtc.getEpoch();
             displayDataFreshness(true, lastSuccessfullCallEpoch, rtc.getEpoch());
             lastCallEpoch = rtc.getEpoch();

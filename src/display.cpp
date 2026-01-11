@@ -117,8 +117,14 @@ static void drawBatteryIcon(int x, int y, int level, bool charging) {
     const int bh = 12;
     const int nipple = 3;  // Battery tip width
     
-    // Draw battery outline
+    bool lowBattery = (level < 20);
+    
+    // Draw battery outline (thicker for low battery warning)
     M5.Display.drawRect(x, y, bw, bh, TFT_BLACK);
+    if (lowBattery) {
+        // Double outline for emphasis
+        M5.Display.drawRect(x - 1, y - 1, bw + 2, bh + 2, TFT_BLACK);
+    }
     // Draw battery tip (positive terminal)
     M5.Display.fillRect(x + bw, y + 3, nipple, bh - 6, TFT_BLACK);
     
@@ -129,8 +135,8 @@ static void drawBatteryIcon(int x, int y, int level, bool charging) {
     
     // Fill color based on level (grayscale for e-ink)
     uint16_t fillColor = TFT_BLACK;
-    if (level < 20) {
-        // Low battery - use lighter gray to indicate warning
+    if (lowBattery) {
+        // Low battery - use pattern fill for visibility
         fillColor = 0x7BEF;  // Dark gray
     }
     
@@ -139,17 +145,58 @@ static void drawBatteryIcon(int x, int y, int level, bool charging) {
         M5.Display.fillRect(x + 2, y + 2, fillW, innerH, fillColor);
     }
     
-    // If charging, draw a small lightning bolt indicator
+    // Low battery: draw exclamation mark to the left
+    if (lowBattery && !charging) {
+        int exX = x - 10;
+        int exY = y + 2;
+        M5.Display.fillRect(exX, exY, 2, 5, TFT_BLACK);      // Line
+        M5.Display.fillRect(exX, exY + 6, 2, 2, TFT_BLACK);  // Dot
+    }
+    
+    // If charging, draw a lightning bolt
     if (charging) {
-        // Simple charging indicator: small dot or mark
-        M5.Display.fillCircle(x + bw/2, y + bh/2, 2, 0xC618);  // Light gray circle
+        // Simple lightning bolt in center of battery
+        int cx = x + bw/2;
+        int cy = y + bh/2;
+        M5.Display.drawLine(cx + 2, cy - 4, cx - 1, cy, TFT_WHITE);
+        M5.Display.drawLine(cx - 1, cy, cx + 2, cy, TFT_WHITE);
+        M5.Display.drawLine(cx + 2, cy, cx - 1, cy + 4, TFT_WHITE);
     }
 }
 
 // ============================================================
-// DRAW: Status bar (time + battery) in weather column
+// HELPER: Draw WiFi signal strength icon (4-bar indicator)
 // ============================================================
-static void drawStatusBar(int x, int y, int w, int h, const char* timeStr, int batteryLevel, bool isCharging) {
+static void drawWifiIcon(int x, int y, int rssi) {
+    // RSSI ranges: >-50 (excellent), -50 to -60 (good), -60 to -70 (fair), <-70 (weak)
+    int bars = 0;
+    if (rssi > -50) bars = 4;
+    else if (rssi > -60) bars = 3;
+    else if (rssi > -70) bars = 2;
+    else if (rssi > -80) bars = 1;
+    
+    // Draw 4 bars, filled based on signal strength
+    const int barWidth = 3;
+    const int barGap = 2;
+    const int maxHeight = 12;
+    
+    for (int i = 0; i < 4; i++) {
+        int barHeight = (i + 1) * 3;  // Heights: 3, 6, 9, 12
+        int barX = x + i * (barWidth + barGap);
+        int barY = y + (maxHeight - barHeight);
+        
+        if (i < bars) {
+            M5.Display.fillRect(barX, barY, barWidth, barHeight, TFT_BLACK);
+        } else {
+            M5.Display.drawRect(barX, barY, barWidth, barHeight, 0xC618);  // Light gray outline
+        }
+    }
+}
+
+// ============================================================
+// DRAW: Status bar (time + battery + data freshness) in weather column
+// ============================================================
+static void drawStatusBar(int x, int y, int w, int h, const char* timeStr, int batteryLevel, bool isCharging, int dataAgeSecs, int wifiRssi) {
     // Clear status bar area
     clearRegion(x, y, w, h);
     
@@ -166,6 +213,12 @@ static void drawStatusBar(int x, int y, int w, int h, const char* timeStr, int b
     M5.Display.setCursor(x + PADDING, timeY);
     M5.Display.print(timeStr);
     
+    // WiFi icon (after time)
+    int timeW = M5.Display.textWidth(timeStr);
+    int wifiX = x + PADDING + timeW + 8;
+    int wifiY = y + (h - 12) / 2;  // 12px icon height
+    drawWifiIcon(wifiX, wifiY, wifiRssi);
+    
     // Battery icon (right side) - battery is 24x12 + 3px nipple
     const int batteryW = 24;
     const int batteryH = 12;
@@ -175,22 +228,38 @@ static void drawStatusBar(int x, int y, int w, int h, const char* timeStr, int b
     
     drawBatteryIcon(battX, battY, batteryLevel, isCharging);
     
-    // Battery percentage (next to icon) - use smaller font
+    // Data freshness between WiFi and battery - smaller font
     M5.Display.setFont(&FreeSans9pt7b);
     int smallFontH = M5.Display.fontHeight();
-    int battTextY = getCenteredTextY(y, h, smallFontH);
+    int freshY = getCenteredTextY(y, h, smallFontH);
     
-    char battStr[8];
-    snprintf(battStr, sizeof(battStr), "%d%%", batteryLevel);
-    int battStrW = M5.Display.textWidth(battStr);
-    M5.Display.setCursor(battX - battStrW - 6, battTextY);
-    M5.Display.print(battStr);
+    char freshStr[16];
+    if (dataAgeSecs < 60) {
+        snprintf(freshStr, sizeof(freshStr), "%ds", dataAgeSecs);
+    } else {
+        snprintf(freshStr, sizeof(freshStr), "%dm", dataAgeSecs / 60);
+    }
+    
+    // Show warning if data is stale (>2 min)
+    if (dataAgeSecs > 120) {
+        M5.Display.setTextColor(0x7BEF);  // Gray for stale
+    }
+    
+    int freshW = M5.Display.textWidth(freshStr);
+    // Position between WiFi icon end and battery text start
+    int wifiEnd = wifiX + 20;  // WiFi icon is ~20px wide
+    int battTextX = battX - 6 - M5.Display.textWidth("100%");  // Battery text position
+    int freshX = wifiEnd + (battTextX - wifiEnd - freshW) / 2;
+    
+    M5.Display.setCursor(freshX, freshY);
+    M5.Display.print(freshStr);
+    M5.Display.setTextColor(TFT_BLACK);  // Reset
 }
 
 // ============================================================
 // DRAW: Weather column (right side) with status bar
 // ============================================================
-static void drawWeatherColumn(weatherType weather, bool forceRedraw, const char* timeStr, int batteryLevel, bool isCharging) {
+static void drawWeatherColumn(weatherType weather, bool forceRedraw, const char* timeStr, int batteryLevel, bool isCharging, int dataAgeSecs, int wifiRssi) {
     int x = MAIN_WIDTH;
     int y = 0;
     int w = WEATHER_COL_WIDTH;
@@ -213,8 +282,8 @@ static void drawWeatherColumn(weatherType weather, bool forceRedraw, const char*
     // Draw border
     M5.Display.drawRect(x, y, w, h, TFT_BLACK);
     
-    // Draw status bar at top (time + battery)
-    drawStatusBar(x, y, w, STATUS_BAR_HEIGHT, timeStr, batteryLevel, isCharging);
+    // Draw status bar at top (time + battery + data freshness + wifi)
+    drawStatusBar(x, y, w, STATUS_BAR_HEIGHT, timeStr, batteryLevel, isCharging, dataAgeSecs, wifiRssi);
     
     // Adjust content Y to start below status bar
     int contentY = y + STATUS_BAR_HEIGHT;
@@ -250,7 +319,7 @@ static void drawWeatherColumn(weatherType weather, bool forceRedraw, const char*
     M5.Display.setTextColor(TFT_BLACK);
     
     char tempStr[16];
-    snprintf(tempStr, sizeof(tempStr), "%.1f C", weather.temperature);
+    snprintf(tempStr, sizeof(tempStr), "%.1f%cC", weather.temperature, (char)176);  // 176 = degree symbol
     int tempW = M5.Display.textWidth(tempStr);
     int tempY = textStartY;
     M5.Display.setCursor(x + (w - tempW) / 2, tempY);
@@ -259,7 +328,7 @@ static void drawWeatherColumn(weatherType weather, bool forceRedraw, const char*
     // Feels like
     M5.Display.setFont(&FreeSans9pt7b);
     char feelsStr[24];
-    snprintf(feelsStr, sizeof(feelsStr), "Ressenti %.1fC", weather.feels_like);
+    snprintf(feelsStr, sizeof(feelsStr), "Ressenti %.1f%cC", weather.feels_like, (char)176);  // degree symbol
     int feelsW = M5.Display.textWidth(feelsStr);
     int feelsY = textStartY + lineSpacing;
     M5.Display.setCursor(x + (w - feelsW) / 2, feelsY);
@@ -457,7 +526,7 @@ static void drawBusBoard(std::vector<departureType>& departures,
 // ============================================================
 void drawScreen(std::vector<std::vector<departureType>> allDepartures, 
                 weatherType weather, bool fullRefresh,
-                const char* timeStr, int batteryLevel, bool isCharging)
+                const char* timeStr, int batteryLevel, bool isCharging, int dataAgeSecs, int wifiRssi)
 {
     M5.Display.setRotation(1);  // Landscape
     
@@ -515,7 +584,7 @@ void drawScreen(std::vector<std::vector<departureType>> allDepartures,
                  prevBus2Schedules, prevBus2Delays);
     
     // Draw weather column with status bar (right side)
-    drawWeatherColumn(weather, needsFullRefresh, timeStr, batteryLevel, isCharging);
+    drawWeatherColumn(weather, needsFullRefresh, timeStr, batteryLevel, isCharging, dataAgeSecs, wifiRssi);
     
     // Draw separators
     M5.Display.drawFastVLine(MAIN_WIDTH, 0, SCREEN_HEIGHT, TFT_BLACK);
@@ -576,5 +645,5 @@ void displayBanner(int posx, int posy, int height, int width, String text)
 void displayWeather(int posx, int posy, int width, int height, weatherType weather) {
     (void)posx; (void)posy; (void)width; (void)height;  // Unused in new layout
     // Legacy function - use default time/battery for standalone calls
-    drawWeatherColumn(weather, true, "--:--", 0, false);
+    drawWeatherColumn(weather, true, "--:--", 0, false, 0, -100);  // -100 = no WiFi
 }
