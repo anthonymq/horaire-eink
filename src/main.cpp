@@ -90,7 +90,10 @@ void setup()
 
     USE_SERIAL.println(rtc.getEpoch());
 
-    wifiMulti.addAP("WIFI_SSID_REMOVED", "WIFI_PASSWORD_REMOVED");
+    // Add all configured WiFi networks from config.h
+    for (const auto& wifi : WIFI_CREDENTIALS) {
+        wifiMulti.addAP(wifi.first.c_str(), wifi.second.c_str());
+    }
     lastSuccessfullCallEpoch = rtc.getEpoch();
 }
 
