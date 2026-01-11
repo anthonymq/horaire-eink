@@ -1,13 +1,218 @@
 # Prochain Depart - Implementation Plan
 
-**Last Updated**: 2026-01-10
-**Status**: Active Development
+**Last Updated**: 2026-01-11
+**Status**: Active Development - **M5Paper S3 Migration - Firmware Uploaded, Hardware Testing In Progress**
 
 ---
 
 ## Summary
 
 This document tracks implementation progress against specifications in `specs/` and the PRD in `docs/PRD.md`. Items are organized by priority and grouped by feature area.
+
+---
+
+## M5Paper S3 Migration (ACTIVE)
+
+### Overview
+
+Migrating from generic ESP32 + SPI E-Ink (GxEPD2) to M5Paper S3 with parallel EPD interface.
+
+**Target Hardware**: [M5Paper S3](https://shop.m5stack.com/products/m5papers3-esp32s3-development-kit)
+
+### Hardware Comparison
+
+| Aspect | Current | M5Paper S3 |
+|--------|---------|------------|
+| MCU | ESP32 | ESP32-S3R8 |
+| Display | 4.2" GDEY042T81 (400x300) | 4.7" ED047TC1 (960x540) |
+| Driver | SSD1683 (SPI) | Parallel 8-bit EPD |
+| Library | GxEPD2 | M5Unified + M5GFX |
+| Touch | None | GT911 capacitive |
+| Button | GPIO 0 | Built-in via M5Unified |
+| Extras | - | Gyro (BMI270), Buzzer, RTC (BM8563), 1800mAh battery |
+
+### Critical Note
+
+> **GxEPD2 is NOT compatible with M5Paper S3.**
+> The M5Paper S3 uses a parallel 8-bit EPD interface, not SPI.
+> Must migrate to M5Unified/M5GFX or FastEPD library.
+
+---
+
+### Phase 1: Environment Setup
+
+| Task | Status | Notes |
+|------|--------|-------|
+| Update `platformio.ini` for ESP32-S3 | [x] | Board: `esp32-s3-devkitc-1` (M5Unified auto-detects) |
+| Add M5Unified library | [x] | `m5stack/M5Unified@^0.2.2` |
+| Add M5GFX library | [x] | Auto-installed as M5Unified dependency |
+| Remove GxEPD2 dependency | [x] | Removed from lib_deps |
+| Verify build compiles | [x] | BUILD SUCCESS |
+
+**Actual platformio.ini:**
+```ini
+[env:M5PaperS3]
+platform = espressif32@^6.5.0
+board = esp32-s3-devkitc-1
+framework = arduino
+board_build.arduino.memory_type = qio_opi
+board_upload.flash_size = 16MB
+board_build.partitions = default_16MB.csv
+build_flags = 
+    -DBOARD_HAS_PSRAM
+    -DARDUINO_USB_CDC_ON_BOOT=1
+lib_deps = 
+    m5stack/M5Unified@^0.2.2
+    bblanchon/ArduinoJson@^7.2.1
+    fbiego/ESP32Time@^2.0.6
+```
+
+---
+
+### Phase 2: Display Driver Migration
+
+| Task | Status | Notes |
+|------|--------|-------|
+| Create new display header with M5GFX types | [x] | Replaced `GxEPD2_BW` include with `M5Unified.h` |
+| Refactor display init in `main.cpp` | [x] | Uses `M5.begin(cfg)` |
+| Remove HSPI/SPI configuration | [x] | M5Unified handles internally |
+| Update display object declaration | [x] | Uses `M5.Display` throughout |
+
+**API Mapping:**
+
+| GxEPD2 | M5GFX (M5Unified) |
+|--------|-------------------|
+| `display.init()` | `M5.begin()` |
+| `display.setRotation(3)` | `M5.Display.setRotation(3)` |
+| `display.setFullWindow()` | `M5.Display.startWrite()` |
+| `display.firstPage()/nextPage()` | Direct draw + `M5.Display.display()` |
+| `display.fillScreen(GxEPD_WHITE)` | `M5.Display.fillScreen(TFT_WHITE)` |
+| `display.drawRect()` | `M5.Display.drawRect()` |
+| `display.setCursor()` | `M5.Display.setCursor()` |
+| `display.setTextColor(GxEPD_BLACK)` | `M5.Display.setTextColor(TFT_BLACK)` |
+| `display.width()` | `M5.Display.width()` |
+| `display.height()` | `M5.Display.height()` |
+
+---
+
+### Phase 3: Drawing Code Refactor
+
+| Task | Status | Notes |
+|------|--------|-------|
+| Migrate `displayLoader()` | [x] | Uses `textWidth()` and `fontHeight()` |
+| Migrate `displayBanner()` | [x] | Updated for M5GFX API |
+| Migrate `drawScreen()` | [x] | Complete rewrite for M5GFX |
+| Migrate `draw2BitIcon()` | [x] | Works with `M5.Display.drawPixel()` |
+| Migrate `displayWeather()` | [x] | Updated for M5GFX API |
+| Migrate `displayDataFreshness()` | [x] | Placeholder (TODO in code) |
+
+---
+
+### Phase 4: UI Layout Redesign
+
+| Task | Status | Notes |
+|------|--------|-------|
+| Recalculate for 960x540 resolution | [x] | Full layout updated |
+| Update banner heights | [x] | 44 -> 80px |
+| Update weather section | [x] | 55 -> 100px |
+| Update departure cell sizes | [x] | Scaled proportionally |
+| Consider larger fonts | [x] | Using FreeSansBold12pt7b |
+| Consider more departure rows | [x] | 5 -> 6 rows |
+
+**Resolution Scaling:**
+
+| Element | Current (400x300) | New (960x540) |
+|---------|-------------------|---------------|
+| Weather Bar Height | 55px | 100px |
+| Banner Height | 44px | 80px |
+| Icon Size | 50x50 | 80x80 or 100x100 |
+| Departure Rows | 5 | 6-7 |
+
+---
+
+### Phase 5: Button & Input Handling
+
+| Task | Status | Notes |
+|------|--------|-------|
+| Replace GPIO 0 with M5Unified button API | [x] | Uses `M5.BtnA.wasPressed()` |
+| Update button press detection | [x] | M5Unified handles debounce |
+| Consider touch support (future) | [ ] | GT911 available - not implemented yet |
+
+---
+
+### Phase 6: Power Management
+
+| Task | Status | Notes |
+|------|--------|-------|
+| Leverage BM8563 RTC for sleep/wake | [ ] | Future enhancement |
+| Battery monitoring | [ ] | Future enhancement |
+| Update power-off logic | [ ] | Future enhancement |
+
+---
+
+### Phase 7: Testing & Verification
+
+| Task | Status | Notes |
+|------|--------|-------|
+| Build compiles successfully | [x] | **BUILD SUCCESS** |
+| WiFi connectivity works | [ ] | Needs hardware test |
+| PRIM API calls work | [ ] | Needs hardware test |
+| OpenWeatherMap API works | [ ] | Needs hardware test |
+| Full refresh displays correctly | [ ] | Needs hardware test |
+| Partial refresh works | [ ] | Needs hardware test |
+| Button interaction works | [ ] | Needs hardware test |
+| 24+ hour stability test | [ ] | Needs hardware test |
+
+---
+
+### File Change Tracker (M5Paper S3)
+
+| File | Status | Changes |
+|------|--------|---------|
+| `platformio.ini` | [x] Complete | ESP32-S3 board, M5Unified deps |
+| `src/main.cpp` | [x] Complete | M5.begin(), M5.update(), button API |
+| `include/display.h` | [x] Complete | M5Unified.h include, removed GxEPD2 |
+| `src/display.cpp` | [x] Complete | Full M5GFX API migration |
+| `include/types.h` | No Change | Data structures unchanged |
+| `src/transport_api.cpp` | No Change | API logic unchanged |
+| `src/weather_api.cpp` | No Change | API logic unchanged |
+| `include/weathericons.h` | No Change | PROGMEM icons compatible |
+| `include/config.h` | No Change | Credentials unchanged |
+
+---
+
+### Risks & Mitigations
+
+| Risk | Impact | Mitigation |
+|------|--------|------------|
+| M5GFX API differences | Medium | API similar to Adafruit_GFX |
+| Partial refresh behavior | Medium | Test on device, M5Paper S3 supports it |
+| Font rendering differences | Low | Same Adafruit GFX fonts work |
+| Weather icon scaling | Medium | May need larger icons |
+
+---
+
+### Migration Success Criteria
+
+- [x] App compiles without errors
+- [x] Uploads to M5Paper S3 successfully (uploaded 2026-01-11 via `/dev/cu.usbmodem11101`)
+- [ ] WiFi connects and APIs return data
+- [ ] Display shows departures correctly
+- [ ] Display shows weather correctly
+- [ ] Button triggers refresh
+- [ ] Partial refresh works
+- [ ] Full refresh clears ghosting
+- [ ] Stable for 24+ hours
+
+---
+
+### References
+
+- [M5Unified GitHub](https://github.com/m5stack/M5Unified)
+- [M5GFX GitHub](https://github.com/m5stack/M5GFX)
+- [M5Paper S3 Product Page](https://shop.m5stack.com/products/m5papers3-esp32s3-development-kit)
+- [FastEPD (alternative)](https://github.com/bitbank2/FastEPD)
+- [M5Paper S3 Docs](https://docs.m5stack.com/en/core/M5PaperS3)
 
 ---
 
@@ -157,7 +362,19 @@ The `WIFI_CREDENTIALS` map in `config.h` is **not used**.
 
 ## Priority Implementation Order
 
-### P0 - Critical Bugs (Fix First)
+### P0 - M5Paper S3 Migration (ACTIVE PRIORITY)
+
+**This is the current active work.** See "M5Paper S3 Migration" section above for detailed tracking.
+
+1. [ ] **Phase 1**: Environment setup (platformio.ini, dependencies)
+2. [ ] **Phase 2**: Display driver migration (GxEPD2 -> M5Unified)
+3. [ ] **Phase 3**: Drawing code refactor
+4. [ ] **Phase 4**: UI layout redesign for 960x540
+5. [ ] **Phase 5**: Button handling migration
+6. [ ] **Phase 6**: Power management integration
+7. [ ] **Phase 7**: Testing & verification
+
+### P1 - Critical Bugs (Post-Migration or if staying on current hardware)
 
 1. [ ] **Fix RER C banner** - Uncomment line 130 in `display.cpp` to fill banner background black
 2. [ ] **Fix weather icon size** - Icons are 50x50 but code specifies 100x100
@@ -256,4 +473,14 @@ The `WIFI_CREDENTIALS` map in `config.h` is **not used**.
 
 ## Changelog
 
+- **2026-01-11**: Firmware uploaded to M5Paper S3 device
+  - Upload successful via esptool to `/dev/cu.usbmodem11101`
+  - Device MAC: d0:cf:13:16:07:40
+  - Hardware testing phase in progress
+- **2026-01-11**: Added M5Paper S3 migration plan as P0 priority
+  - Hardware comparison and compatibility analysis
+  - 7-phase migration plan with detailed task tracking
+  - API mapping from GxEPD2 to M5GFX
+  - Resolution scaling guide (400x300 -> 960x540)
+  - Success criteria and risk mitigations
 - **2026-01-10**: Initial plan created from codebase analysis

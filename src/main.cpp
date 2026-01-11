@@ -2,9 +2,11 @@
  * Prochain Départ
  *
  *  Created on: 21.11.2024
+ *  Migrated to M5Paper S3: 2026-01-11
  *
  */
 #include <Arduino.h>
+#include <M5Unified.h>
 #include <WiFi.h>
 #include <WiFiMulti.h>
 
@@ -16,78 +18,76 @@
 #include <misc.h>
 #include <string>
 
-// EINK
-#define USE_HSPI_FOR_EPD
-
-#include <GxEPD2_BW.h>
-// #include <GxEPD2_3C.h>
-// #include <GxEPD2_4C.h>
-// #include <GxEPD2_7C.h>
-#include <Fonts/FreeSansBold12pt7b.h>
-#include <Fonts/FreeSansBold9pt7b.h>
-#include <Fonts/FreeMonoBold12pt7b.h>
-#include <Fonts/FreeMonoBold9pt7b.h>
+// M5Paper S3 uses M5Unified - no manual SPI/display setup needed
+// Display accessed via M5.Display
 
 // custom
 #include <config.h>
 #include <transport_api.h>
 #include "types.h"
-#include "display.h"  // Add this include
-
-#define GxEPD2_DISPLAY_CLASS GxEPD2_BW
-// old screen 2.7
-// GxEPD2_BW<GxEPD2_270_GDEY027T91, GxEPD2_270_GDEY027T91::HEIGHT> display(GxEPD2_270_GDEY027T91(/*CS=*/15, /*DC=*/27, /*RST=*/26, /*BUSY=*/25)); // GDEY027T91 176x264, SSD1680
-GxEPD2_BW<GxEPD2_420_GDEY042T81, GxEPD2_420_GDEY042T81::HEIGHT> display(GxEPD2_420_GDEY042T81(/*CS=*/15, /*DC=*/27, /*RST=*/26, /*BUSY=*/25)); // 400x300, SSD1683
-
-// #include "bitmaps/Bitmaps176x264.h" // 2.7"  b/w
-SPIClass hspi(HSPI);
-// /EINK
+#include "display.h"
 
 using namespace std;
 
 #define USE_SERIAL Serial
 
-////// button
-#define BUTTON_PIN 0  // Changed from GPIO 12 (boot strapping pin conflict)
-int lastButtonState = HIGH; // the previous state from the input pin
-int buttonState;            // the current reading from the input pin
-bool screenBacklightState = true;
-
 WiFiMulti wifiMulti;
 
-// Change the offset to 3600 seconds (1 hour) for GMT+1
-ESP32Time rtc(3600); // offset in seconds GMT+1
+// RTC for timekeeping (will be synced via NTP)
+ESP32Time rtc(0); // No offset - timezone handled by TZ env var
 long lastSuccessfullCallEpoch;
 long lastCallEpoch = 0;
 long lastScreenRefreshEpoch = 0;
+bool ntpSynced = false;
 #define DELAY_BETWEEN_CALLS 30; // in seconds
 
-// Remove the display functions that were moved to display.cpp
+// Sync time via NTP
+void syncTimeWithNTP() {
+    USE_SERIAL.println("Syncing time with NTP...");
+    
+    // Configure NTP with Paris timezone
+    // TZ string: CET-1CEST,M3.5.0,M10.5.0/3
+    // CET = Central European Time (standard time name)
+    // -1 = UTC+1 (note: POSIX uses inverted sign)
+    // CEST = Central European Summer Time (DST name)
+    // M3.5.0 = DST starts last Sunday of March at 00:00
+    // M10.5.0/3 = DST ends last Sunday of October at 03:00
+    configTzTime("CET-1CEST,M3.5.0,M10.5.0/3", "pool.ntp.org", "time.nist.gov");
+    
+    // Wait for time sync (max 10 seconds)
+    int retry = 0;
+    while (time(nullptr) < 1700000000 && retry < 20) {  // Wait until we get a reasonable time (after 2023)
+        delay(500);
+        retry++;
+        USE_SERIAL.print(".");
+    }
+    USE_SERIAL.println();
+    
+    if (time(nullptr) > 1700000000) {
+        // Update ESP32Time RTC with the synced time
+        struct tm timeinfo;
+        getLocalTime(&timeinfo);
+        rtc.setTimeStruct(timeinfo);
+        USE_SERIAL.printf("NTP sync successful: %s", asctime(&timeinfo));
+        ntpSynced = true;
+    } else {
+        USE_SERIAL.println("NTP sync failed - using default time");
+    }
+}
 
-// Keep the setup and loop functions
 void setup()
 {
-    // Set timezone to Central European Time (CET/CEST with automatic DST adjustment)
-    // For France/Paris timezone
-    setenv("TZ", "GMT+1GMT+2,M3.5.0,M10.5.0/3", 1);
-    tzset();
-    USE_SERIAL.begin(115200);
+    // Initialize M5Paper S3 with auto-detection
+    auto cfg = M5.config();
+    cfg.serial_baudrate = 115200;
+    M5.begin(cfg);
 
-    // *** special handling for Waveshare ESP32 Driver board *** //
-    // ********************************************************* //
-    hspi.begin(13, 12, 14, 15); // remap hspi for EPD (swap pins)
-    display.epd2.selectSPI(hspi, SPISettings(4000000, MSBFIRST, SPI_MODE0));
-    // *** end of special handling for Waveshare ESP32 Driver board *** //
-    // **************************************************************** //
-    display.init(115200);
+    // M5Paper S3 display is automatically initialized by M5.begin()
+    // Set rotation (0=portrait, 1=landscape, 2=portrait inverted, 3=landscape inverted)
+    M5.Display.setRotation(1);  // Landscape mode
 
     displayLoader("Horaire...");
-    Serial.println("setup done");
-
-    // drawScreen(std::vector<departureType>());
-    pinMode(BUTTON_PIN, INPUT_PULLUP);
-
-    USE_SERIAL.println(rtc.getEpoch());
+    USE_SERIAL.println("setup done");
 
     // Add all configured WiFi networks from config.h
     for (int i = 0; i < NUM_WIFI_CREDENTIALS; i++) {
@@ -96,25 +96,31 @@ void setup()
     lastSuccessfullCallEpoch = rtc.getEpoch();
 }
 
-// Add this include at the top with other includes
 #include <weather_api.h>
 
-// Modify the loop function to fetch weather data
-// Add at the top with other global variables
+// Weather refresh interval
 long lastWeatherCallEpoch = 0;
 #define WEATHER_CALL_INTERVAL 1800; // 30 minutes in seconds
 
 void loop()
 {
-    buttonState = digitalRead(BUTTON_PIN);
-    if (lastButtonState == LOW && buttonState == HIGH)
-    {
-        Serial.println("The state changed from LOW to HIGH");
+    // Update M5Unified (handles button states, etc.)
+    M5.update();
+
+    // Check for button press using M5Unified API
+    // M5Paper S3 has one physical button
+    if (M5.BtnA.wasPressed()) {
+        USE_SERIAL.println("Button pressed - forcing refresh");
+        lastCallEpoch = 0;  // Force immediate refresh
     }
-    lastButtonState = buttonState;
 
     if (wifiMulti.run() == WL_CONNECTED)
     {
+        // Sync time with NTP on first WiFi connection
+        if (!ntpSynced) {
+            syncTimeWithNTP();
+        }
+        
         if ((rtc.getEpoch() - lastCallEpoch) > 29 || lastCallEpoch == 0)
         {
             std::vector<std::vector<departureType>> allDepartures;
@@ -139,10 +145,22 @@ void loop()
                 lastWeatherCallEpoch = rtc.getEpoch();
             }
 
-            bool fullScreenRefresh = (rtc.getEpoch() - lastScreenRefreshEpoch) > 300 || lastScreenRefreshEpoch == 0;
-            drawScreen(allDepartures, currentWeather, fullScreenRefresh);  // Pass the array of vectors and weather data
+            // Full refresh every 30 minutes to clear ghosting (1800 seconds)
+            // Partial refresh handles individual row updates
+            bool fullScreenRefresh = (rtc.getEpoch() - lastScreenRefreshEpoch) > 1800 || lastScreenRefreshEpoch == 0;
+            
+            // Get current time using standard C library (respects timezone from configTzTime)
+            struct tm timeinfo;
+            getLocalTime(&timeinfo);
+            char timeStr[6];
+            strftime(timeStr, sizeof(timeStr), "%H:%M", &timeinfo);
+            
+            // Get battery status
+            int batteryLevel = M5.Power.getBatteryLevel();
+            bool isCharging = M5.Power.isCharging();
+            
+            drawScreen(allDepartures, currentWeather, fullScreenRefresh, timeStr, batteryLevel, isCharging);
             lastSuccessfullCallEpoch = rtc.getEpoch();
-            // @TODO fix data freshness
             displayDataFreshness(true, lastSuccessfullCallEpoch, rtc.getEpoch());
             lastCallEpoch = rtc.getEpoch();
             if (fullScreenRefresh)
