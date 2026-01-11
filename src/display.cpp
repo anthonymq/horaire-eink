@@ -2,6 +2,36 @@
 #include "weathericons.h"
 #define USE_SERIAL Serial
 
+// Draw a 2-bit PROGMEM weather icon as monochrome on the display
+// 2-bit values: 0=white, 1=light gray (white), 2=dark gray (black), 3=black
+// The icon data has a 6-byte header: version(1) + bitdepth(1) + width(2) + height(2)
+void draw2BitIcon(int x, int y, const char* iconData, int width, int height, uint16_t color) {
+    const int HEADER_SIZE = 6;
+    // In 2-bit mode, each byte contains 4 pixels (2 bits each)
+    // Row width is padded to the next byte boundary
+    int paddedWidth = ((width + 3) / 4) * 4;  // Round up to next multiple of 4 pixels
+    int bytesPerRow = paddedWidth / 4;        // 4 pixels per byte at 2 bits each
+    
+    for (int row = 0; row < height; row++) {
+        for (int col = 0; col < width; col++) {
+            // Calculate byte position in the row
+            int byteIndex = HEADER_SIZE + (row * bytesPerRow) + (col / 4);
+            // Calculate bit position within byte (4 pixels per byte, 2 bits each, MSB first)
+            int pixelInByte = 3 - (col % 4);  // 3,2,1,0 for pixels 0,1,2,3
+            int shift = pixelInByte * 2;
+            
+            // Read byte from PROGMEM and extract 2-bit value
+            uint8_t byteVal = pgm_read_byte(iconData + byteIndex);
+            uint8_t pixelVal = (byteVal >> shift) & 0x03;
+            
+            // Map 2-bit grayscale to monochrome: 0,1 = white (skip), 2,3 = black (draw)
+            if (pixelVal >= 2) {
+                display.drawPixel(x + col, y + row, color);
+            }
+        }
+    }
+}
+
 void displayBanner(int posx, int posy, int height, int width, String text)
 {
     // HEADER
@@ -79,9 +109,13 @@ void drawScreen(std::vector<std::vector<departureType>> allDepartures, weatherTy
     {
         // Constants for departure board display
         const int BANNER_HEIGHT = 44;
-        const int WEATHER_HEIGHT = 22;
+        const int WEATHER_HEIGHT = 55; // Increased to fit 50px icon
         const int ROWS = 5;
         const int PADDING = 5;
+        
+        // Weather icon dimensions (from weathericons.h mini meteocons)
+        const int ICON_WIDTH = 50;
+        const int ICON_HEIGHT = 50;
         
         // Clear the screen with white background
         display.fillScreen(GxEPD_WHITE);
@@ -90,23 +124,23 @@ void drawScreen(std::vector<std::vector<departureType>> allDepartures, weatherTy
         display.setFont(&FreeSansBold9pt7b);
         display.setTextColor(GxEPD_BLACK);
         
-        // Create weather string
-        String weatherInfo =  String(weather.temperature, 1) + "°C, " + 
-                           weather.icon + ", " + String(weather.humidity) + "% hum";
-                           // Draw the weather icon
-                           int iconX = PADDING;
-                           int iconY = 0;
-                           int iconWidth = 100; // The icons are 50x50 pixels
-                           int iconHeight = 100;
-                           display.drawBitmap(iconX, iconY, 
-                                           (uint8_t*) getMiniMeteoconIconFromProgmem(weather.icon),
-                                           iconWidth, iconHeight, GxEPD_BLACK);
+        // Draw the weather icon using 2-bit to monochrome conversion
+        const char* iconData = getMiniMeteoconIconFromProgmem(weather.icon);
+        if (iconData != nullptr) {
+            draw2BitIcon(PADDING, 3, iconData, ICON_WIDTH, ICON_HEIGHT, GxEPD_BLACK);
+        }
         
-        // Position the weather text at the top of the screen
-        display.setCursor(PADDING+50, WEATHER_HEIGHT - 5);
-        display.print(weatherInfo);
+        // Position weather text next to the icon
+        int textX = PADDING + ICON_WIDTH + 10;
+        int textY = 25; // Vertically centered in weather bar
+        display.setCursor(textX, textY);
+        display.print(String(weather.temperature, 1) + " C");
         
-        // Draw a separator line
+        // Second line: humidity
+        display.setCursor(textX, textY + 20);
+        display.print(String(weather.humidity) + "% hum");
+        
+        // Draw a separator line below weather bar
         display.drawFastHLine(0, WEATHER_HEIGHT, display.width(), GxEPD_BLACK);
         
         // Draw main board (top half)
