@@ -102,6 +102,10 @@ void setup()
 long lastWeatherCallEpoch = 0;
 #define WEATHER_CALL_INTERVAL 1800; // 30 minutes in seconds
 
+// Long press detection state
+bool longPressHandled = false;
+#define LONG_PRESS_DURATION 5000  // 5 seconds in milliseconds
+
 void loop()
 {
     // Update M5Unified (handles button states, etc.)
@@ -109,7 +113,24 @@ void loop()
 
     // Check for button press using M5Unified API
     // M5Paper S3 has one physical button
-    if (M5.BtnA.wasPressed()) {
+    
+    // Long press detection: 5+ seconds triggers configuration mode
+    if (M5.BtnA.pressedFor(LONG_PRESS_DURATION)) {
+        if (!longPressHandled) {
+            longPressHandled = true;
+            USE_SERIAL.println("Long press detected - entering configuration mode");
+            displayLoader("Configuration...");
+            // TODO: Start WiFi Manager AP mode here (FR-WM5)
+            // For now, just display the message and wait for button release
+        }
+    } else if (M5.BtnA.wasReleased()) {
+        if (longPressHandled) {
+            // Button was released after long press - reset state
+            longPressHandled = false;
+            USE_SERIAL.println("Exiting configuration mode");
+            lastCallEpoch = 0;  // Force screen refresh
+        }
+    } else if (M5.BtnA.wasPressed()) {
         USE_SERIAL.println("Button pressed - forcing refresh");
         lastCallEpoch = 0;  // Force immediate refresh
     }

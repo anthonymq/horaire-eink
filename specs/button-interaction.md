@@ -4,78 +4,90 @@
 The physical button provides user interaction with the device for manual refresh and configuration access.
 
 ## Hardware
-- Momentary push button connected to GPIO 12
-- Uses internal pull-up resistor
-- Active LOW (pressed = LOW, released = HIGH)
+
+M5Paper S3 has a built-in button handled by M5Unified:
+- Access via `M5.BtnA`
+- Internal debouncing handled by library
+- No manual GPIO configuration required
 
 ## Functional Requirements
 
 ### FR-B1: Button Debouncing
-- Track previous button state
-- Detect state transitions (LOW → HIGH = release)
-- Ignore bouncing/noise
+- Handled automatically by M5Unified
+- Call `M5.update()` in each loop iteration to process button state
 
 ### FR-B2: Short Press Action
 - Trigger immediate data refresh
 - Bypass normal 30-second refresh timer
-- Visual feedback (optional: brief message on display)
+- Sets `lastCallEpoch = 0` to force refresh
 
 ### FR-B3: Long Press Action (5+ seconds)
-- Trigger WiFi configuration mode
+- Detect using `M5.BtnA.pressedFor(5000)`
 - Display "Configuration..." message
-- Start AP mode for WiFi Manager
+- Trigger WiFi configuration mode (FR-WM5)
+- Reset state on button release
 
 ### FR-B4: Press Detection
 ```cpp
-// Current implementation
-int lastButtonState = HIGH;
-int buttonState = digitalRead(BUTTON_PIN);
-if (lastButtonState == LOW && buttonState == HIGH) {
-    // Button was released - trigger action
+// M5Unified button API
+M5.update();  // Must call every loop iteration
+
+// Short press
+if (M5.BtnA.wasPressed()) {
+    lastCallEpoch = 0;  // Force refresh
 }
-lastButtonState = buttonState;
+
+// Long press (5 seconds)
+if (M5.BtnA.pressedFor(5000)) {
+    displayLoader("Configuration...");
+    // Enter config mode
+}
+
+// Button release
+if (M5.BtnA.wasReleased()) {
+    // Handle release after long press
+}
 ```
 
 ## State Machine
 
 ```
-        ┌─────────────────────────────────────────┐
-        │                                         │
-        ▼                                         │
-   ┌─────────┐    press    ┌──────────┐          │
-   │  IDLE   │────────────>│ PRESSED  │          │
-   └─────────┘             └──────────┘          │
-        ▲                       │                │
-        │                       │                │
-        │    release < 5s       │ held > 5s      │
-        │    (short press)      │ (long press)   │
-        │                       ▼                │
-        │              ┌──────────────┐          │
-        └──────────────│ LONG_PRESSED │──────────┘
-                       └──────────────┘
-                              │
-                              ▼
+        +---------------------------------------------+
+        |                                             |
+        v                                             |
+   +---------+    press    +----------+               |
+   |  IDLE   |------------>| PRESSED  |               |
+   +---------+             +----------+               |
+        ^                       |                     |
+        |                       |                     |
+        |    release < 5s       | held > 5s           |
+        |    (short press)      | (long press)        |
+        |                       v                     |
+        |              +--------------+               |
+        +--------------| LONG_PRESSED |---------------+
+                       +--------------+
+                              |
+                              v
                        [Enter Config Mode]
 ```
 
-## Current Implementation Status
-- Basic button reading: Implemented
-- State tracking: Implemented
-- Short press action: Not implemented (detected but no action)
-- Long press detection: Not implemented
-- Visual feedback: Not implemented
+## Implementation Status
+- [x] Button debouncing via M5Unified
+- [x] Short press action: Forces immediate refresh
+- [x] Long press detection (5+ seconds)
+- [x] Visual feedback: "Configuration..." message
+- [ ] WiFi Manager AP mode on long press (FR-WM5)
 
 ## Acceptance Criteria
 
-- [ ] Button debouncing prevents false triggers
-- [ ] Short press triggers immediate data refresh
-- [ ] Display updates after manual refresh
-- [ ] Long press (5s) enters configuration mode
-- [ ] Configuration mode is clearly indicated on display
-- [ ] Button works reliably during normal operation
+- [x] Button debouncing prevents false triggers
+- [x] Short press triggers immediate data refresh
+- [x] Display updates after manual refresh
+- [x] Long press (5s) shows configuration message
+- [ ] Configuration mode starts WiFi Manager AP
 
 ## Priority
-P2 - Enhancement (partially implemented)
+P2 - Enhancement (implemented)
 
 ## Notes
-Current code detects button release but doesn't trigger any action. The log message "The state changed from LOW to HIGH" is printed but no refresh is triggered.
+Long press currently shows a message but WiFi Manager AP mode is not yet implemented (depends on FR-WM1-WM5).

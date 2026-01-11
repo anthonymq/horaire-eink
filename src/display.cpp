@@ -13,7 +13,8 @@ static const int SCREEN_HEIGHT = 540;
 static const int WEATHER_COL_WIDTH = 200;
 static const int MAIN_WIDTH = SCREEN_WIDTH - WEATHER_COL_WIDTH;  // 760px
 
-static const int BANNER_HEIGHT = 36;   // Fits 12pt font nicely
+static const int TOP_MARGIN = 8;        // Margin to prevent header cutoff by bezel
+static const int BANNER_HEIGHT = 36;    // Fits 12pt font nicely
 static const int STATUS_BAR_HEIGHT = 32; // Status bar for time/battery
 static const int PADDING = 12;
 static const int RER_ROWS = 5;
@@ -88,6 +89,20 @@ static int getCenteredTextY(int boxY, int boxH, int fontH) {
     // For GFX fonts, ascent (height above baseline) is ~70% of total height
     int ascent = (fontH * 70) / 100;
     return boxY + (boxH + ascent) / 2;
+}
+
+// ============================================================
+// HELPER: Draw degree symbol manually (FreeSans fonts lack char 176)
+// Draws a small circle at the current cursor position
+// ============================================================
+static void drawDegreeSymbol(int x, int y, int fontSize) {
+    // Scale circle size based on font - larger fonts get larger circles
+    int radius = (fontSize >= 12) ? 3 : 2;
+    // Position circle at top-right of the baseline (superscript position)
+    // For GFX fonts, y is baseline, so move up by ~70% of font height
+    int cx = x + radius + 1;
+    int cy = y - (fontSize * 7 / 10) + radius;
+    M5.Display.drawCircle(cx, cy, radius, TFT_BLACK);
 }
 
 // ============================================================
@@ -261,9 +276,9 @@ static void drawStatusBar(int x, int y, int w, int h, const char* timeStr, int b
 // ============================================================
 static void drawWeatherColumn(weatherType weather, bool forceRedraw, const char* timeStr, int batteryLevel, bool isCharging, int dataAgeSecs, int wifiRssi) {
     int x = MAIN_WIDTH;
-    int y = 0;
+    int y = TOP_MARGIN;  // Start below top margin to match RER board
     int w = WEATHER_COL_WIDTH;
-    int h = SCREEN_HEIGHT;
+    int h = SCREEN_HEIGHT - TOP_MARGIN;
     
     // Check if weather changed
     bool changed = forceRedraw || 
@@ -319,20 +334,44 @@ static void drawWeatherColumn(weatherType weather, bool forceRedraw, const char*
     M5.Display.setTextColor(TFT_BLACK);
     
     char tempStr[16];
-    snprintf(tempStr, sizeof(tempStr), "%.1f%cC", weather.temperature, (char)176);  // 176 = degree symbol
-    int tempW = M5.Display.textWidth(tempStr);
+    snprintf(tempStr, sizeof(tempStr), "%.1fC", weather.temperature);  // No degree char - draw manually
+    // Calculate width including space for degree symbol (circle ~8px wide)
+    int tempTextW = M5.Display.textWidth(tempStr);
+    int degreeW = 8;  // Space for degree circle
+    int tempTotalW = tempTextW + degreeW;
     int tempY = textStartY;
-    M5.Display.setCursor(x + (w - tempW) / 2, tempY);
-    M5.Display.print(tempStr);
+    int tempX = x + (w - tempTotalW) / 2;
+    M5.Display.setCursor(tempX, tempY);
+    // Print number only
+    char numStr[16];
+    snprintf(numStr, sizeof(numStr), "%.1f", weather.temperature);
+    M5.Display.print(numStr);
+    // Draw degree symbol after the number
+    int afterNumX = tempX + M5.Display.textWidth(numStr);
+    drawDegreeSymbol(afterNumX, tempY, 12);
+    // Print "C" after the degree symbol
+    M5.Display.setCursor(afterNumX + degreeW, tempY);
+    M5.Display.print("C");
     
     // Feels like
     M5.Display.setFont(&FreeSans9pt7b);
-    char feelsStr[24];
-    snprintf(feelsStr, sizeof(feelsStr), "Ressenti %.1f%cC", weather.feels_like, (char)176);  // degree symbol
-    int feelsW = M5.Display.textWidth(feelsStr);
+    char feelsNumStr[16];
+    snprintf(feelsNumStr, sizeof(feelsNumStr), "Ressenti %.1f", weather.feels_like);
     int feelsY = textStartY + lineSpacing;
-    M5.Display.setCursor(x + (w - feelsW) / 2, feelsY);
-    M5.Display.print(feelsStr);
+    // Calculate total width: "Ressenti X.X" + degree + "C"
+    int feelsTextW = M5.Display.textWidth(feelsNumStr);
+    int feelsDegreeW = 6;  // Smaller for 9pt font
+    int feelsCW = M5.Display.textWidth("C");
+    int feelsTotalW = feelsTextW + feelsDegreeW + feelsCW;
+    int feelsX = x + (w - feelsTotalW) / 2;
+    M5.Display.setCursor(feelsX, feelsY);
+    M5.Display.print(feelsNumStr);
+    // Draw degree symbol
+    int afterFeelsX = feelsX + feelsTextW;
+    drawDegreeSymbol(afterFeelsX, feelsY, 9);
+    // Print "C"
+    M5.Display.setCursor(afterFeelsX + feelsDegreeW, feelsY);
+    M5.Display.print("C");
     
     // Humidity
     char humStr[16];
@@ -406,9 +445,9 @@ static void drawDepartureRow(int x, int y, int w, int h,
 // ============================================================
 static void drawRerBoard(std::vector<departureType>& departures, bool forceRedraw) {
     int x = 0;
-    int y = 0;
+    int y = TOP_MARGIN;  // Start below top margin to avoid bezel cutoff
     int w = MAIN_WIDTH;
-    int h = SCREEN_HEIGHT / 2;
+    int h = (SCREEN_HEIGHT / 2) - TOP_MARGIN;
     
     int boardY = y + BANNER_HEIGHT;
     int boardH = h - BANNER_HEIGHT;
@@ -587,7 +626,7 @@ void drawScreen(std::vector<std::vector<departureType>> allDepartures,
     drawWeatherColumn(weather, needsFullRefresh, timeStr, batteryLevel, isCharging, dataAgeSecs, wifiRssi);
     
     // Draw separators
-    M5.Display.drawFastVLine(MAIN_WIDTH, 0, SCREEN_HEIGHT, TFT_BLACK);
+    M5.Display.drawFastVLine(MAIN_WIDTH, TOP_MARGIN, SCREEN_HEIGHT - TOP_MARGIN, TFT_BLACK);
     M5.Display.drawFastHLine(0, SCREEN_HEIGHT / 2, MAIN_WIDTH, TFT_BLACK);
     
     M5.Display.endWrite();

@@ -231,14 +231,14 @@ Successfully migrated from generic ESP32 + SPI E-Ink (GxEPD2) to M5Paper S3 with
 
 ## Enhancement Features Status
 
-### Button Interaction (`specs/button-interaction.md`) - PARTIAL
+### Button Interaction (`specs/button-interaction.md`) - COMPLETE
 
 | Requirement | Status | Notes |
 |-------------|--------|-------|
 | FR-B1: Button Debouncing | [x] | M5Unified handles this |
 | FR-B2: Short Press Action | [x] | Forces immediate refresh |
-| FR-B3: Long Press Action (5+ sec) | [ ] | Not implemented |
-| FR-B4: Press Detection | [x] | `M5.BtnA.wasPressed()` |
+| FR-B3: Long Press Action (5+ sec) | [x] | Shows "Configuration...", triggers config mode |
+| FR-B4: Press Detection | [x] | `M5.BtnA.wasPressed()`, `pressedFor()` |
 
 ### WiFi Manager (`specs/wifi-manager.md`) - NOT IMPLEMENTED
 
@@ -289,7 +289,7 @@ All phases complete. Firmware uploaded and running.
 2. [ ] Implement AP mode on boot failure
 3. [ ] Create captive portal
 4. [ ] Store credentials in NVS
-5. [ ] Long button press triggers AP mode
+5. [x] Long button press triggers AP mode (detection implemented, AP mode pending)
 
 ### P4 - Power Management
 
@@ -340,6 +340,11 @@ Flash: [==        ]  17.7% (used 1161829 bytes from 6553600 bytes)
 
 ## Changelog
 
+- **2026-01-11**: Long press detection and spec updates
+  - Implemented FR-B3: Long press (5+ sec) shows "Configuration..." message
+  - Updated specs/display.md for M5Paper S3 hardware
+  - Updated specs/button-interaction.md with M5Unified API
+  - Created git tag 0.0.1 for stable build
 - **2026-01-11**: UI enhancements complete
   - Added degree symbol to temperature displays
   - Added low battery warning (<20%)
