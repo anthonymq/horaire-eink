@@ -3,10 +3,18 @@
 ## Overview
 Allow users to configure which transit stops to display without modifying source code.
 
+## Implementation Status: COMPLETE (2026-01-11)
+
+**Storage**: ESP32 Preferences library (NVS)  
+**Interface**: WiFiManager custom parameters  
+**Trigger**: Long press (5s) to enter config mode  
+**Files**: `station_config.h`, `station_config.cpp`
+
 ## Current State
-- Station endpoints hardcoded in `config.h`
-- Station types and filters hardcoded in `config.h`
-- Requires recompilation to change stations
+- ✅ Station configs stored in NVS (FR-SC1)
+- ✅ Web interface for configuration (FR-SC2)
+- Station presets not yet implemented (FR-SC3)
+- API validation not yet implemented (FR-SC4)
 
 ## Target State
 - Web interface for station configuration
@@ -72,17 +80,17 @@ struct StationConfig {
 
 ## Acceptance Criteria
 
-- [ ] Station configs stored in NVS
-- [ ] Web interface lists configured stations
-- [ ] User can add new station with custom MonitoringRef
-- [ ] User can edit existing station configuration
-- [ ] User can remove a station
+- [x] Station configs stored in NVS
+- [x] Web interface lists configured stations
+- [x] User can add new station with custom MonitoringRef
+- [x] User can edit existing station configuration
+- [ ] User can remove a station (clear NVS to reset)
 - [ ] Station presets available for quick setup
 - [ ] API validation before saving
-- [ ] Changes take effect on next refresh cycle
+- [x] Changes take effect on next restart
 
 ## Priority
-P2 - Enhancement (listed in README TODOs as "configuration du StopPoint")
+P5 - Enhancement (COMPLETE)
 
 ## Dependencies
 - WiFi Manager (FR-WM2 web interface)

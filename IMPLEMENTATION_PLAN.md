@@ -178,7 +178,7 @@ Successfully migrated from generic ESP32 + SPI E-Ink (GxEPD2) to M5Paper S3 with
 | File | Status | Changes |
 |------|--------|---------|
 | `platformio.ini` | [x] Complete | ESP32-S3 board, M5Unified + WiFiManager deps |
-| `src/main.cpp` | [x] Complete | M5.begin(), NTP sync, battery/time/WiFi RSSI, WiFi Manager, Light Sleep |
+| `src/main.cpp` | [x] Complete | M5.begin(), NTP sync, battery/time/WiFi RSSI, WiFi Manager, Light Sleep, Station Config |
 | `include/display.h` | [x] Complete | Updated function signatures |
 | `src/display.cpp` | [x] Complete | Full M5GFX API, status bar, UI enhancements |
 | `include/types.h` | No Change | Data structures unchanged |
@@ -187,6 +187,8 @@ Successfully migrated from generic ESP32 + SPI E-Ink (GxEPD2) to M5Paper S3 with
 | `include/weathericons.h` | No Change | PROGMEM icons compatible |
 | `include/config.h` | No Change | Credentials unchanged |
 | `include/config.h.example` | [x] Updated | Fixed STL container crash issue |
+| `include/station_config.h` | [x] **NEW** | NVS-based station configuration header |
+| `src/station_config.cpp` | [x] **NEW** | NVS storage implementation for stations |
 
 ---
 
@@ -259,14 +261,22 @@ Successfully migrated from generic ESP32 + SPI E-Ink (GxEPD2) to M5Paper S3 with
 | FR-WM4: Connection Logic (fallback) | [x] | Uses `WiFiMulti` with multiple APs |
 | FR-WM5: Runtime Config Access | [x] | Long press (5s) triggers AP mode |
 
-### StopPoint Configuration (`specs/stoppoint-config.md`) - NOT IMPLEMENTED
+### StopPoint Configuration (`specs/stoppoint-config.md`) - IMPLEMENTED (2026-01-11)
 
 | Requirement | Status | Notes |
 |-------------|--------|-------|
-| FR-SC1: Station Configuration Storage | [ ] | Hardcoded in `config.h` |
-| FR-SC2: Web Configuration Interface | [ ] | Depends on WiFi Manager |
-| FR-SC3: Station Presets | [ ] | Not implemented |
-| FR-SC4: Validation | [ ] | Not implemented |
+| FR-SC1: Station Configuration Storage | [x] | NVS-based storage via Preferences library |
+| FR-SC2: Web Configuration Interface | [x] | WiFiManager custom parameters for 3 stations |
+| FR-SC3: Station Presets | [ ] | Future enhancement (not implemented) |
+| FR-SC4: Validation | [ ] | Future enhancement (not implemented) |
+
+**Implementation Details:**
+- Created `station_config.h` and `station_config.cpp` modules
+- Stations stored in NVS namespace "stations" with keys like `s0_name`, `s0_ref`, etc.
+- Falls back to `config.h` `STATIONS[]` if no NVS config exists
+- WiFi Manager portal shows 3 station configuration sections
+- Long press (5s) triggers config portal with station fields
+- Changes take effect on device restart
 
 ---
 
@@ -308,11 +318,11 @@ All phases complete. Firmware uploaded and running.
 4. [ ] RTC-based wake scheduling (timerSleep - future)
 5. [ ] Configurable sleep duration via web interface
 
-### P5 - StopPoint Configuration
+### P5 - StopPoint Configuration - COMPLETE (2026-01-11)
 
-1. [ ] Web interface for station config
-2. [ ] NVS storage for stations
-3. [ ] Station presets/search
+1. [x] Web interface for station config (WiFiManager custom params)
+2. [x] NVS storage for stations (station_config module)
+3. [ ] Station presets/search (future enhancement)
 
 ---
 
@@ -322,8 +332,8 @@ All phases complete. Firmware uploaded and running.
 **Status**: SUCCESS
 
 ```
-RAM:   [==        ]  15.5% (used 50948 bytes from 327680 bytes)
-Flash: [==        ]  19.6% (used 1283669 bytes from 6553600 bytes)
+RAM:   [==        ]  15.7% (used 51564 bytes from 327680 bytes)
+Flash: [==        ]  19.8% (used 1295153 bytes from 6553600 bytes)
 ```
 
 **Device**: M5Paper S3
@@ -351,6 +361,14 @@ Flash: [==        ]  19.6% (used 1283669 bytes from 6553600 bytes)
 
 ## Changelog
 
+- **2026-01-11**: StopPoint Configuration (P5) implementation complete
+  - Created `station_config.h` and `station_config.cpp` modules
+  - NVS-based storage using ESP32 Preferences library
+  - WiFiManager custom parameters for up to 3 stations
+  - Each station configurable: name, MonitoringRef, type (RER/BUS), filter
+  - Falls back to `config.h` STATIONS[] if no NVS config exists
+  - Config portal accessible via long press (5s) - shows station fields
+  - Stations now loaded dynamically at runtime instead of hardcoded
 - **2026-01-11**: Power Management implementation complete
   - Added light sleep between refresh cycles (25 seconds)
   - Uses `M5.Power.lightSleep()` for battery conservation
