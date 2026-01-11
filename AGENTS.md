@@ -22,7 +22,7 @@ horaire-eink/
 │   ├── config.h            # SENSITIVE: API keys, WiFi, stations (not in git)
 │   ├── config.h.example    # Template for config.h
 │   ├── types.h             # departureType, weatherType structs
-│   ├── weathericons.h      # 50x50 2-bit PROGMEM icons
+│   ├── weathericons.h      # 100x100 and 50x50 2-bit PROGMEM icons
 │   └── WeatherStationFonts.h
 ├── specs/                  # Feature specifications (Ralph loop)
 ├── docs/                   # Reference documentation
@@ -97,10 +97,8 @@ main.cpp::loop()
 
 ## Known Issues
 
-1. **`displayDataFreshness()`** - Empty stub, needs implementation
-2. **Weather icons 50x50** - May want 80x80 for 960x540 screen
-3. **No NTP sync** - Relies on API response timestamps
-4. **Hardcoded UI** - Adding stations requires `display.cpp` changes
+1. **Hardcoded UI** - Adding stations requires `display.cpp` changes
+2. **StopPoint Configuration** - Not implemented; stations defined in `config.h`
 
 ## Configuration Setup
 

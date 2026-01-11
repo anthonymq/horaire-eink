@@ -108,9 +108,10 @@ For each station:
 
 ## Weather Icons
 - Icons stored in `weathericons.h` as 2-bit PROGMEM bitmaps
-- Icon size: 50x50 pixels
+- Icon size: 100x100 pixels (preferred), falls back to 50x50 mini icons
 - Rendered via `draw2BitIcon()` with 4-level grayscale mapping
-- Function: `getMiniMeteoconIconFromProgmem(iconName)`
+- Function: `getMeteoconIconFromProgmem(iconName)` for 100x100
+- Function: `getMiniMeteoconIconFromProgmem(iconName)` for 50x50 fallback
 
 ## Colors
 M5GFX uses TFT color constants:

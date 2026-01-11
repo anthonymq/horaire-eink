@@ -304,15 +304,15 @@ static void drawWeatherColumn(weatherType weather, bool forceRedraw, const char*
     int contentY = y + STATUS_BAR_HEIGHT;
     int contentH = h - STATUS_BAR_HEIGHT;
     
-    // Weather icon (centered, larger 100x100 icon with grayscale)
-    // Use smaller icon (50x50) to fit better in 200px column
-    const char* iconData = getMiniMeteoconIconFromProgmem(weather.icon);
-    int iconSize = 50;
+    // Weather icon (centered, 100x100 icon with 4-level grayscale)
+    // Use 100x100 icons for better visibility on 960x540 screen
+    const char* iconData = getMeteoconIconFromProgmem(weather.icon);
+    int iconSize = 100;
     
-    // If mini icon not found, try large icon
+    // Fall back to mini (50x50) if 100x100 not found
     if (iconData == nullptr) {
-        iconData = getMeteoconIconFromProgmem(weather.icon);
-        iconSize = 100;
+        iconData = getMiniMeteoconIconFromProgmem(weather.icon);
+        iconSize = 50;
     }
     
     int iconY = contentY + 15;

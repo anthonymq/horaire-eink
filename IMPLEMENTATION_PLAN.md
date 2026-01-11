@@ -280,7 +280,7 @@ All phases complete. Firmware uploaded and running.
 ### P2 - Future UI Enhancements
 
 1. [ ] Touch support (GT911)
-2. [ ] Larger weather icons (100x100)
+2. [x] Larger weather icons (100x100)
 3. [ ] Configurable refresh intervals
 4. [ ] Multiple screen layouts
 
@@ -341,6 +341,10 @@ Flash: [==        ]  19.4% (used 1274557 bytes from 6553600 bytes)
 
 ## Changelog
 
+- **2026-01-11**: Larger weather icons (100x100)
+  - Changed icon priority to prefer 100x100 over 50x50 mini icons
+  - Better visibility on 960x540 screen
+  - Falls back to mini icons if large not found
 - **2026-01-11**: WiFi Manager implementation complete
   - Added tzapu/WiFiManager library for captive portal
   - Long press (5s) starts AP mode "ProchainDepart-Setup"
