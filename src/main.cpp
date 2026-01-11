@@ -4,6 +4,7 @@
  *  Created on: 21.11.2024
  *  Migrated to M5Paper S3: 2026-01-11
  *  WiFi Manager added: 2026-01-11
+ *  Power Management added: 2026-01-11
  *
  */
 #include <Arduino.h>
@@ -16,6 +17,7 @@
 #include <ArduinoJson.h>
 
 #include <ctime>
+#include <esp_sleep.h>  // For light/deep sleep functions
 
 #include <misc.h>
 #include <string>
@@ -43,9 +45,58 @@ long lastCallEpoch = 0;
 long lastScreenRefreshEpoch = 0;
 bool ntpSynced = false;
 bool configPortalActive = false;  // Track if config portal is running
-#define DELAY_BETWEEN_CALLS 30; // in seconds
+#define DELAY_BETWEEN_CALLS 30  // in seconds
 #define CONFIG_PORTAL_TIMEOUT 120  // Portal timeout in seconds
 #define AP_NAME "ProchainDepart-Setup"  // AP name for configuration
+
+// Power Management Configuration (P4)
+// Light sleep is used between refresh cycles to conserve battery.
+// When charging via USB, sleep is disabled for better responsiveness.
+#define POWER_SAVE_ENABLED true       // Master toggle for power saving
+#define SLEEP_DURATION_US 25000000ULL // Sleep 25 seconds (25,000,000 microseconds)
+                                       // This leaves ~5s for WiFi reconnect + data fetch
+                                       // to hit the 30s refresh target
+
+/**
+ * Enter light sleep to conserve power between refresh cycles.
+ * Light sleep preserves RAM and program state, allowing quick resume.
+ * The ESP32-S3 wakes after the specified duration or on button press.
+ * 
+ * @param durationUs Sleep duration in microseconds
+ * @return true if woke from sleep, false if sleep was skipped
+ */
+bool enterLightSleep(uint64_t durationUs) {
+    // Skip sleep if:
+    // 1. Power saving is disabled
+    // 2. Device is charging (USB connected = more responsive operation)
+    // 3. Config portal is active
+    if (!POWER_SAVE_ENABLED || M5.Power.isCharging() || configPortalActive) {
+        USE_SERIAL.println("Sleep skipped (charging or config active)");
+        return false;
+    }
+    
+    USE_SERIAL.printf("Entering light sleep for %.1f seconds...\n", durationUs / 1000000.0);
+    USE_SERIAL.flush();  // Ensure serial output completes before sleep
+    
+    // Configure wake-up sources
+    // 1. Timer wake-up after specified duration
+    esp_sleep_enable_timer_wakeup(durationUs);
+    
+    // 2. Button wake-up (GPIO wake-up via M5Unified - uses EXT0/EXT1)
+    // M5Paper S3 button is handled internally by M5Unified
+    // Using M5.Power.lightSleep() which handles button wakeup automatically
+    
+    // Enter light sleep using M5Unified API (handles hardware properly)
+    M5.Power.lightSleep(durationUs, false);
+    
+    // After waking up
+    USE_SERIAL.println("Woke up from light sleep");
+    
+    // Update M5Unified state after wake
+    M5.update();
+    
+    return true;
+}
 
 /**
  * Start WiFi Manager configuration portal (FR-WM1, FR-WM2, FR-WM5)
@@ -289,10 +340,17 @@ void loop()
             {
                 lastScreenRefreshEpoch = rtc.getEpoch();
             }
+            
+            // Power Management: Enter light sleep to conserve battery
+            // Sleep for ~25 seconds, leaving time for WiFi reconnect + fetch
+            // Light sleep is skipped when charging for better responsiveness
+            enterLightSleep(SLEEP_DURATION_US);
         }
     }
     else
     {
         displayLoader("Connection au WIFI...");
+        // Brief delay when not connected to avoid busy loop
+        delay(500);
     }
 }
