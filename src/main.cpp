@@ -11,7 +11,6 @@
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
 
-#include <iostream>
 #include <ctime>
 
 #include <misc.h>
@@ -49,7 +48,7 @@ using namespace std;
 #define USE_SERIAL Serial
 
 ////// button
-#define BUTTON_PIN 12
+#define BUTTON_PIN 0  // Changed from GPIO 12 (boot strapping pin conflict)
 int lastButtonState = HIGH; // the previous state from the input pin
 int buttonState;            // the current reading from the input pin
 bool screenBacklightState = true;
@@ -91,8 +90,8 @@ void setup()
     USE_SERIAL.println(rtc.getEpoch());
 
     // Add all configured WiFi networks from config.h
-    for (const auto& wifi : WIFI_CREDENTIALS) {
-        wifiMulti.addAP(wifi.first.c_str(), wifi.second.c_str());
+    for (int i = 0; i < NUM_WIFI_CREDENTIALS; i++) {
+        wifiMulti.addAP(WIFI_CREDENTIALS[i].ssid, WIFI_CREDENTIALS[i].password);
     }
     lastSuccessfullCallEpoch = rtc.getEpoch();
 }
@@ -119,11 +118,10 @@ void loop()
         if ((rtc.getEpoch() - lastCallEpoch) > 29 || lastCallEpoch == 0)
         {
             std::vector<std::vector<departureType>> allDepartures;
-            for (const auto& station : STATION_ENDPOINTS) {
-                std::string stationName = station.first;
-                std::string endpoint = station.second;
-                std::string type = STATION_TYPES.at(stationName);
-                std::string filter = STATION_FILTERS.at(stationName);
+            for (int i = 0; i < NUM_STATIONS; i++) {
+                std::string endpoint = STATIONS[i].endpoint;
+                std::string type = STATIONS[i].type;
+                std::string filter = STATIONS[i].filter;
                 
                 std::vector<departureType> departures = fetchDepartures(endpoint, type, filter);
                 // Process departures...
