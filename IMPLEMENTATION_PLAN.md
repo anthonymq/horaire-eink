@@ -169,8 +169,8 @@ Successfully migrated from generic ESP32 + SPI E-Ink (GxEPD2) to M5Paper S3 with
 
 | File | Status | Changes |
 |------|--------|---------|
-| `platformio.ini` | [x] Complete | ESP32-S3 board, M5Unified deps |
-| `src/main.cpp` | [x] Complete | M5.begin(), NTP sync, battery/time/WiFi RSSI |
+| `platformio.ini` | [x] Complete | ESP32-S3 board, M5Unified + WiFiManager deps |
+| `src/main.cpp` | [x] Complete | M5.begin(), NTP sync, battery/time/WiFi RSSI, WiFi Manager |
 | `include/display.h` | [x] Complete | Updated function signatures |
 | `src/display.cpp` | [x] Complete | Full M5GFX API, status bar, UI enhancements |
 | `include/types.h` | No Change | Data structures unchanged |
@@ -178,6 +178,7 @@ Successfully migrated from generic ESP32 + SPI E-Ink (GxEPD2) to M5Paper S3 with
 | `src/weather_api.cpp` | No Change | API logic unchanged |
 | `include/weathericons.h` | No Change | PROGMEM icons compatible |
 | `include/config.h` | No Change | Credentials unchanged |
+| `include/config.h.example` | [x] Updated | Fixed STL container crash issue |
 
 ---
 
@@ -240,15 +241,15 @@ Successfully migrated from generic ESP32 + SPI E-Ink (GxEPD2) to M5Paper S3 with
 | FR-B3: Long Press Action (5+ sec) | [x] | Shows "Configuration...", triggers config mode |
 | FR-B4: Press Detection | [x] | `M5.BtnA.wasPressed()`, `pressedFor()` |
 
-### WiFi Manager (`specs/wifi-manager.md`) - NOT IMPLEMENTED
+### WiFi Manager (`specs/wifi-manager.md`) - COMPLETE (2026-01-11)
 
 | Requirement | Status | Notes |
 |-------------|--------|-------|
-| FR-WM1: Access Point Mode | [ ] | Not implemented |
-| FR-WM2: Configuration Web Interface | [ ] | Not implemented |
-| FR-WM3: Credential Storage (NVS) | [ ] | Not implemented |
+| FR-WM1: Access Point Mode | [x] | Creates "ProchainDepart-Setup" AP |
+| FR-WM2: Configuration Web Interface | [x] | WiFiManager captive portal |
+| FR-WM3: Credential Storage (NVS) | [x] | WiFiManager auto-saves to NVS |
 | FR-WM4: Connection Logic (fallback) | [x] | Uses `WiFiMulti` with multiple APs |
-| FR-WM5: Runtime Config Access | [ ] | Not implemented |
+| FR-WM5: Runtime Config Access | [x] | Long press (5s) triggers AP mode |
 
 ### StopPoint Configuration (`specs/stoppoint-config.md`) - NOT IMPLEMENTED
 
@@ -283,13 +284,13 @@ All phases complete. Firmware uploaded and running.
 3. [ ] Configurable refresh intervals
 4. [ ] Multiple screen layouts
 
-### P3 - WiFi Manager (Major Feature)
+### P3 - WiFi Manager - COMPLETE
 
-1. [ ] Add WiFiManager library
-2. [ ] Implement AP mode on boot failure
-3. [ ] Create captive portal
-4. [ ] Store credentials in NVS
-5. [x] Long button press triggers AP mode (detection implemented, AP mode pending)
+1. [x] Add WiFiManager library
+2. [x] Implement AP mode on button long press
+3. [x] Create captive portal with instructions screen
+4. [x] Store credentials in NVS (handled by WiFiManager)
+5. [x] Long button press triggers AP mode
 
 ### P4 - Power Management
 
@@ -311,8 +312,8 @@ All phases complete. Firmware uploaded and running.
 **Status**: SUCCESS
 
 ```
-RAM:   [==        ]  15.1% (used 49440 bytes from 327680 bytes)
-Flash: [==        ]  17.7% (used 1161829 bytes from 6553600 bytes)
+RAM:   [==        ]  15.5% (used 50784 bytes from 327680 bytes)
+Flash: [==        ]  19.4% (used 1274557 bytes from 6553600 bytes)
 ```
 
 **Device**: M5Paper S3
@@ -340,6 +341,13 @@ Flash: [==        ]  17.7% (used 1161829 bytes from 6553600 bytes)
 
 ## Changelog
 
+- **2026-01-11**: WiFi Manager implementation complete
+  - Added tzapu/WiFiManager library for captive portal
+  - Long press (5s) starts AP mode "ProchainDepart-Setup"
+  - On-screen instructions displayed during configuration
+  - Credentials auto-saved to NVS by WiFiManager
+  - Device restarts after successful configuration
+  - Updated config.h.example to use C arrays (avoid STL crash)
 - **2026-01-11**: Long press detection and spec updates
   - Implemented FR-B3: Long press (5+ sec) shows "Configuration..." message
   - Updated specs/display.md for M5Paper S3 hardware

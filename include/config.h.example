@@ -1,9 +1,6 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
-#include <map>
-#include <string>
-
 // API Configuration
 #define API_URL "https://prim.iledefrance-mobilites.fr/marketplace/stop-monitoring?MonitoringRef=STIF:StopArea:SP:46366:"
 #define API_TOKEN "YOUR_IDFM_API_TOKEN"
@@ -16,44 +13,68 @@
 #define WEATHER_CITY "Ivry-sur-Seine"
 #define WEATHER_UNITS "metric" // Use metric units (Celsius)
 
-// Map of station names to their API endpoints
-// Instead of a map, use a vector of pairs to maintain order
-const std::vector<std::pair<std::string, std::string>> STATION_ENDPOINTS = {
-    {"RER C", "https://prim.iledefrance-mobilites.fr/marketplace/stop-monitoring?MonitoringRef=STIF:StopArea:SP:46366:"},
-    {"323 Moliere", "https://prim.iledefrance-mobilites.fr/marketplace/stop-monitoring?MonitoringRef=STIF:StopPoint:Q:39570:"},
-    {"323 Jules Ferry", "https://prim.iledefrance-mobilites.fr/marketplace/stop-monitoring?MonitoringRef=STIF:StopPoint:Q:39571:"}
+// Station configuration using simple C arrays (avoid global std::map/vector crashes on ESP32)
+// IMPORTANT: Do NOT use STL containers (std::map, std::vector) for global config - causes boot crash
+struct StationConfig {
+    const char* name;
+    const char* endpoint;
+    const char* type;        // "RER", "BUS", "METRO", "TRAM"
+    const char* filter;      // Platform name for RER, operator for BUS
+    bool showNames;          // Show destination names (true for RER, false for BUS)
+    int maxEntries;          // Max departures to display (1-6)
+    const char* displayName; // Name shown in UI banner
 };
 
-// Map of station names to their filter settings
-const std::map<std::string, std::string> STATION_TYPES = {
-    {"RER C", "RER"},
-    {"323 Moliere", "BUS"},
-    {"323 Jules Ferry", "BUS"}
-};
-// Map of station names to their filter settings
-const std::map<std::string, std::string> STATION_FILTERS = {
-    {"RER C", "2B"},
-    {"323 Moliere", "MeC_Bus_PC:Operator::100:"},
-    {"323 Jules Ferry", "MeC_Bus_PC:Operator::100:"}
+// Station configurations - order matters for display layout:
+// - First station: RER section (full width, shows destination names)
+// - Second station: Bus left column
+// - Third station: Bus right column
+const StationConfig STATIONS[] = {
+    {
+        "RER C",
+        "https://prim.iledefrance-mobilites.fr/marketplace/stop-monitoring?MonitoringRef=STIF:StopArea:SP:46366:",
+        "RER",
+        "2B",      // Filter by platform 2B
+        true,      // Show destination names
+        6,
+        "RER C"
+    },
+    {
+        "323 Moliere",
+        "https://prim.iledefrance-mobilites.fr/marketplace/stop-monitoring?MonitoringRef=STIF:StopPoint:Q:39570:",
+        "BUS",
+        "MeC_Bus_PC:Operator::100:",  // Filter by operator
+        false,     // Don't show destination names for bus
+        6,
+        "323 Moliere"
+    },
+    {
+        "323 Jules Ferry",
+        "https://prim.iledefrance-mobilites.fr/marketplace/stop-monitoring?MonitoringRef=STIF:StopPoint:Q:39571:",
+        "BUS",
+        "MeC_Bus_PC:Operator::100:",
+        false,
+        6,
+        "323 Jules F"
+    }
 };
 
-// Map of station names to their display settings
-struct DisplaySettings {
-    bool showNames;
-    int maxEntries;
-    std::string displayName;
+const int NUM_STATIONS = sizeof(STATIONS) / sizeof(STATIONS[0]);
+
+// WiFi credentials - supports multiple networks via WiFiMulti
+// Device will try each network in order until one connects
+struct WifiCredential {
+    const char* ssid;
+    const char* password;
 };
 
-const std::map<std::string, DisplaySettings> STATION_DISPLAY_SETTINGS = {
-    {"RER C", {true, 6, "RER C"}},
-    {"323 Moliere", {false, 6, "323 Moliere"}},
-    {"323 Jules Ferry", {false, 6, "323 Jules F"}}
-};
-
-// WiFi credentials
-const std::map<std::string, std::string> WIFI_CREDENTIALS = {
+const WifiCredential WIFI_CREDENTIALS[] = {
     {"YOUR_WIFI_SSID", "YOUR_WIFI_PASSWORD"}
-    // Add more WiFi networks as needed
+    // Add more networks as needed:
+    // {"Second_Network", "password2"},
+    // {"Mobile_Hotspot", "password3"}
 };
+
+const int NUM_WIFI_CREDENTIALS = sizeof(WIFI_CREDENTIALS) / sizeof(WIFI_CREDENTIALS[0]);
 
 #endif // CONFIG_H

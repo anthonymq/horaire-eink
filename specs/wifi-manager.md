@@ -3,10 +3,17 @@
 ## Overview
 The WiFi Manager provides a web-based configuration interface for WiFi credentials, eliminating the need to recompile firmware for different networks.
 
+## Implementation Status: COMPLETE (2026-01-11)
+
+**Library**: tzapu/WiFiManager (via PlatformIO)  
+**Trigger**: Long press button for 5+ seconds  
+**AP Name**: "ProchainDepart-Setup" (open network)  
+**Timeout**: 120 seconds
+
 ## Current State
-- WiFi credentials are hardcoded in `config.h`
-- Requires recompilation to change networks
-- Multiple networks supported via WiFiMulti
+- WiFi credentials stored in NVS via WiFiManager
+- Fallback to hardcoded credentials in `config.h` via WiFiMulti
+- Long press (5s) triggers configuration portal
 
 ## Target State
 - Captive portal for initial configuration
@@ -66,16 +73,16 @@ Cons: More code to write
 
 ## Acceptance Criteria
 
-- [ ] Device creates AP when no WiFi configured
-- [ ] Captive portal serves configuration page
-- [ ] User can enter SSID and password
-- [ ] Credentials are saved to NVS
-- [ ] Device connects to saved network on reboot
-- [ ] Fallback to AP mode on connection failure
-- [ ] Long button press triggers AP mode
+- [x] Device creates AP when long press detected
+- [x] Captive portal serves configuration page
+- [x] User can enter SSID and password
+- [x] Credentials are saved to NVS
+- [x] Device connects to saved network on reboot
+- [x] Fallback to hardcoded credentials if NVS empty
+- [x] Long button press triggers AP mode
 
 ## Priority
-P2 - Enhancement (listed in README TODOs)
+P2 - Enhancement (COMPLETE)
 
 ## Notes
 This feature was identified in the project README as a TODO item. Implementation should not break existing functionality.

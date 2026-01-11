@@ -76,7 +76,7 @@ if (M5.BtnA.wasReleased()) {
 - [x] Short press action: Forces immediate refresh
 - [x] Long press detection (5+ seconds)
 - [x] Visual feedback: "Configuration..." message
-- [ ] WiFi Manager AP mode on long press (FR-WM5)
+- [x] WiFi Manager AP mode on long press (FR-WM5)
 
 ## Acceptance Criteria
 
@@ -84,10 +84,10 @@ if (M5.BtnA.wasReleased()) {
 - [x] Short press triggers immediate data refresh
 - [x] Display updates after manual refresh
 - [x] Long press (5s) shows configuration message
-- [ ] Configuration mode starts WiFi Manager AP
+- [x] Configuration mode starts WiFi Manager AP
 
 ## Priority
-P2 - Enhancement (implemented)
+P2 - Enhancement (COMPLETE)
 
 ## Notes
-Long press currently shows a message but WiFi Manager AP mode is not yet implemented (depends on FR-WM1-WM5).
+Long press triggers WiFi Manager AP mode. User can connect to "ProchainDepart-Setup" network and configure WiFi via captive portal.

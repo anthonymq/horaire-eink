@@ -3,12 +3,14 @@
  *
  *  Created on: 21.11.2024
  *  Migrated to M5Paper S3: 2026-01-11
+ *  WiFi Manager added: 2026-01-11
  *
  */
 #include <Arduino.h>
 #include <M5Unified.h>
 #include <WiFi.h>
 #include <WiFiMulti.h>
+#include <WiFiManager.h>  // tzapu/WiFiManager - captive portal for WiFi configuration
 
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
@@ -32,6 +34,7 @@ using namespace std;
 #define USE_SERIAL Serial
 
 WiFiMulti wifiMulti;
+WiFiManager wm;  // WiFi Manager for captive portal configuration
 
 // RTC for timekeeping (will be synced via NTP)
 ESP32Time rtc(0); // No offset - timezone handled by TZ env var
@@ -39,7 +42,98 @@ long lastSuccessfullCallEpoch;
 long lastCallEpoch = 0;
 long lastScreenRefreshEpoch = 0;
 bool ntpSynced = false;
+bool configPortalActive = false;  // Track if config portal is running
 #define DELAY_BETWEEN_CALLS 30; // in seconds
+#define CONFIG_PORTAL_TIMEOUT 120  // Portal timeout in seconds
+#define AP_NAME "ProchainDepart-Setup"  // AP name for configuration
+
+/**
+ * Start WiFi Manager configuration portal (FR-WM1, FR-WM2, FR-WM5)
+ * Creates an open AP that user connects to for WiFi configuration.
+ * Credentials are automatically saved to NVS/Preferences by WiFiManager.
+ */
+void startConfigPortal() {
+    USE_SERIAL.println("Starting WiFi configuration portal...");
+    
+    // Display instructions on screen
+    M5.Display.fillScreen(TFT_WHITE);
+    M5.Display.setTextColor(TFT_BLACK);
+    M5.Display.setFont(&FreeSansBold12pt7b);
+    
+    // Center title
+    const char* title = "WiFi Configuration";
+    int titleWidth = M5.Display.textWidth(title);
+    M5.Display.setCursor((960 - titleWidth) / 2, 100);
+    M5.Display.print(title);
+    
+    // Instructions
+    M5.Display.setFont(&FreeSans9pt7b);
+    int y = 180;
+    int lineHeight = 30;
+    
+    M5.Display.setCursor(100, y);
+    M5.Display.print("1. Connect to WiFi network:");
+    y += lineHeight;
+    
+    M5.Display.setFont(&FreeSansBold9pt7b);
+    M5.Display.setCursor(120, y);
+    M5.Display.print(AP_NAME);
+    y += lineHeight + 10;
+    
+    M5.Display.setFont(&FreeSans9pt7b);
+    M5.Display.setCursor(100, y);
+    M5.Display.print("2. Open browser to http://192.168.4.1");
+    y += lineHeight;
+    
+    M5.Display.setCursor(100, y);
+    M5.Display.print("3. Select your WiFi network and enter password");
+    y += lineHeight;
+    
+    M5.Display.setCursor(100, y);
+    M5.Display.print("4. Device will restart and connect automatically");
+    y += lineHeight + 20;
+    
+    // Timeout info
+    M5.Display.setTextColor(TFT_DARKGREY);
+    char timeoutMsg[64];
+    snprintf(timeoutMsg, sizeof(timeoutMsg), "Portal will close automatically after %d seconds", CONFIG_PORTAL_TIMEOUT);
+    M5.Display.setCursor(100, y);
+    M5.Display.print(timeoutMsg);
+    
+    M5.Display.display();
+    
+    // Configure WiFi Manager
+    wm.setConfigPortalTimeout(CONFIG_PORTAL_TIMEOUT);
+    wm.setBreakAfterConfig(true);  // Exit portal after config saved
+    
+    // Callback when configuration is saved
+    wm.setSaveConfigCallback([]() {
+        USE_SERIAL.println("WiFi configuration saved!");
+    });
+    
+    // Start the configuration portal
+    // This is a blocking call - will return when:
+    // 1. User saves valid credentials and connects
+    // 2. Timeout expires
+    // 3. User manually closes portal
+    bool connected = wm.startConfigPortal(AP_NAME);
+    
+    if (connected) {
+        USE_SERIAL.println("WiFi configured successfully, restarting...");
+        displayLoader("WiFi configure! Redemarrage...");
+        delay(2000);
+        ESP.restart();
+    } else {
+        USE_SERIAL.println("Config portal timeout or cancelled, resuming normal operation");
+        displayLoader("Configuration annulee...");
+        delay(1000);
+        // Force screen refresh after config portal closes
+        lastCallEpoch = 0;
+        lastScreenRefreshEpoch = 0;
+    }
+    
+    configPortalActive = false;
+}
 
 // Sync time via NTP
 void syncTimeWithNTP() {
@@ -119,15 +213,15 @@ void loop()
         if (!longPressHandled) {
             longPressHandled = true;
             USE_SERIAL.println("Long press detected - entering configuration mode");
-            displayLoader("Configuration...");
-            // TODO: Start WiFi Manager AP mode here (FR-WM5)
-            // For now, just display the message and wait for button release
+            configPortalActive = true;
+            startConfigPortal();  // Blocking call - handles all portal logic
+            longPressHandled = false;  // Reset after portal closes
         }
     } else if (M5.BtnA.wasReleased()) {
-        if (longPressHandled) {
-            // Button was released after long press - reset state
+        if (longPressHandled && !configPortalActive) {
+            // Button was released after long press (outside portal) - reset state
             longPressHandled = false;
-            USE_SERIAL.println("Exiting configuration mode");
+            USE_SERIAL.println("Button released");
             lastCallEpoch = 0;  // Force screen refresh
         }
     } else if (M5.BtnA.wasPressed()) {
