@@ -3,19 +3,19 @@
 #define USE_SERIAL Serial
 
 // M5Paper S3: 960x540 resolution (landscape)
-// Layout: Main content (660px) | Weather column (300px)
+// Layout: Main content (560px) | Weather column (400px)
 
 // ============================================================
 // LAYOUT CONSTANTS
 // ============================================================
 static const int SCREEN_WIDTH = 960;
 static const int SCREEN_HEIGHT = 540;
-static const int WEATHER_COL_WIDTH = 300;
-static const int MAIN_WIDTH = SCREEN_WIDTH - WEATHER_COL_WIDTH;  // 660px
+static const int WEATHER_COL_WIDTH = 400;
+static const int MAIN_WIDTH = SCREEN_WIDTH - WEATHER_COL_WIDTH;  // 560px
 
-static const int TOP_MARGIN = 8;        // Margin to prevent header cutoff by bezel
-static const int BANNER_HEIGHT = 42;    // Increased to prevent text clipping
-static const int STATUS_BAR_HEIGHT = 32; // Status bar for time/battery
+static const int TOP_MARGIN = 0;        // No margin - banner extends to screen edge
+static const int BANNER_HEIGHT = 42;    // Banner height for section titles
+static const int STATUS_BAR_HEIGHT = 42; // Status bar matches banner height
 static const int PADDING = 12;
 static const int RER_ROWS = 5;
 static const int BUS_ROWS = 3;
@@ -335,21 +335,21 @@ static void drawWeatherColumn(weatherType weather, bool forceRedraw, const char*
     
     // Calculate vertical spacing for text elements
     // Available space: from after icon to bottom (minus city name area)
-    int textStartY = iconY + iconSize + 20;
-    int textEndY = h - 40;  // Reserve space for city name
+    int textStartY = iconY + iconSize + 25;
+    int textEndY = h - 50;  // Reserve space for city name
     int textAreaH = textEndY - textStartY;
     int numTextLines = 5;  // temp, feels, humidity, description, wind
     int lineSpacing = textAreaH / numTextLines;
     
-    // Temperature (large)
-    M5.Display.setFont(&FreeSansBold12pt7b);
+    // Temperature (large - use 18pt for better visibility)
+    M5.Display.setFont(&FreeSansBold18pt7b);
     M5.Display.setTextColor(TFT_BLACK);
     
     char tempStr[16];
     snprintf(tempStr, sizeof(tempStr), "%.1fC", weather.temperature);  // No degree char - draw manually
-    // Calculate width including space for degree symbol (circle ~8px wide)
+    // Calculate width including space for degree symbol (circle ~10px wide for 18pt)
     int tempTextW = M5.Display.textWidth(tempStr);
-    int degreeW = 8;  // Space for degree circle
+    int degreeW = 10;  // Space for degree circle
     int tempTotalW = tempTextW + degreeW;
     int tempY = textStartY;
     int tempX = x + (w - tempTotalW) / 2;
@@ -360,19 +360,19 @@ static void drawWeatherColumn(weatherType weather, bool forceRedraw, const char*
     M5.Display.print(numStr);
     // Draw degree symbol after the number
     int afterNumX = tempX + M5.Display.textWidth(numStr);
-    drawDegreeSymbol(afterNumX, tempY, 12);
+    drawDegreeSymbol(afterNumX, tempY, 18);
     // Print "C" after the degree symbol
     M5.Display.setCursor(afterNumX + degreeW, tempY);
     M5.Display.print("C");
     
-    // Feels like
-    M5.Display.setFont(&FreeSans9pt7b);
+    // Feels like (use 12pt for better readability)
+    M5.Display.setFont(&FreeSansBold12pt7b);
     char feelsNumStr[16];
     snprintf(feelsNumStr, sizeof(feelsNumStr), "Ressenti %.1f", weather.feels_like);
     int feelsY = textStartY + lineSpacing;
     // Calculate total width: "Ressenti X.X" + degree + "C"
     int feelsTextW = M5.Display.textWidth(feelsNumStr);
-    int feelsDegreeW = 6;  // Smaller for 9pt font
+    int feelsDegreeW = 8;  // For 12pt font
     int feelsCW = M5.Display.textWidth("C");
     int feelsTotalW = feelsTextW + feelsDegreeW + feelsCW;
     int feelsX = x + (w - feelsTotalW) / 2;
@@ -380,20 +380,20 @@ static void drawWeatherColumn(weatherType weather, bool forceRedraw, const char*
     M5.Display.print(feelsNumStr);
     // Draw degree symbol
     int afterFeelsX = feelsX + feelsTextW;
-    drawDegreeSymbol(afterFeelsX, feelsY, 9);
+    drawDegreeSymbol(afterFeelsX, feelsY, 12);
     // Print "C"
     M5.Display.setCursor(afterFeelsX + feelsDegreeW, feelsY);
     M5.Display.print("C");
     
-    // Humidity
+    // Humidity (use 12pt)
     char humStr[16];
-    snprintf(humStr, sizeof(humStr), "%d%%", weather.humidity);
+    snprintf(humStr, sizeof(humStr), "Humidite %d%%", weather.humidity);
     int humW = M5.Display.textWidth(humStr);
     int humY = textStartY + lineSpacing * 2;
     M5.Display.setCursor(x + (w - humW) / 2, humY);
     M5.Display.print(humStr);
     
-    // Description
+    // Description (use 12pt)
     int descY = textStartY + lineSpacing * 3;
     if (weather.description.length() > 0) {
         int descW = M5.Display.textWidth(weather.description.c_str());
@@ -403,40 +403,47 @@ static void drawWeatherColumn(weatherType weather, bool forceRedraw, const char*
         M5.Display.print(weather.description);
     }
     
-    // Wind
-    char windStr[16];
-    snprintf(windStr, sizeof(windStr), "%.1f m/s", weather.wind_speed);
+    // Wind (use 12pt)
+    char windStr[24];
+    snprintf(windStr, sizeof(windStr), "Vent %.1f m/s", weather.wind_speed);
     int windW = M5.Display.textWidth(windStr);
     int windY = textStartY + lineSpacing * 4;
     M5.Display.setCursor(x + (w - windW) / 2, windY);
     M5.Display.print(windStr);
     
-    // City name at bottom
-    M5.Display.setFont(&FreeSansBold9pt7b);
+    // City name at bottom (use 12pt)
+    M5.Display.setFont(&FreeSansBold12pt7b);
     const char* city = "Ivry-sur-Seine";
     int cityW = M5.Display.textWidth(city);
-    int cityY = h - 15;
+    int cityY = h - 20;
     M5.Display.setCursor(x + (w - cityW) / 2, cityY);
     M5.Display.print(city);
 }
 
 // ============================================================
 // DRAW: Single departure row - uses textdatum for vertical centering
+// fontSize: 12 for RER (wide), 9 for Bus (narrow columns)
 // ============================================================
 static void drawDepartureRow(int x, int y, int w, int h, 
                               const char* schedule, const char* name, 
-                              const char* delay, bool showName) {
+                              const char* delay, bool showName, bool useSmallFont = false) {
     // Clear row interior (keep grid lines)
     M5.Display.fillRect(x + 1, y + 1, w - 2, h - 2, TFT_WHITE);
     
-    M5.Display.setFont(&FreeSansBold12pt7b);
+    // Use smaller font for narrow bus columns
+    if (useSmallFont) {
+        M5.Display.setFont(&FreeSansBold9pt7b);
+    } else {
+        M5.Display.setFont(&FreeSansBold12pt7b);
+    }
     M5.Display.setTextColor(TFT_BLACK);
     
     int centerY = y + h / 2;
+    int pad = useSmallFont ? 8 : PADDING;
     
     // Schedule (left aligned, vertically centered)
     M5.Display.setTextDatum(textdatum_t::middle_left);
-    M5.Display.drawString(schedule, x + PADDING, centerY);
+    M5.Display.drawString(schedule, x + pad, centerY);
     
     // Name (center) - only for RER
     if (showName && name != nullptr && strlen(name) > 0) {
@@ -446,7 +453,7 @@ static void drawDepartureRow(int x, int y, int w, int h,
     
     // Delay (right aligned, vertically centered)
     M5.Display.setTextDatum(textdatum_t::middle_right);
-    M5.Display.drawString(delay, x + w - PADDING, centerY);
+    M5.Display.drawString(delay, x + w - pad, centerY);
     
     // Reset datum
     M5.Display.setTextDatum(textdatum_t::top_left);
@@ -554,7 +561,7 @@ static void drawBusBoard(std::vector<departureType>& departures,
                 
                 drawDepartureRow(x, boardY + i * rowH, w, rowH,
                                  departures[i].schedule.c_str(),
-                                 nullptr, delayStr, false);
+                                 nullptr, delayStr, false, true);  // useSmallFont = true
                 
                 if (i > 0) {
                     M5.Display.drawFastHLine(x, boardY + i * rowH, w, TFT_BLACK);
@@ -562,13 +569,15 @@ static void drawBusBoard(std::vector<departureType>& departures,
             }
         }
     } else if (forceRedraw) {
-        M5.Display.setFont(&FreeSansBold12pt7b);
+        // Draw placeholder rows when no data
+        M5.Display.setFont(&FreeSansBold9pt7b);
         M5.Display.setTextColor(TFT_BLACK);
-        const char* msg = "Aucun bus";
-        int msgW = M5.Display.textWidth(msg);
-        int fontH = M5.Display.fontHeight();
-        M5.Display.setCursor(x + (w - msgW) / 2, getCenteredTextY(boardY, boardH, fontH));
-        M5.Display.print(msg);
+        M5.Display.setTextDatum(textdatum_t::middle_left);
+        for (int i = 0; i < BUS_ROWS; i++) {
+            int rowCenterY = boardY + i * rowH + rowH / 2;
+            M5.Display.drawString("--:--", x + 8, rowCenterY);
+        }
+        M5.Display.setTextDatum(textdatum_t::top_left);
     }
 }
 
@@ -649,7 +658,7 @@ void drawScreen(std::vector<std::vector<departureType>> allDepartures,
 }
 
 // ============================================================
-// LOADER: Display loading message
+// LOADER: Display loading message (centered on screen)
 // ============================================================
 void displayLoader(String message)
 {
@@ -659,16 +668,11 @@ void displayLoader(String message)
     M5.Display.setFont(&FreeSansBold12pt7b);
     M5.Display.setTextColor(TFT_BLACK);
     
-    int textW = M5.Display.textWidth(message.c_str());
-    int fontH = M5.Display.fontHeight();
+    // Use textdatum for true center positioning
+    M5.Display.setTextDatum(textdatum_t::middle_center);
+    M5.Display.drawString(message.c_str(), SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2);
+    M5.Display.setTextDatum(textdatum_t::top_left);  // Reset
     
-    int x = (SCREEN_WIDTH - textW) / 2;
-    int y = getCenteredTextY(0, SCREEN_HEIGHT, fontH);
-    
-    M5.Display.startWrite();
-    M5.Display.setCursor(x, y);
-    M5.Display.print(message);
-    M5.Display.endWrite();
     M5.Display.display();
 }
 

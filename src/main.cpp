@@ -113,53 +113,85 @@ void startConfigPortal() {
     // Display instructions on screen
     M5.Display.fillScreen(TFT_WHITE);
     M5.Display.setTextColor(TFT_BLACK);
+    
+    // Title with icon-like box
+    M5.Display.fillRect(0, 0, 960, 60, TFT_BLACK);
     M5.Display.setFont(&FreeSansBold12pt7b);
+    M5.Display.setTextColor(TFT_WHITE);
+    M5.Display.setTextDatum(textdatum_t::middle_center);
+    M5.Display.drawString("Mode Configuration WiFi", 480, 30);
+    M5.Display.setTextDatum(textdatum_t::top_left);
+    M5.Display.setTextColor(TFT_BLACK);
     
-    // Center title
-    const char* title = "Configuration Mode";
-    int titleWidth = M5.Display.textWidth(title);
-    M5.Display.setCursor((960 - titleWidth) / 2, 80);
-    M5.Display.print(title);
+    int y = 100;
+    int lineHeight = 32;
+    int leftMargin = 80;
     
-    // Instructions
-    M5.Display.setFont(&FreeSans9pt7b);
-    int y = 150;
-    int lineHeight = 28;
-    
-    M5.Display.setCursor(100, y);
-    M5.Display.print("1. Connect to WiFi network:");
+    // Step 1
+    M5.Display.setFont(&FreeSansBold12pt7b);
+    M5.Display.setCursor(leftMargin, y);
+    M5.Display.print("1. Sur votre telephone ou ordinateur:");
     y += lineHeight;
     
-    M5.Display.setFont(&FreeSansBold9pt7b);
-    M5.Display.setCursor(120, y);
+    M5.Display.setFont(&FreeSans9pt7b);
+    M5.Display.setCursor(leftMargin + 30, y);
+    M5.Display.print("Connectez-vous au reseau WiFi:");
+    y += lineHeight;
+    
+    // AP name in a box
+    M5.Display.setFont(&FreeSansBold12pt7b);
+    int apNameWidth = M5.Display.textWidth(AP_NAME);
+    int boxX = leftMargin + 30;
+    M5.Display.drawRect(boxX, y - 5, apNameWidth + 20, 35, TFT_BLACK);
+    M5.Display.setCursor(boxX + 10, y + 18);
     M5.Display.print(AP_NAME);
-    y += lineHeight + 8;
+    y += 50;
+    
+    // Step 2
+    M5.Display.setFont(&FreeSansBold12pt7b);
+    M5.Display.setCursor(leftMargin, y);
+    M5.Display.print("2. Ouvrez votre navigateur web:");
+    y += lineHeight;
     
     M5.Display.setFont(&FreeSans9pt7b);
-    M5.Display.setCursor(100, y);
-    M5.Display.print("2. Open browser to http://192.168.4.1");
+    M5.Display.setCursor(leftMargin + 30, y);
+    M5.Display.print("Allez a l'adresse:");
     y += lineHeight;
     
-    M5.Display.setCursor(100, y);
-    M5.Display.print("3. Configure WiFi network and station settings");
-    y += lineHeight;
+    // URL in a box
+    M5.Display.setFont(&FreeSansBold12pt7b);
+    const char* url = "http://192.168.4.1";
+    int urlWidth = M5.Display.textWidth(url);
+    M5.Display.drawRect(boxX, y - 5, urlWidth + 20, 35, TFT_BLACK);
+    M5.Display.setCursor(boxX + 10, y + 18);
+    M5.Display.print(url);
+    y += 50;
     
-    M5.Display.setCursor(100, y);
-    M5.Display.print("4. Device will restart after configuration");
-    y += lineHeight + 16;
+    // Step 3
+    M5.Display.setFont(&FreeSansBold12pt7b);
+    M5.Display.setCursor(leftMargin, y);
+    M5.Display.print("3. Configurez votre WiFi et vos arrets");
+    y += lineHeight + 10;
     
-    // Station config info
-    M5.Display.setTextColor(TFT_DARKGREY);
-    M5.Display.setCursor(100, y);
-    M5.Display.print("StopPoint IDs: prim.iledefrance-mobilites.fr/fr/jeux-de-donnees/arrets-lignes");
-    y += lineHeight;
+    // Step 4
+    M5.Display.setCursor(leftMargin, y);
+    M5.Display.print("4. L'appareil redemarrera automatiquement");
+    y += lineHeight + 20;
     
-    // Timeout info
-    char timeoutMsg[64];
-    snprintf(timeoutMsg, sizeof(timeoutMsg), "Portal closes after %d seconds of inactivity", CONFIG_PORTAL_TIMEOUT);
-    M5.Display.setCursor(100, y);
+    // Timeout info at bottom
+    M5.Display.setFont(&FreeSans9pt7b);
+    M5.Display.setTextColor(0x7BEF);  // Gray
+    char timeoutMsg[80];
+    snprintf(timeoutMsg, sizeof(timeoutMsg), "Le portail se fermera apres %d secondes d'inactivite", CONFIG_PORTAL_TIMEOUT);
+    M5.Display.setCursor(leftMargin, y);
     M5.Display.print(timeoutMsg);
+    y += lineHeight;
     
+    // StopPoint info
+    M5.Display.setCursor(leftMargin, y);
+    M5.Display.print("IDs des arrets: prim.iledefrance-mobilites.fr/fr/jeux-de-donnees/arrets-lignes");
+    
+    M5.Display.setTextColor(TFT_BLACK);  // Reset
     M5.Display.display();
     
     // Get current station configs for default values
