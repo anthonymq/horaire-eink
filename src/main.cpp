@@ -45,19 +45,23 @@ ESP32Time rtc(0); // No offset - timezone handled by TZ env var
 long lastSuccessfullCallEpoch;
 long lastCallEpoch = 0;
 long lastScreenRefreshEpoch = 0;
+long lastStatusBarEpoch = 0;      // Track last status bar update
+int lastStatusBarMinute = -1;     // Track minute for clock updates
 bool ntpSynced = false;
 bool configPortalActive = false;  // Track if config portal is running
 #define DELAY_BETWEEN_CALLS 30  // in seconds
+#define STATUS_BAR_INTERVAL 10  // Status bar refresh every 10 seconds
 #define CONFIG_PORTAL_TIMEOUT 120  // Portal timeout in seconds
 #define AP_NAME "ProchainDepart-Setup"  // AP name for configuration
 
 // Power Management Configuration (P4)
 // Light sleep is used between refresh cycles to conserve battery.
 // When charging via USB, sleep is disabled for better responsiveness.
-#define POWER_SAVE_ENABLED true       // Master toggle for power saving
-#define SLEEP_DURATION_US 25000000ULL // Sleep 25 seconds (25,000,000 microseconds)
-                                       // This leaves ~5s for WiFi reconnect + data fetch
-                                       // to hit the 30s refresh target
+// NOTE: Set to false to test battery operation - light sleep may cause issues on M5Paper S3
+#define POWER_SAVE_ENABLED false      // DISABLED: Testing battery operation without sleep
+#define SLEEP_DURATION_US 10000000ULL // Sleep 10 seconds (10,000,000 microseconds)
+                                       // Status bar updates every 10s for data freshness
+                                       // Clock updates every minute
 
 /**
  * Enter light sleep to conserve power between refresh cycles.
@@ -73,12 +77,8 @@ bool enterLightSleep(uint64_t durationUs) {
     // 2. Device is charging (USB connected = more responsive operation)
     // 3. Config portal is active
     if (!POWER_SAVE_ENABLED || M5.Power.isCharging() || configPortalActive) {
-        USE_SERIAL.println("Sleep skipped (charging or config active)");
         return false;
     }
-    
-    USE_SERIAL.printf("Entering light sleep for %.1f seconds...\n", durationUs / 1000000.0);
-    USE_SERIAL.flush();  // Ensure serial output completes before sleep
     
     // Configure wake-up sources
     // 1. Timer wake-up after specified duration
@@ -90,9 +90,6 @@ bool enterLightSleep(uint64_t durationUs) {
     
     // Enter light sleep using M5Unified API (handles hardware properly)
     M5.Power.lightSleep(durationUs, false);
-    
-    // After waking up
-    USE_SERIAL.println("Woke up from light sleep");
     
     // Update M5Unified state after wake
     M5.update();
@@ -385,7 +382,7 @@ void setup()
 {
     // Initialize M5Paper S3 with auto-detection
     auto cfg = M5.config();
-    cfg.serial_baudrate = 115200;
+    cfg.serial_baudrate = 0;  // Disable serial to prevent blocking on battery
     M5.begin(cfg);
 
     // M5Paper S3 display is automatically initialized by M5.begin()
@@ -393,7 +390,6 @@ void setup()
     M5.Display.setRotation(1);  // Landscape mode
 
     displayLoader("Horaire...");
-    USE_SERIAL.println("setup done");
     
     // Initialize station configuration from NVS or config.h fallback (FR-SC1)
     initStationConfig();
@@ -452,7 +448,20 @@ void loop()
             syncTimeWithNTP();
         }
         
-        if ((rtc.getEpoch() - lastCallEpoch) > 29 || lastCallEpoch == 0)
+        // Get current time info for both data fetch and status bar decisions
+        struct tm timeinfo;
+        getLocalTime(&timeinfo);
+        int currentMinute = timeinfo.tm_min;
+        long currentEpoch = rtc.getEpoch();
+        
+        // Check if we need a full data fetch (every 30s)
+        bool needsDataFetch = (currentEpoch - lastCallEpoch) > 29 || lastCallEpoch == 0;
+        
+        // Check if we need status bar update (every 10s for freshness, or minute changed for clock)
+        bool needsStatusBarUpdate = (currentEpoch - lastStatusBarEpoch) >= STATUS_BAR_INTERVAL || 
+                                     currentMinute != lastStatusBarMinute;
+        
+        if (needsDataFetch)
         {
             std::vector<std::vector<departureType>> allDepartures;
             
@@ -491,9 +500,7 @@ void loop()
             // Partial refresh handles individual row updates
             bool fullScreenRefresh = (rtc.getEpoch() - lastScreenRefreshEpoch) > 1800 || lastScreenRefreshEpoch == 0;
             
-            // Get current time using standard C library (respects timezone from configTzTime)
-            struct tm timeinfo;
-            getLocalTime(&timeinfo);
+            // Format time string
             char timeStr[6];
             strftime(timeStr, sizeof(timeStr), "%H:%M", &timeinfo);
             
@@ -512,16 +519,34 @@ void loop()
             lastSuccessfullCallEpoch = rtc.getEpoch();
             displayDataFreshness(true, lastSuccessfullCallEpoch, rtc.getEpoch());
             lastCallEpoch = rtc.getEpoch();
+            lastStatusBarEpoch = rtc.getEpoch();
+            lastStatusBarMinute = currentMinute;
             if (fullScreenRefresh)
             {
                 lastScreenRefreshEpoch = rtc.getEpoch();
             }
-            
-            // Power Management: Enter light sleep to conserve battery
-            // Sleep for ~25 seconds, leaving time for WiFi reconnect + fetch
-            // Light sleep is skipped when charging for better responsiveness
-            enterLightSleep(SLEEP_DURATION_US);
         }
+        else if (needsStatusBarUpdate)
+        {
+            // Only update status bar (time, battery, data freshness) - no API calls
+            char timeStr[6];
+            strftime(timeStr, sizeof(timeStr), "%H:%M", &timeinfo);
+            
+            int batteryLevel = M5.Power.getBatteryLevel();
+            bool isCharging = M5.Power.isCharging();
+            int dataAgeSecs = (int)(currentEpoch - lastSuccessfullCallEpoch);
+            if (dataAgeSecs < 0) dataAgeSecs = 0;
+            int wifiRssi = WiFi.RSSI();
+            
+            updateStatusBarOnly(timeStr, batteryLevel, isCharging, dataAgeSecs, wifiRssi);
+            lastStatusBarEpoch = currentEpoch;
+            lastStatusBarMinute = currentMinute;
+        }
+        
+        // Power Management: Enter light sleep to conserve battery
+        // Sleep for 10 seconds for responsive status bar updates
+        // Light sleep is skipped when charging for better responsiveness
+        enterLightSleep(SLEEP_DURATION_US);
     }
     else
     {

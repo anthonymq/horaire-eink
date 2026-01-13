@@ -15,5 +15,6 @@ void drawScreen(std::vector<std::vector<departureType>> allDepartures, weatherTy
 void displayWeather(int posx, int posy, int width, int height, weatherType weather);
 void displayLoader(String message);
 void displayDataFreshness(bool success, long lastSuccess, long currentEpoch);
+void updateStatusBarOnly(const char* timeStr, int batteryLevel, bool isCharging, int dataAgeSecs, int wifiRssi);
 
 #endif

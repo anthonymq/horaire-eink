@@ -97,8 +97,7 @@ main.cpp::loop()
 
 ## Known Issues
 
-1. **Hardcoded UI** - Adding stations requires `display.cpp` changes
-2. **StopPoint Configuration** - Not implemented; stations defined in `config.h`
+1. **Hardcoded UI** - Adding stations requires `display.cpp` changes (layout is fixed to 3 stations)
 
 ## Configuration Setup
 

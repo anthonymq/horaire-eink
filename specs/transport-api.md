@@ -61,11 +61,11 @@ struct departureType {
 
 ## Acceptance Criteria
 
-- [ ] Successfully connects to PRIM API with valid API key
-- [ ] Parses SIRI JSON response correctly
-- [ ] Filters RER departures by platform
-- [ ] Filters BUS departures by operator
-- [ ] Returns up to 6 departures per station
-- [ ] Calculates accurate delay in minutes
-- [ ] Handles API errors without crashing
-- [ ] Logs HTTP response codes for debugging
+- [x] Successfully connects to PRIM API with valid API key
+- [x] Parses SIRI JSON response correctly
+- [x] Filters RER departures by platform
+- [x] Filters BUS departures by operator
+- [x] Returns up to 6 departures per station
+- [x] Calculates accurate delay in minutes
+- [x] Handles API errors without crashing
+- [x] Logs HTTP response codes for debugging

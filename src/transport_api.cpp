@@ -81,13 +81,15 @@ std::vector<departureType> fetchDepartures(const std::string &url, const std::st
                     String formattedTime(toDateTime(parsedTime, format));
                     String shortFormattedTime(toDateTime(parsedTime, shortFormat));
 
-                    tm *tm_gmt = gmtime(&parsedTime);
                     time_t delayInSeconds = parsedTime - currentTimestamp;
 
                     departureType currentDeparture;
                     currentDeparture.name = name;
-                    char scheduleBuffer[5];
-                    sprintf(scheduleBuffer, "%.2d:%.2d", tm_gmt->tm_hour, tm_gmt->tm_min);
+                    
+                    // Convert UTC time to local time (respects timezone set by configTzTime)
+                    tm *tm_local = localtime(&parsedTime);
+                    char scheduleBuffer[6];
+                    sprintf(scheduleBuffer, "%.2d:%.2d", tm_local->tm_hour, tm_local->tm_min);
                     currentDeparture.schedule = scheduleBuffer;
                     currentDeparture.delay = delayInSeconds / 60;
 

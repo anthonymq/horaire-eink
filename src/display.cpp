@@ -3,18 +3,18 @@
 #define USE_SERIAL Serial
 
 // M5Paper S3: 960x540 resolution (landscape)
-// Layout: Main content (760px) | Weather column (200px)
+// Layout: Main content (660px) | Weather column (300px)
 
 // ============================================================
 // LAYOUT CONSTANTS
 // ============================================================
 static const int SCREEN_WIDTH = 960;
 static const int SCREEN_HEIGHT = 540;
-static const int WEATHER_COL_WIDTH = 200;
-static const int MAIN_WIDTH = SCREEN_WIDTH - WEATHER_COL_WIDTH;  // 760px
+static const int WEATHER_COL_WIDTH = 300;
+static const int MAIN_WIDTH = SCREEN_WIDTH - WEATHER_COL_WIDTH;  // 660px
 
 static const int TOP_MARGIN = 8;        // Margin to prevent header cutoff by bezel
-static const int BANNER_HEIGHT = 36;    // Fits 12pt font nicely
+static const int BANNER_HEIGHT = 42;    // Increased to prevent text clipping
 static const int STATUS_BAR_HEIGHT = 32; // Status bar for time/battery
 static const int PADDING = 12;
 static const int RER_ROWS = 5;
@@ -82,13 +82,13 @@ static void clearRegion(int x, int y, int w, int h) {
 // ============================================================
 // HELPER: Get text Y for vertical centering in a box
 // For GFX fonts: cursor Y = baseline position
-// Formula: boxY + (boxH + ascent) / 2
-// Ascent is approximately 70-75% of fontHeight for FreeSans fonts
+// Position baseline near bottom of box, leaving small margin
 // ============================================================
 static int getCenteredTextY(int boxY, int boxH, int fontH) {
-    // For GFX fonts, ascent (height above baseline) is ~70% of total height
-    int ascent = (fontH * 70) / 100;
-    return boxY + (boxH + ascent) / 2;
+    // Position baseline at box bottom minus small margin
+    // Text renders UPWARD from baseline, so this keeps text inside box
+    (void)fontH;  // Not used in simplified formula
+    return boxY + boxH - 8;  // 8px margin from bottom
 }
 
 // ============================================================
@@ -106,21 +106,19 @@ static void drawDegreeSymbol(int x, int y, int fontSize) {
 }
 
 // ============================================================
-// HELPER: Draw banner with black background - FIXED CENTERING
+// HELPER: Draw banner with black background - uses textdatum for centering
 // ============================================================
 static void drawBanner(int x, int y, int w, int h, const char* text) {
     M5.Display.fillRect(x, y, w, h, TFT_BLACK);
     M5.Display.setFont(&FreeSansBold12pt7b);
     M5.Display.setTextColor(TFT_WHITE);
     
-    int textW = M5.Display.textWidth(text);
-    int fontH = M5.Display.fontHeight();
+    // Use M5GFX text datum for automatic centering
+    M5.Display.setTextDatum(textdatum_t::middle_center);
+    M5.Display.drawString(text, x + w / 2, y + h / 2);
     
-    int tx = x + (w - textW) / 2;
-    int ty = getCenteredTextY(y, h, fontH);
-    
-    M5.Display.setCursor(tx, ty);
-    M5.Display.print(text);
+    // Reset to default datum
+    M5.Display.setTextDatum(textdatum_t::top_left);
 }
 
 // ============================================================
@@ -218,15 +216,13 @@ static void drawStatusBar(int x, int y, int w, int h, const char* timeStr, int b
     // Draw bottom border
     M5.Display.drawFastHLine(x, y + h - 1, w, TFT_BLACK);
     
+    int centerY = y + h / 2;
+    
     // Time display (left side) - use larger font
     M5.Display.setFont(&FreeSansBold12pt7b);
     M5.Display.setTextColor(TFT_BLACK);
-    
-    int fontH = M5.Display.fontHeight();
-    int timeY = getCenteredTextY(y, h, fontH);
-    
-    M5.Display.setCursor(x + PADDING, timeY);
-    M5.Display.print(timeStr);
+    M5.Display.setTextDatum(textdatum_t::middle_left);
+    M5.Display.drawString(timeStr, x + PADDING, centerY);
     
     // WiFi icon (after time)
     int timeW = M5.Display.textWidth(timeStr);
@@ -234,20 +230,33 @@ static void drawStatusBar(int x, int y, int w, int h, const char* timeStr, int b
     int wifiY = y + (h - 12) / 2;  // 12px icon height
     drawWifiIcon(wifiX, wifiY, wifiRssi);
     
-    // Battery icon (right side) - battery is 24x12 + 3px nipple
+    // Battery percentage text + icon (right side)
     const int batteryW = 24;
     const int batteryH = 12;
     const int nippleW = 3;
-    int battX = x + w - batteryW - nippleW - PADDING;
+    const int textIconGap = 4;
+    
+    // Format battery percentage text
+    char battText[8];
+    snprintf(battText, sizeof(battText), "%d%%", batteryLevel);
+    
+    M5.Display.setFont(&FreeSans9pt7b);
+    int battTextW = M5.Display.textWidth(battText);
+    
+    // Calculate positions from right edge
+    int battIconX = x + w - batteryW - nippleW - PADDING;
+    int battTextX = battIconX - textIconGap - battTextW;
     int battY = y + (h - batteryH) / 2;
     
-    drawBatteryIcon(battX, battY, batteryLevel, isCharging);
+    // Draw battery percentage text (right-aligned to its position)
+    M5.Display.setTextColor(TFT_BLACK);
+    M5.Display.setTextDatum(textdatum_t::middle_right);
+    M5.Display.drawString(battText, battIconX - textIconGap, centerY);
     
-    // Data freshness between WiFi and battery - smaller font
-    M5.Display.setFont(&FreeSans9pt7b);
-    int smallFontH = M5.Display.fontHeight();
-    int freshY = getCenteredTextY(y, h, smallFontH);
+    // Draw battery icon
+    drawBatteryIcon(battIconX, battY, batteryLevel, isCharging);
     
+    // Data freshness between WiFi and battery text
     char freshStr[16];
     if (dataAgeSecs < 60) {
         snprintf(freshStr, sizeof(freshStr), "%ds", dataAgeSecs);
@@ -258,17 +267,20 @@ static void drawStatusBar(int x, int y, int w, int h, const char* timeStr, int b
     // Show warning if data is stale (>2 min)
     if (dataAgeSecs > 120) {
         M5.Display.setTextColor(0x7BEF);  // Gray for stale
+    } else {
+        M5.Display.setTextColor(TFT_BLACK);
     }
     
-    int freshW = M5.Display.textWidth(freshStr);
     // Position between WiFi icon end and battery text start
     int wifiEnd = wifiX + 20;  // WiFi icon is ~20px wide
-    int battTextX = battX - 6 - M5.Display.textWidth("100%");  // Battery text position
-    int freshX = wifiEnd + (battTextX - wifiEnd - freshW) / 2;
+    int freshX = wifiEnd + (battTextX - wifiEnd) / 2;
     
-    M5.Display.setCursor(freshX, freshY);
-    M5.Display.print(freshStr);
-    M5.Display.setTextColor(TFT_BLACK);  // Reset
+    M5.Display.setTextDatum(textdatum_t::middle_center);
+    M5.Display.drawString(freshStr, freshX, centerY);
+    
+    // Reset
+    M5.Display.setTextColor(TFT_BLACK);
+    M5.Display.setTextDatum(textdatum_t::top_left);
 }
 
 // ============================================================
@@ -375,7 +387,7 @@ static void drawWeatherColumn(weatherType weather, bool forceRedraw, const char*
     
     // Humidity
     char humStr[16];
-    snprintf(humStr, sizeof(humStr), "%d%% hum", weather.humidity);
+    snprintf(humStr, sizeof(humStr), "%d%%", weather.humidity);
     int humW = M5.Display.textWidth(humStr);
     int humY = textStartY + lineSpacing * 2;
     M5.Display.setCursor(x + (w - humW) / 2, humY);
@@ -409,7 +421,7 @@ static void drawWeatherColumn(weatherType weather, bool forceRedraw, const char*
 }
 
 // ============================================================
-// DRAW: Single departure row - FIXED VERTICAL CENTERING
+// DRAW: Single departure row - uses textdatum for vertical centering
 // ============================================================
 static void drawDepartureRow(int x, int y, int w, int h, 
                               const char* schedule, const char* name, 
@@ -420,24 +432,24 @@ static void drawDepartureRow(int x, int y, int w, int h,
     M5.Display.setFont(&FreeSansBold12pt7b);
     M5.Display.setTextColor(TFT_BLACK);
     
-    int fontH = M5.Display.fontHeight();
-    int textY = getCenteredTextY(y, h, fontH);
+    int centerY = y + h / 2;
     
-    // Schedule (left aligned)
-    M5.Display.setCursor(x + PADDING, textY);
-    M5.Display.print(schedule);
+    // Schedule (left aligned, vertically centered)
+    M5.Display.setTextDatum(textdatum_t::middle_left);
+    M5.Display.drawString(schedule, x + PADDING, centerY);
     
     // Name (center) - only for RER
     if (showName && name != nullptr && strlen(name) > 0) {
-        int nameW = M5.Display.textWidth(name);
-        M5.Display.setCursor(x + (w - nameW) / 2, textY);
-        M5.Display.print(name);
+        M5.Display.setTextDatum(textdatum_t::middle_center);
+        M5.Display.drawString(name, x + w / 2, centerY);
     }
     
-    // Delay (right aligned)
-    int delayW = M5.Display.textWidth(delay);
-    M5.Display.setCursor(x + w - delayW - PADDING, textY);
-    M5.Display.print(delay);
+    // Delay (right aligned, vertically centered)
+    M5.Display.setTextDatum(textdatum_t::middle_right);
+    M5.Display.drawString(delay, x + w - PADDING, centerY);
+    
+    // Reset datum
+    M5.Display.setTextDatum(textdatum_t::top_left);
 }
 
 // ============================================================
@@ -668,6 +680,23 @@ void displayDataFreshness(bool success, long lastSuccess, long currentEpoch)
     USE_SERIAL.print("Data age: ");
     USE_SERIAL.print(currentEpoch - lastSuccess);
     USE_SERIAL.println("s");
+}
+
+// ============================================================
+// STATUS BAR ONLY: Update just the status bar (time, battery, freshness)
+// Used for frequent updates without redrawing departure data
+// ============================================================
+void updateStatusBarOnly(const char* timeStr, int batteryLevel, bool isCharging, int dataAgeSecs, int wifiRssi) {
+    int x = MAIN_WIDTH;
+    int y = TOP_MARGIN;
+    int w = WEATHER_COL_WIDTH;
+    
+    M5.Display.startWrite();
+    drawStatusBar(x, y, w, STATUS_BAR_HEIGHT, timeStr, batteryLevel, isCharging, dataAgeSecs, wifiRssi);
+    M5.Display.endWrite();
+    M5.Display.display();
+    
+    USE_SERIAL.printf("Status bar updated: %s, %d%%, %ds\n", timeStr, batteryLevel, dataAgeSecs);
 }
 
 // ============================================================

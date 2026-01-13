@@ -73,11 +73,11 @@ struct weatherType {
 
 ## Acceptance Criteria
 
-- [ ] Successfully connects to OpenWeatherMap API with valid key
-- [ ] Parses JSON response correctly
-- [ ] Extracts all required weather fields
-- [ ] Maps OWM icon codes to local icon names
-- [ ] Returns valid weather struct with data
-- [ ] Handles API errors without crashing
-- [ ] Respects 30-minute refresh interval
-- [ ] Logs weather data for debugging
+- [x] Successfully connects to OpenWeatherMap API with valid key
+- [x] Parses JSON response correctly
+- [x] Extracts all required weather fields
+- [x] Maps OWM icon codes to local icon names
+- [x] Returns valid weather struct with data
+- [x] Handles API errors without crashing
+- [x] Respects 30-minute refresh interval
+- [x] Logs weather data for debugging
