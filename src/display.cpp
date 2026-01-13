@@ -588,6 +588,9 @@ void drawScreen(std::vector<std::vector<departureType>> allDepartures,
                 weatherType weather, bool fullRefresh,
                 const char* timeStr, int batteryLevel, bool isCharging, int dataAgeSecs, int wifiRssi)
 {
+    // Wake display from sleep before drawing
+    M5.Display.wakeup();
+    
     M5.Display.setRotation(1);  // Landscape
     
     unsigned long now = millis();
@@ -654,6 +657,11 @@ void drawScreen(std::vector<std::vector<departureType>> allDepartures,
     
     // Update display
     M5.Display.display();
+    
+    // Put display controller to sleep to conserve power
+    // The IT8951 draws significant current even when idle
+    M5.Display.sleep();
+    
     USE_SERIAL.println(needsFullRefresh ? "Full refresh" : "Partial refresh");
 }
 
@@ -691,6 +699,9 @@ void displayDataFreshness(bool success, long lastSuccess, long currentEpoch)
 // Used for frequent updates without redrawing departure data
 // ============================================================
 void updateStatusBarOnly(const char* timeStr, int batteryLevel, bool isCharging, int dataAgeSecs, int wifiRssi) {
+    // Wake display from sleep before drawing
+    M5.Display.wakeup();
+    
     int x = MAIN_WIDTH;
     int y = TOP_MARGIN;
     int w = WEATHER_COL_WIDTH;
@@ -699,6 +710,9 @@ void updateStatusBarOnly(const char* timeStr, int batteryLevel, bool isCharging,
     drawStatusBar(x, y, w, STATUS_BAR_HEIGHT, timeStr, batteryLevel, isCharging, dataAgeSecs, wifiRssi);
     M5.Display.endWrite();
     M5.Display.display();
+    
+    // Put display controller to sleep to conserve power
+    M5.Display.sleep();
     
     USE_SERIAL.printf("Status bar updated: %s, %d%%, %ds\n", timeStr, batteryLevel, dataAgeSecs);
 }

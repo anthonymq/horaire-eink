@@ -19,6 +19,7 @@
 
 #include <ctime>
 #include <esp_sleep.h>  // For light/deep sleep functions
+#include <esp_wifi.h>   // For WiFi power management (modem sleep)
 
 #include <misc.h>
 #include <string>
@@ -50,7 +51,7 @@ int lastStatusBarMinute = -1;     // Track minute for clock updates
 bool ntpSynced = false;
 bool configPortalActive = false;  // Track if config portal is running
 #define DELAY_BETWEEN_CALLS 30  // in seconds
-#define STATUS_BAR_INTERVAL 10  // Status bar refresh every 10 seconds
+#define STATUS_BAR_INTERVAL 60  // Status bar refresh every 60 seconds (saves E-Ink refreshes)
 #define CONFIG_PORTAL_TIMEOUT 120  // Portal timeout in seconds
 #define AP_NAME "ProchainDepart-Setup"  // AP name for configuration
 
@@ -58,7 +59,7 @@ bool configPortalActive = false;  // Track if config portal is running
 // Light sleep is used between refresh cycles to conserve battery.
 // When charging via USB, sleep is disabled for better responsiveness.
 // NOTE: Set to false to test battery operation - light sleep may cause issues on M5Paper S3
-#define POWER_SAVE_ENABLED false      // DISABLED: Testing battery operation without sleep
+#define POWER_SAVE_ENABLED true       // Enable light sleep for battery conservation
 #define SLEEP_DURATION_US 10000000ULL // Sleep 10 seconds (10,000,000 microseconds)
                                        // Status bar updates every 10s for data freshness
                                        // Clock updates every minute
@@ -405,6 +406,11 @@ void syncTimeWithNTP() {
         rtc.setTimeStruct(timeinfo);
         USE_SERIAL.printf("NTP sync successful: %s", asctime(&timeinfo));
         ntpSynced = true;
+        
+        // Enable WiFi modem sleep to conserve power between packets
+        // The radio will wake automatically when needed for API calls
+        esp_wifi_set_ps(WIFI_PS_MIN_MODEM);
+        USE_SERIAL.println("WiFi modem sleep enabled");
     } else {
         USE_SERIAL.println("NTP sync failed - using default time");
     }
