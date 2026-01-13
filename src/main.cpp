@@ -59,7 +59,7 @@ bool configPortalActive = false;  // Track if config portal is running
 // Light sleep is used between refresh cycles to conserve battery.
 // When charging via USB, sleep is disabled for better responsiveness.
 // NOTE: Set to false to test battery operation - light sleep may cause issues on M5Paper S3
-#define POWER_SAVE_ENABLED true       // Enable light sleep for battery conservation
+#define POWER_SAVE_ENABLED false      // DISABLED: Light sleep causes display issues on M5Paper S3
 #define SLEEP_DURATION_US 10000000ULL // Sleep 10 seconds (10,000,000 microseconds)
                                        // Status bar updates every 10s for data freshness
                                        // Clock updates every minute
