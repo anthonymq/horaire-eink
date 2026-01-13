@@ -125,10 +125,10 @@ static void drawBanner(int x, int y, int w, int h, const char* text) {
 // HELPER: Draw battery icon with level indicator
 // ============================================================
 static void drawBatteryIcon(int x, int y, int level, bool charging) {
-    // Battery body: 24x12 pixels
-    const int bw = 24;
-    const int bh = 12;
-    const int nipple = 3;  // Battery tip width
+    // Battery body: 30x16 pixels (larger for better visibility)
+    const int bw = 30;
+    const int bh = 16;
+    const int nipple = 4;  // Battery tip width
     
     bool lowBattery = (level < 20);
     
@@ -139,7 +139,7 @@ static void drawBatteryIcon(int x, int y, int level, bool charging) {
         M5.Display.drawRect(x - 1, y - 1, bw + 2, bh + 2, TFT_BLACK);
     }
     // Draw battery tip (positive terminal)
-    M5.Display.fillRect(x + bw, y + 3, nipple, bh - 6, TFT_BLACK);
+    M5.Display.fillRect(x + bw, y + 4, nipple, bh - 8, TFT_BLACK);
     
     // Calculate fill level (inner area is bw-4 x bh-4)
     int innerW = bw - 4;
@@ -231,16 +231,16 @@ static void drawStatusBar(int x, int y, int w, int h, const char* timeStr, int b
     drawWifiIcon(wifiX, wifiY, wifiRssi);
     
     // Battery percentage text + icon (right side)
-    const int batteryW = 24;
-    const int batteryH = 12;
-    const int nippleW = 3;
-    const int textIconGap = 4;
+    const int batteryW = 30;   // Larger battery icon
+    const int batteryH = 16;
+    const int nippleW = 4;
+    const int textIconGap = 6;
     
     // Format battery percentage text
     char battText[8];
     snprintf(battText, sizeof(battText), "%d%%", batteryLevel);
     
-    M5.Display.setFont(&FreeSans9pt7b);
+    M5.Display.setFont(&FreeSansBold12pt7b);  // Same size as clock
     int battTextW = M5.Display.textWidth(battText);
     
     // Calculate positions from right edge
@@ -257,6 +257,7 @@ static void drawStatusBar(int x, int y, int w, int h, const char* timeStr, int b
     drawBatteryIcon(battIconX, battY, batteryLevel, isCharging);
     
     // Data freshness between WiFi and battery text
+    M5.Display.setFont(&FreeSansBold12pt7b);  // Same size as clock
     char freshStr[16];
     if (dataAgeSecs < 60) {
         snprintf(freshStr, sizeof(freshStr), "%ds", dataAgeSecs);
@@ -561,7 +562,7 @@ static void drawBusBoard(std::vector<departureType>& departures,
                 
                 drawDepartureRow(x, boardY + i * rowH, w, rowH,
                                  departures[i].schedule.c_str(),
-                                 nullptr, delayStr, false, true);  // useSmallFont = true
+                                 nullptr, delayStr, false);  // Same font as RER
                 
                 if (i > 0) {
                     M5.Display.drawFastHLine(x, boardY + i * rowH, w, TFT_BLACK);
@@ -570,12 +571,12 @@ static void drawBusBoard(std::vector<departureType>& departures,
         }
     } else if (forceRedraw) {
         // Draw placeholder rows when no data
-        M5.Display.setFont(&FreeSansBold9pt7b);
+        M5.Display.setFont(&FreeSansBold12pt7b);  // Same font as departures
         M5.Display.setTextColor(TFT_BLACK);
         M5.Display.setTextDatum(textdatum_t::middle_left);
         for (int i = 0; i < BUS_ROWS; i++) {
             int rowCenterY = boardY + i * rowH + rowH / 2;
-            M5.Display.drawString("--:--", x + 8, rowCenterY);
+            M5.Display.drawString("--:--", x + PADDING, rowCenterY);
         }
         M5.Display.setTextDatum(textdatum_t::top_left);
     }
