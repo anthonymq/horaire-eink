@@ -12,6 +12,7 @@
 static const size_t MAX_DEPARTURES = 8;  // Keep a few spare so the list survives between fetches
 static const size_t MAX_LINES = 2;       // Lines remembered per stop (for the incident lookup)
 static const size_t MAX_DESTINATIONS = 6;
+static const size_t MAX_QUAYS = 6;
 static const size_t MAX_INCIDENTS = 4;   // Per stop
 static const size_t MAX_GZIP_BODY = 1024 * 1024;  // Compressed line report (RER C ~ 60 KB)
 static const size_t MAX_ROUTE_CACHE = 32;         // Route stop orders kept (for section incidents)
@@ -40,7 +41,9 @@ static void buildFilter(JsonDocument &filter)
 {
     JsonObject delivery = filter["Siri"]["ServiceDelivery"].to<JsonObject>();
     delivery["ResponseTimestamp"] = true;
-    JsonObject journey = delivery["StopMonitoringDelivery"][0]["MonitoredStopVisit"][0]["MonitoredVehicleJourney"].to<JsonObject>();
+    JsonObject visit = delivery["StopMonitoringDelivery"][0]["MonitoredStopVisit"][0].to<JsonObject>();
+    visit["MonitoringRef"] = true;
+    JsonObject journey = visit["MonitoredVehicleJourney"].to<JsonObject>();
     journey["JourneyNote"] = true;
     journey["LineRef"] = true;
     journey["OperatorRef"] = true;
@@ -130,6 +133,11 @@ bool fetchDepartures(const char *url, const char *type, const char *filter, std:
         if (destination[0] && found.destinations.size() < MAX_DESTINATIONS &&
             std::find(found.destinations.begin(), found.destinations.end(), destination) == found.destinations.end()) {
             found.destinations.push_back(destination);
+        }
+        const char *quay = stop["MonitoringRef"]["value"] | "";
+        if (quay[0] && found.quays.size() < MAX_QUAYS &&
+            std::find(found.quays.begin(), found.quays.end(), quay) == found.quays.end()) {
+            found.quays.push_back(quay);
         }
     }
     if (seen) *seen = std::move(found);
@@ -488,10 +496,11 @@ static const RouteStops *routeStops(const char *routeId)
     return &routeCache.back();
 }
 
-// Where the incident lookup stands: our stop, and where its trains go
+// Where the incident lookup stands: our stop (and its quays), and where its trains go
 struct StopContext {
     StopKey stop;
     std::vector<StopKey> destinations;
+    std::vector<String> stopIds;  // Navitia ids an incident at our stop would name
 };
 
 // Does a section of the line (from/to stop areas, on some routes) include our
@@ -525,21 +534,37 @@ static bool sectionCoversStop(JsonObjectConst section, const StopContext &ctx)
     return false;
 }
 
+enum Concern { CONCERN_NONE, CONCERN_LINE, CONCERN_STOP };
+
 // Is this incident about our part of the line, or about our stop?
-static bool concernsStop(JsonArrayConst objects, const char *stopId, const StopContext &ctx)
+static Concern concernsStop(JsonArrayConst objects, const StopContext &ctx)
 {
+    Concern concern = CONCERN_NONE;
     for (JsonObjectConst o : objects) {
         const char *type = o["pt_object"]["embedded_type"] | "";
         const char *id = o["pt_object"]["id"] | "";
         if (strcmp(type, "line") == 0 || strcmp(type, "route") == 0 || strcmp(type, "network") == 0) {
             JsonObjectConst section = o["impacted_rail_section"];
             if (section.isNull()) section = o["impacted_section"];
-            if (section.isNull() || sectionCoversStop(section, ctx)) return true;
-        } else if (stopId[0] && strcmp(id, stopId) == 0) {
-            return true;
+            if (section.isNull() || sectionCoversStop(section, ctx)) return CONCERN_LINE;
+        } else if (concern == CONCERN_NONE) {
+            for (const String &stopId : ctx.stopIds) {
+                if (stopId == id) concern = CONCERN_STOP;
+            }
         }
     }
-    return false;
+    return concern;
+}
+
+// Line named by a title prefix: "Bus 27 : Manifestation..." -> "27"
+static String titleLine(const String &title)
+{
+    int colon = title.indexOf(':');
+    if (colon < 0 || colon > 14) return "";
+    String prefix = title.substring(0, colon);
+    prefix.trim();
+    int space = prefix.lastIndexOf(' ');
+    return space >= 0 ? prefix.substring(space + 1) : prefix;
 }
 
 static void addIncident(std::vector<incidentType> &list, const String &text, bool blocking, const String &when)
@@ -553,12 +578,11 @@ static void addIncident(std::vector<incidentType> &list, const String &text, boo
     list.push_back({text, blocking, when});
 }
 
-bool fetchIncidents(const char *lineRef, const char *monitoringRef, const std::vector<String> &destinations,
+bool fetchIncidents(const char *lineRef, const char *monitoringRef, const StopSeen &seen,
                     std::vector<incidentType> &out)
 {
-    char lineId[32], stopId[40] = "";
+    char lineId[32];
     if (!stifToNavitia(lineRef, lineId, sizeof(lineId))) return false;
-    stifToNavitia(monitoringRef, stopId, sizeof(stopId));
 
     char url[192];
     snprintf(url, sizeof(url), "%s/lines/%s/line_reports?filter_status%%5B%%5D=active&disable_geojson=true",
@@ -579,11 +603,25 @@ bool fetchIncidents(const char *lineRef, const char *monitoringRef, const std::v
         return false;
     }
 
-    StopContext ctx{StopKey(monitoringRef), {}};
-    for (const String &d : destinations) {
+    StopContext ctx{StopKey(monitoringRef), {}, {}};
+    for (const String &d : seen.destinations) {
         StopKey key(d.c_str());
         if (key.valid()) ctx.destinations.push_back(key);
     }
+    char nav[48];
+    if (stifToNavitia(monitoringRef, nav, sizeof(nav))) ctx.stopIds.push_back(nav);
+    for (const String &q : seen.quays) {
+        if (stifToNavitia(q.c_str(), nav, sizeof(nav))) ctx.stopIds.push_back(nav);
+    }
+
+    // Stop-level incidents of a line report also come from the other lines
+    // serving its stops ("Bus 27 : ..." in the 132 report); only the title says
+    // which line, so they are checked against the line code once it is read.
+    struct Candidate {
+        incidentType incident;
+        String titleLine;  // Set for stop-level incidents
+    };
+    std::vector<Candidate> candidates;
 
     // One disruption at a time keeps the parse memory to a few KB
     JsonDocument filter;
@@ -615,7 +653,9 @@ bool fetchIncidents(const char *lineRef, const char *monitoringRef, const std::v
         }
         if (lift) continue;  // Lift outages: dozens per RER line, not about departures
         int level = incidentLevel(doc["severity"]["effect"] | "");
-        if (level == 0 || !concernsStop(doc["impacted_objects"], stopId, ctx)) continue;
+        if (level == 0) continue;
+        Concern concern = concernsStop(doc["impacted_objects"], ctx);
+        if (concern == CONCERN_NONE) continue;
 
         // Short plain-text title; "pids" (station screens) is even shorter but vaguer
         const char *title = nullptr, *notification = nullptr, *pids = nullptr;
@@ -629,15 +669,34 @@ bool fetchIncidents(const char *lineRef, const char *monitoringRef, const std::v
         }
         const char *text = title ? title : notification ? notification : pids;
         if (!text) continue;
-        String folded = stripLinePrefix(asciiFold(text));
+        String full = asciiFold(text);
+        String folded = stripLinePrefix(full);
         folded.trim();
         if (folded.length()) {
-            addIncident(found, folded, level == 2, currentPeriod(doc["application_periods"], time(nullptr)));
+            candidates.push_back({{folded, level == 2, currentPeriod(doc["application_periods"], time(nullptr))},
+                                  concern == CONCERN_STOP ? titleLine(full) : String()});
         }
     }
     if (reader.failed()) {
         USE_SERIAL.println("[INCIDENTS] inflate error");
         return false;
+    }
+
+    // The line's own code comes after the disruptions: line_reports[0].line.code
+    String lineCode;
+    if (reader.skipPast("\"line_reports\":") && reader.readNonSpace() == '[') {
+        JsonDocument codeFilter;
+        codeFilter["line"]["code"] = true;
+        if (!deserializeJson(doc, reader, DeserializationOption::Filter(codeFilter),
+                             DeserializationOption::NestingLimit(24))) {
+            lineCode = doc["line"]["code"] | "";
+        }
+    }
+
+    for (const Candidate &c : candidates) {
+        // "RERC" still matches "C"; no code or no prefix: keep
+        if (lineCode.length() && c.titleLine.length() && !c.titleLine.endsWith(lineCode)) continue;
+        addIncident(found, c.incident.text, c.incident.blocking, c.incident.when);
     }
 
     std::stable_sort(found.begin(), found.end(),

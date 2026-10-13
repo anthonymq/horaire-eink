@@ -197,7 +197,7 @@ static void fetchStationIncidents() {
         std::vector<incidentType> found;
         bool ok = true;
         for (const String& line : lines) {
-            ok &= fetchIncidents(line.c_str(), stations[i].monitoringRef, stationSeen[i].destinations, found);
+            ok &= fetchIncidents(line.c_str(), stations[i].monitoringRef, stationSeen[i], found);
         }
         if (ok) incidents[i] = std::move(found);
         allOk &= ok;

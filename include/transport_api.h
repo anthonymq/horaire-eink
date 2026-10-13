@@ -11,6 +11,7 @@
 struct StopSeen {
     std::vector<String> lines;         // LineRefs ("STIF:Line::C01727:")
     std::vector<String> destinations;  // DestinationRefs ("STIF:StopArea:SP:44411:")
+    std::vector<String> quays;         // MonitoringRefs of the visits: the quays of a stop area
 };
 
 // Returns true when the API answered and the payload parsed; `out` (and
@@ -19,11 +20,11 @@ bool fetchDepartures(const char *url, const char *type, const char *filter, std:
                      StopSeen *seen = nullptr);
 
 // Append the active incidents of one line ("STIF:Line::C01727:") that concern
-// the given stop (its MonitoringRef): at the stop, or on a part of the line
-// through it in the direction of `destinations` (none known = any direction).
-// Blocking ones first. Shares the PRIM connection with fetchDepartures().
-// Returns false on failure.
-bool fetchIncidents(const char *lineRef, const char *monitoringRef, const std::vector<String> &destinations,
+// the given stop (its MonitoringRef): at the stop or one of `seen.quays` (and
+// titled for this line), or on a part of the line through it in the direction
+// of `seen.destinations` (none known = any direction). Blocking ones first.
+// Shares the PRIM connection with fetchDepartures(). Returns false on failure.
+bool fetchIncidents(const char *lineRef, const char *monitoringRef, const StopSeen &seen,
                     std::vector<incidentType> &out);
 
 // Close the shared PRIM connection.
