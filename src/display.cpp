@@ -28,8 +28,7 @@
 //  delays):
 //
 //  |#### RER C ############################ /!\ #|
-//  | /!\ 6 gares non desservies                  |
-//  |     9h40 - 16h00                             |
+//  | /!\ 6 gares non desservies     9h40 - 16h00 |  one line per incident
 //  |  4 min   Destination              14:36     |
 
 // ============================================================
@@ -211,35 +210,6 @@ static void drawAlertCardTitle(int x, int y, int w, const char* title, int incid
     char fitted[48];
     fitText(title, right - (x + 8) - 8, fitted, sizeof(fitted));
     drawText(fitted, x + 8, baseline, font, PAPER, textdatum_t::baseline_left);
-}
-
-// Splits `text` into at most maxLines lines of maxW pixels (current font), on
-// spaces; the last line is cut with "...". Returns the number of lines.
-static int wrapText(const char* text, int maxW, String* lines, int maxLines) {
-    String rest = text;
-    int count = 0;
-    while (rest.length() > 0 && count < maxLines) {
-        if (count == maxLines - 1 || M5.Display.textWidth(rest) <= maxW) {
-            char fitted[96];
-            fitText(rest.c_str(), maxW, fitted, sizeof(fitted));
-            lines[count++] = fitted;
-            break;
-        }
-        // Longest prefix ending at a space that fits
-        int cut = -1;
-        for (int i = rest.indexOf(' '); i > 0; i = rest.indexOf(' ', i + 1)) {
-            if (M5.Display.textWidth(rest.substring(0, i)) > maxW) break;
-            cut = i;
-        }
-        if (cut < 0) {  // One long word: let the next line cut it
-            cut = rest.indexOf(' ');
-            if (cut < 0) cut = rest.length();
-        }
-        lines[count++] = rest.substring(0, cut);
-        rest = rest.substring(cut);
-        rest.trim();
-    }
-    return count;
 }
 
 // ============================================================
@@ -455,9 +425,8 @@ static void drawBusRow(int x, int y, int w, int h, const departureType* dep, tim
     drawClockTime(x + w, baseline, dep->expected);
 }
 
-// Incident text in the first row of a board, led by a warning sign (filled =
-// blocking, outline = delays). A single incident wraps over the lines, with its
-// time window on the last one; several get one truncated line each.
+// Incidents in the first row of a board, one line each: warning sign (filled =
+// blocking, outline = delays), text cut to fit, time window right-aligned.
 static void drawIncidents(int x, int y, int w, int h, bool isTrain,
                           const std::vector<incidentType>& incidents) {
     const lgfx::GFXfont* bold = isTrain ? &FreeSansBold12pt7b : &FreeSansBold9pt7b;
@@ -465,40 +434,25 @@ static void drawIncidents(int x, int y, int w, int h, bool isTrain,
     const int maxLines = isTrain ? 3 : 2;
     const int iconSize = isTrain ? 22 : 16;
     const int textX = x + iconSize + 10;
-    const int textW = w - (textX - x);
     
-    struct Line {
-        String text;
-        const lgfx::GFXfont* font;
-        bool icon;
-        bool blocking;
-    };
-    Line lines[3];
-    int count = 0;
-    M5.Display.setFont(bold);
-    if (incidents.size() == 1) {
-        const incidentType& inc = incidents[0];
-        String wrapped[3];
-        int textLines = wrapText(inc.text.c_str(), textW, wrapped, maxLines - (inc.when.length() ? 1 : 0));
-        for (int i = 0; i < textLines; i++) lines[count++] = {wrapped[i], bold, i == 0, inc.blocking};
-        if (inc.when.length()) lines[count++] = {inc.when, regular, false, inc.blocking};
-    } else {
-        for (size_t i = 0; i < incidents.size() && count < maxLines; i++) {
-            String text = incidents[i].when.length() ? incidents[i].when + " : " + incidents[i].text
-                                                     : incidents[i].text;
-            char fitted[96];
-            fitText(text.c_str(), textW, fitted, sizeof(fitted));
-            lines[count++] = {fitted, bold, true, incidents[i].blocking};
-        }
-    }
-    
+    const int count = min((int)incidents.size(), maxLines);
     const int lineH = (h - 4) / maxLines;
     const int top = y + (h - lineH * count) / 2;
     clearRegion(x, y + 1, w, h - 1);
     for (int i = 0; i < count; i++) {
-        int baseline = centeredBaseline(top + i * lineH, lineH, bold);
-        if (lines[i].icon) drawWarningIcon(x + 2, baseline, iconSize, lines[i].blocking, INK, PAPER);
-        drawText(lines[i].text.c_str(), textX, baseline, lines[i].font, INK, textdatum_t::baseline_left);
+        const incidentType& inc = incidents[i];
+        const int baseline = centeredBaseline(top + i * lineH, lineH, bold);
+        drawWarningIcon(x + 2, baseline, iconSize, inc.blocking, INK, PAPER);
+        
+        int textRight = x + w;
+        if (inc.when.length()) {
+            drawText(inc.when.c_str(), x + w, baseline, regular, INK, textdatum_t::baseline_right);
+            textRight -= M5.Display.textWidth(inc.when.c_str()) + 12;
+        }
+        M5.Display.setFont(bold);
+        char fitted[96];
+        fitText(inc.text.c_str(), textRight - textX, fitted, sizeof(fitted));
+        drawText(fitted, textX, baseline, bold, INK, textdatum_t::baseline_left);
     }
 }
 
