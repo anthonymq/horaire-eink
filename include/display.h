@@ -11,6 +11,7 @@
 struct BoardView {
     const char* title;
     const std::vector<departureType>* departures;  // Only upcoming departures, soonest first
+    const std::vector<incidentType>* incidents;    // Active incidents, blocking first (may be null)
 };
 
 struct StatusInfo {

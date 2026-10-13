@@ -22,6 +22,14 @@
 //  | 31 min   Destination              15:03    | City                    |
 //  |                                            | [icon] 12°  Ressenti... |
 //  +----------------------------------------------------------------------+
+//
+//  A board whose line has an active incident gets an inverted title bar and
+//  gives its first row to the incident text (filled sign = blocking, outline =
+//  delays):
+//
+//  |#### RER C ############################ /!\ #|
+//  | /!\ 6 gares non desservies                  |
+//  |  4 min   Destination              14:36     |
 
 // ============================================================
 // LAYOUT CONSTANTS
@@ -67,6 +75,7 @@ static const uint16_t PAPER = TFT_WHITE;
 // rendered text changes, so M5GFX only refreshes the dirty area.
 static String prevRerRows[RER_ROWS];
 static String prevBusRows[2][BUS_ROWS];
+static String prevIncidents[3];  // Incidents shown per board: a change redraws the whole board
 static weatherType prevWeather;
 static bool weatherDrawn = false;
 
@@ -159,6 +168,77 @@ static void drawCardTitle(int x, int y, int w, const char* title) {
     fitText(title, w, fitted, sizeof(fitted));
     drawText(fitted, x, y + 22, &FreeSansBold12pt7b, INK, textdatum_t::baseline_left);
     M5.Display.fillRect(x, y + TITLE_H - 4, w, 2, INK);
+}
+
+// Warning sign: triangle with an exclamation mark, `size` wide, bottom at `bottom`.
+// Filled draws a solid triangle in `color` with the mark in `bg`; otherwise an outline.
+static void drawWarningIcon(int x, int bottom, int size, bool filled, uint16_t color, uint16_t bg) {
+    const int h = size * 7 / 8;
+    const int top = bottom - h, cx = x + size / 2;
+    M5.Display.fillTriangle(cx, top, x, bottom, x + size, bottom, color);
+    if (!filled) {
+        // Hollow: inset triangle in the background color leaves a ~3px border
+        M5.Display.fillTriangle(cx, top + 6, x + 4, bottom - 2, x + size - 4, bottom - 2, bg);
+    }
+    uint16_t mark = filled ? bg : color;
+    const int markW = max(2, size / 8);
+    M5.Display.fillRect(cx - markW / 2, top + h * 3 / 8, markW, h * 3 / 8, mark);
+    M5.Display.fillRect(cx - markW / 2, bottom - h / 8 - markW, markW, markW, mark);
+}
+
+// Alert card header: the title in white on a black bar, warning sign on the
+// right (with the number of incidents when there are several)
+static void drawAlertCardTitle(int x, int y, int w, const char* title, int incidentCount) {
+    const int barH = TITLE_H - 2;
+    M5.Display.fillRect(x, y, w, barH, INK);
+    
+    const int iconSize = 24;
+    int right = x + w - 8;
+    drawWarningIcon(right - iconSize, y + barH - 4, iconSize, true, PAPER, INK);
+    right -= iconSize + 8;
+    
+    const lgfx::GFXfont* font = &FreeSansBold12pt7b;
+    const int baseline = centeredBaseline(y, barH, font);
+    if (incidentCount > 1) {
+        char count[8];
+        snprintf(count, sizeof(count), "%d", incidentCount);
+        drawText(count, right, baseline, font, PAPER, textdatum_t::baseline_right);
+        right -= M5.Display.textWidth(count) + 8;
+    }
+    
+    M5.Display.setFont(font);
+    char fitted[48];
+    fitText(title, right - (x + 8) - 8, fitted, sizeof(fitted));
+    drawText(fitted, x + 8, baseline, font, PAPER, textdatum_t::baseline_left);
+}
+
+// Splits `text` into at most maxLines lines of maxW pixels (current font), on
+// spaces; the last line is cut with "...". Returns the number of lines.
+static int wrapText(const char* text, int maxW, String* lines, int maxLines) {
+    String rest = text;
+    int count = 0;
+    while (rest.length() > 0 && count < maxLines) {
+        if (count == maxLines - 1 || M5.Display.textWidth(rest) <= maxW) {
+            char fitted[96];
+            fitText(rest.c_str(), maxW, fitted, sizeof(fitted));
+            lines[count++] = fitted;
+            break;
+        }
+        // Longest prefix ending at a space that fits
+        int cut = -1;
+        for (int i = rest.indexOf(' '); i > 0; i = rest.indexOf(' ', i + 1)) {
+            if (M5.Display.textWidth(rest.substring(0, i)) > maxW) break;
+            cut = i;
+        }
+        if (cut < 0) {  // One long word: let the next line cut it
+            cut = rest.indexOf(' ');
+            if (cut < 0) cut = rest.length();
+        }
+        lines[count++] = rest.substring(0, cut);
+        rest = rest.substring(cut);
+        rest.trim();
+    }
+    return count;
 }
 
 // ============================================================
@@ -374,16 +454,77 @@ static void drawBusRow(int x, int y, int w, int h, const departureType* dep, tim
     drawClockTime(x + w, baseline, dep->expected);
 }
 
-// Title, then rows separated by light rules. Only rows whose content changed are redrawn.
+// Incident text in the first row of a board, each line led by a warning sign
+// (filled = blocking, outline = delays). A single incident may wrap over both
+// lines; several get one truncated line each.
+static void drawIncidents(int x, int y, int w, int h, bool isTrain,
+                          const std::vector<incidentType>& incidents) {
+    const lgfx::GFXfont* font = isTrain ? &FreeSansBold18pt7b : &FreeSansBold9pt7b;
+    const int maxLines = 2;
+    const int iconSize = isTrain ? 30 : 16;
+    const int textX = x + iconSize + 10;
+    const int textW = w - (textX - x);
+    
+    M5.Display.setFont(font);
+    String lines[maxLines];
+    bool lineBlocking[maxLines];
+    bool lineIcon[maxLines];
+    int count = 0;
+    if (incidents.size() == 1) {
+        count = wrapText(incidents[0].text.c_str(), textW, lines, maxLines);
+        for (int i = 0; i < count; i++) {
+            lineBlocking[i] = incidents[0].blocking;
+            lineIcon[i] = i == 0;
+        }
+    } else {
+        for (size_t i = 0; i < incidents.size() && count < maxLines; i++) {
+            char fitted[96];
+            fitText(incidents[i].text.c_str(), textW, fitted, sizeof(fitted));
+            lines[count] = fitted;
+            lineBlocking[count] = incidents[i].blocking;
+            lineIcon[count] = true;
+            count++;
+        }
+    }
+    
+    const int lineH = (h - 4) / maxLines;
+    const int top = y + (h - lineH * count) / 2;
+    clearRegion(x, y + 1, w, h - 1);
+    for (int i = 0; i < count; i++) {
+        int baseline = centeredBaseline(top + i * lineH, lineH, font);
+        if (lineIcon[i]) drawWarningIcon(x + 2, baseline, iconSize, lineBlocking[i], INK, PAPER);
+        drawText(lines[i].c_str(), textX, baseline, font, INK, textdatum_t::baseline_left);
+    }
+}
+
+// Title, then rows separated by light rules. Only rows whose content changed are
+// redrawn, except when the incidents change: then the whole board is.
 static void drawBoard(int x, int y, int w, int h, int rows, const BoardView& board, bool isTrain,
-                      time_t now, String* prevRows, bool forceRedraw) {
+                      time_t now, String* prevRows, String& prevIncidentKey, bool forceRedraw) {
     const int rowsY = y + TITLE_H;
     const int rowH = (h - TITLE_H) / rows;
     const char* emptyText = isTrain ? "Aucun train annonce" : "Aucun passage annonce";
     
+    static const std::vector<incidentType> none;
+    const std::vector<incidentType>& incidents = board.incidents ? *board.incidents : none;
+    String incidentKey;
+    for (const auto& inc : incidents) {
+        incidentKey += inc.blocking ? '!' : '~';
+        incidentKey += inc.text;
+        incidentKey += '\n';
+    }
+    if (incidentKey != prevIncidentKey) forceRedraw = true;
+    prevIncidentKey = incidentKey;
+    const int firstRow = incidents.empty() ? 0 : 1;  // Departures start after the incident row
+    
     if (forceRedraw) {
         clearRegion(x, y, w, h);
-        drawCardTitle(x, y, w, board.title);
+        if (incidents.empty()) {
+            drawCardTitle(x, y, w, board.title);
+        } else {
+            drawAlertCardTitle(x, y, w, board.title, incidents.size());
+            drawIncidents(x, rowsY, w, rowH, isTrain, incidents);
+        }
         for (int i = 1; i < rows; i++) {
             M5.Display.drawFastHLine(x, rowsY + i * rowH, w, INK_FAINT);
         }
@@ -391,20 +532,21 @@ static void drawBoard(int x, int y, int w, int h, int rows, const BoardView& boa
     }
     
     const std::vector<departureType>& deps = *board.departures;
-    for (int i = 0; i < rows; i++) {
-        const departureType* dep = (size_t)i < deps.size() ? &deps[i] : nullptr;
+    for (int i = firstRow; i < rows; i++) {
+        size_t depIndex = i - firstRow;
+        const departureType* dep = depIndex < deps.size() ? &deps[depIndex] : nullptr;
         
         String key;
         if (dep) {
             long mins = (long)(dep->expected - now) / 60;
             key = String((long)dep->expected) + '|' + String(mins < 1 ? 0 : mins) + '|' + dep->name;
-        } else if (i == 0) {
+        } else if (depIndex == 0) {
             key = "empty";
         }
         if (key == prevRows[i]) continue;
         prevRows[i] = key;
         
-        const char* empty = i == 0 ? emptyText : nullptr;
+        const char* empty = depIndex == 0 ? emptyText : nullptr;
         int rowY = rowsY + i * rowH;
         if (isTrain) {
             drawTrainRow(x, rowY, w, rowH, dep, now, empty);
@@ -433,11 +575,11 @@ void drawScreen(const BoardView boards[3], const weatherType& weather, const Sta
     drawHeader(status, now);
     
     drawBoard(RER_X, BODY_Y, RER_W, RER_H, RER_ROWS, boards[0], true,
-              now, prevRerRows, fullRefresh);
+              now, prevRerRows, prevIncidents[0], fullRefresh);
     drawBoard(SIDE_X, BUS1_Y, SIDE_W, BUS_H, BUS_ROWS, boards[1], false,
-              now, prevBusRows[0], fullRefresh);
+              now, prevBusRows[0], prevIncidents[1], fullRefresh);
     drawBoard(SIDE_X, BUS2_Y, SIDE_W, BUS_H, BUS_ROWS, boards[2], false,
-              now, prevBusRows[1], fullRefresh);
+              now, prevBusRows[1], prevIncidents[2], fullRefresh);
     
     drawWeather(weather, fullRefresh);
     

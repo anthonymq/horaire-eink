@@ -9,3 +9,7 @@ time_t parseIsoUtc(const char *datetimeString);
 
 // Percent-encode a query string value (keeps ':' so STIF refs stay readable).
 String urlEncode(const char *s);
+
+// Transliterate UTF-8 to the 7-bit ASCII the e-ink fonts can draw: accents are
+// dropped, typographic quotes/dashes/spaces become plain ones, the rest is removed.
+String asciiFold(const char *utf8);

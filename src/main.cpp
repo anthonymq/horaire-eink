@@ -44,6 +44,7 @@
 #define FETCH_MAX_BACKOFF_S     900     // Max retry delay when WiFi/API keeps failing
 #define MIN_TAP_FETCH_GAP_S     20      // Ignore refresh taps closer than this (debounce / spurious INT)
 #define WEATHER_INTERVAL_S      1800    // 30 minutes
+#define INCIDENT_INTERVAL_S     300     // Traffic incidents (one gzip line report per line)
 #define FULL_REFRESH_INTERVAL_S 1800    // Full e-ink refresh to clear ghosting
 #define NTP_RESYNC_INTERVAL_S   (6 * 3600)  // The RTC slow clock drifts during light sleep
 #define STALE_DEPARTURE_GRACE_S 30      // Keep a departure on screen this long after its time
@@ -69,6 +70,8 @@
 WiFiMulti wifiMulti;
 
 static std::vector<departureType> departures[MAX_STATIONS];
+static std::vector<incidentType> incidents[MAX_STATIONS];
+static std::vector<String> stationLines[MAX_STATIONS];  // LineRefs seen at each stop
 static weatherType currentWeather = {};
 static bool weatherValid = false;
 
@@ -76,6 +79,7 @@ static time_t nextFetchEpoch = 0;
 static time_t lastFetchAttemptEpoch = 0;
 static time_t lastSuccessEpoch = 0;
 static time_t lastWeatherEpoch = 0;
+static time_t lastIncidentEpoch = 0;
 static time_t lastNtpSyncEpoch = 0;
 static time_t lastFullRefreshEpoch = 0;
 static time_t quietOverrideUntil = 0;
@@ -171,6 +175,35 @@ static uint32_t secondsUntilQuietEnd(time_t now) {
 // ============================================================
 // FETCH CYCLE (the only time WiFi is powered)
 // ============================================================
+// Incidents of the lines each stop shows: the line of its filter, or the lines
+// of its recent departures. A failed lookup keeps the previous list.
+static void fetchStationIncidents() {
+    RuntimeStationConfig* stations = getStations();
+    bool allOk = true;
+    for (int i = 0; i < MAX_STATIONS; i++) {
+        if (!stations[i].isConfigured) {
+            incidents[i].clear();
+            continue;
+        }
+        std::vector<String> lines;
+        if (strncmp(stations[i].filter, "STIF:Line::", 11) == 0) {
+            lines.push_back(stations[i].filter);
+        } else {
+            lines = stationLines[i];
+        }
+        if (lines.empty()) continue;  // No departure seen yet: nothing to look up
+
+        std::vector<incidentType> found;
+        bool ok = true;
+        for (const String& line : lines) {
+            ok &= fetchIncidents(line.c_str(), stations[i].monitoringRef, found);
+        }
+        if (ok) incidents[i] = std::move(found);
+        allOk &= ok;
+    }
+    if (allOk) lastIncidentEpoch = time(nullptr);
+}
+
 static void runFetchCycle() {
     lastFetchAttemptEpoch = time(nullptr);
     uint32_t startMs = millis();
@@ -190,7 +223,17 @@ static void runFetchCycle() {
             buildEndpointUrl(stations[i].monitoringRef, endpoint, sizeof(endpoint));
             USE_SERIAL.printf("Fetching station %d: %s\n", i, stations[i].displayName);
             // On failure the previous list is kept; past departures drop off at render time
-            ok &= fetchDepartures(endpoint, stations[i].type, stations[i].filter, departures[i]);
+            std::vector<String> lines;
+            if (fetchDepartures(endpoint, stations[i].type, stations[i].filter, departures[i], &lines)) {
+                if (!lines.empty()) stationLines[i] = std::move(lines);  // Keep the last known lines
+            } else {
+                ok = false;
+            }
+        }
+        
+        now = time(nullptr);
+        if (ok && now - lastIncidentEpoch >= INCIDENT_INTERVAL_S) {
+            fetchStationIncidents();
         }
         transportEnd();
         
@@ -233,7 +276,12 @@ static void runSetup() {
     
     // Stations, weather location or network may have changed: start over from fresh data
     cachedChannel = 0;
-    for (int i = 0; i < MAX_STATIONS; i++) departures[i].clear();
+    for (int i = 0; i < MAX_STATIONS; i++) {
+        departures[i].clear();
+        incidents[i].clear();
+        stationLines[i].clear();
+    }
+    lastIncidentEpoch = 0;
     weatherValid = false;  // Location may have changed
     consecutiveFailures = 0;
     needFullRefresh = true;
@@ -255,6 +303,7 @@ static void render(time_t now) {
         }
         boards[i].title = (i < MAX_STATIONS && stations[i].isConfigured) ? stations[i].displayName : "";
         boards[i].departures = &visible[i];
+        boards[i].incidents = i < MAX_STATIONS ? &incidents[i] : nullptr;
     }
     
     struct tm local;
@@ -402,6 +451,7 @@ void loop()
     if (touch == TOUCH_TAP && now - lastFetchAttemptEpoch >= MIN_TAP_FETCH_GAP_S) {
         USE_SERIAL.println("Tap - forcing refresh");
         forceFetch = true;
+        lastIncidentEpoch = 0;  // A tap asks for everything fresh
         quietOverrideUntil = now + QUIET_TAP_OVERRIDE_S;
     }
     

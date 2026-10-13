@@ -46,6 +46,7 @@ horaire-eink/
 | Add WiFi network | `include/config.h` | `WIFI_CREDENTIALS[]` array |
 | Change hardware pins | N/A | M5Unified handles internally |
 | API response parsing | `src/transport_api.cpp` | `fetchDepartures()` - complex SIRI structure |
+| Traffic incidents | `src/transport_api.cpp` `fetchIncidents()`, `src/display.cpp` `drawIncidents()` | See "Incidents" below |
 
 ## Commands
 
@@ -99,7 +100,7 @@ rm -rf .pio && pio run
 
 ```
 main.cpp::loop()
-  ├─→ runFetchCycle() (every FETCH_INTERVAL_S): WiFi on → fetchDepartures() ×N → fetchWeather() (30min) → WiFi off
+  ├─→ runFetchCycle() (every FETCH_INTERVAL_S): WiFi on → fetchDepartures() ×N → fetchIncidents() (5min) → fetchWeather() (30min) → WiFi off
   ├─→ render() every minute: countdowns computed from departureType.expected → drawScreen()
   └─→ idleFor(): waitDisplay() → light sleep until next minute (timer or touch)
 ```
@@ -113,6 +114,13 @@ Hold the screen 5 s:
 ID mapping: Navitia `stop_area:IDFM:N` → `STIF:StopArea:SP:N:`, `line:IDFM:Cxxxxx` → `STIF:Line::Cxxxxx:`.
 Station filter: empty = all; `STIF:Line::...` = line (any type); otherwise RER = platform name, others = LineRef/OperatorRef substring.
 E-ink fonts are ASCII only: the page strips accents from titles.
+
+## Incidents
+
+Source: Navitia `v2/navitia/lines/line:IDFM:Cxxxxx/line_reports?filter_status[]=active` per line (the station's `STIF:Line::` filter, else the LineRefs of its departures). The SIRI `general-message` endpoint was not used: it misses incidents and mixes in future works.
+- Responses are ~1 MB for an RER line (mostly lift outages), so they are requested gzip (~15x smaller), kept in PSRAM, inflated on the fly with the ROM `tinfl` and parsed one disruption at a time with an ArduinoJson filter.
+- Kept: `status == active`, not tagged `Ascenseur`, effect blocking (`NO_SERVICE`, `REDUCED_SERVICE`, `MODIFIED_SERVICE`, `DETOUR`) or delays (`SIGNIFICANT_DELAYS`, `STOP_MOVED`), impacting the line or this station's stop. Text = `title` message, ASCII-folded, line prefix ("RER C : ") removed, deduplicated.
+- Display: inverted (black) board title with a warning sign (+ count), first board row gives the text; filled sign = blocking, outline = delays. No gray fills: partial refreshes use the text waveform.
 
 ## Known Issues
 
