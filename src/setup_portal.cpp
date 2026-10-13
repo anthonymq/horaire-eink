@@ -45,7 +45,7 @@ static void handleStopsPage() {
 
 static void handleGetStations() {
     lastActivityMs = millis();
-    static const char* const defaultTypes[MAX_STATIONS] = { "RER", "BUS", "BUS" };
+    static const char* const defaultTypes[MAX_STATIONS] = { "RER", "BUS", "BUS", "BUS" };
     RuntimeStationConfig* stations = getStations();
     JsonDocument doc;
     JsonArray arr = doc.to<JsonArray>();
@@ -56,6 +56,7 @@ static void handleGetStations() {
         o["ref"] = s.isConfigured ? s.monitoringRef : "";
         o["type"] = s.isConfigured ? s.type : defaultTypes[i];
         o["filter"] = s.isConfigured ? s.filter : "";
+        o["large"] = s.isConfigured ? s.showNames : strcmp(defaultTypes[i], "RER") == 0;
     }
     String body;
     serializeJson(doc, body);
@@ -69,7 +70,7 @@ static void handleSaveStations() {
         sendError(400, "JSON invalide");
         return;
     }
-    // Stations keep their slot (slot 0 = top board). The count is the highest
+    // Stations keep their slot (= order on screen). The count is the highest
     // configured slot + 1 so that skipped slots don't hide later ones.
     int highestSlot = -1;
     for (int i = 0; i < MAX_STATIONS; i++) {
@@ -87,7 +88,7 @@ static void handleSaveStations() {
         strlcpy(cfg.monitoringRef, ref, sizeof(cfg.monitoringRef));
         strlcpy(cfg.type, s["type"] | "BUS", sizeof(cfg.type));
         strlcpy(cfg.filter, s["filter"] | "", sizeof(cfg.filter));
-        cfg.showNames = (strcmp(cfg.type, "RER") == 0);
+        cfg.showNames = s["large"] | (strcmp(cfg.type, "RER") == 0);
         cfg.maxEntries = 6;
         cfg.isConfigured = true;
         saveStationConfig(i, cfg);
@@ -201,9 +202,14 @@ static void setupWifiManager() {
     done = true;
 
     wm.setTitle("Prochain Départ");
-    static const char* menu[] = { "custom", "wifi", "info", "exit" };
+    static const char* menu[] = { "custom", "wifi", "info", "update", "exit" };
     wm.setMenu(menu, sizeof(menu) / sizeof(menu[0]));
     wm.setCustomMenuHTML("<form action='/stops' method='get'><button>Choisir les arrêts</button></form><br/>\n");
+    // Firmware upload (/update, built into WiFiManager): it reboots on success
+    wm.setPreOtaUpdateCallback([]() {
+        lastActivityMs = millis();
+        displayLoader("Mise a jour du logiciel... ne pas eteindre");
+    });
     // Registered before WiFiManager's own routes, so these take precedence
     wm.setWebServerCallback([]() {
         wm.server->on("/stops", HTTP_GET, handleStopsPage);
@@ -285,6 +291,8 @@ static void runLanPortal(WiFiMulti& wifiMulti) {
         "",
         "*Touchez l'ecran pour quitter",
         "Fermeture apres 10 min d'inactivite",
+        "",
+        "Logiciel du " __DATE__ " " __TIME__,
     };
     drawSetupScreen("Configuration", &qr, 1, lines, sizeof(lines) / sizeof(lines[0]));
 

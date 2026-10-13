@@ -50,32 +50,24 @@ bool saveWeatherLocation(const WeatherLocation& loc)
     return true;
 }
 
-// Map OpenWeatherMap icon codes to weathericons.h codes
-static const char *mapWeatherIcon(const char *owmIcon)
-{
-    if (strncmp(owmIcon, "01", 2) == 0) return "sunny";
-    if (strncmp(owmIcon, "02", 2) == 0) return "partlycloudy";
-    if (strncmp(owmIcon, "03", 2) == 0) return "mostlycloudy";
-    if (strncmp(owmIcon, "04", 2) == 0) return "cloudy";
-    if (strncmp(owmIcon, "09", 2) == 0) return "chancerain";
-    if (strncmp(owmIcon, "10", 2) == 0) return "rain";
-    if (strncmp(owmIcon, "11", 2) == 0) return "tstorms";
-    if (strncmp(owmIcon, "13", 2) == 0) return "snow";
-    if (strncmp(owmIcon, "50", 2) == 0) return "fog";
-    return "unknown";
-}
+static const char *FORECAST_URL = "https://api.openweathermap.org/data/2.5/forecast";
 
-bool fetchWeather(weatherType &out)
+// Query string selecting the saved location
+static String locationQuery()
 {
     const WeatherLocation &loc = getWeatherLocation();
-    HTTPClient http;
-    String url = String(WEATHER_API_URL) + "?appid=" + WEATHER_API_KEY + "&units=" + WEATHER_UNITS;
+    String q = String("?appid=") + WEATHER_API_KEY + "&units=" + WEATHER_UNITS;
     if (loc.hasCoords) {
-        url += "&lat=" + String(loc.lat, 4) + "&lon=" + String(loc.lon, 4);
+        q += "&lat=" + String(loc.lat, 4) + "&lon=" + String(loc.lon, 4);
     } else {
-        url += "&q=" + urlEncode(loc.name);
+        q += "&q=" + urlEncode(loc.name);
     }
+    return q;
+}
 
+static bool owmGet(const String &url, String &payload)
+{
+    HTTPClient http;
     http.setConnectTimeout(5000);
     http.setTimeout(8000);
     http.begin(url);
@@ -85,10 +77,33 @@ bool fetchWeather(weatherType &out)
         http.end();
         return false;
     }
+    payload = http.getString();
+    http.end();
+    return true;
+}
+
+// Next 24 h in 3-hour steps; on failure the previous forecast is kept
+static void fetchForecast(weatherType &out)
+{
+    String payload;
+    if (!owmGet(String(FORECAST_URL) + locationQuery() + "&cnt=" + FORECAST_SLOTS, payload)) return;
+    ForecastSlot slots[FORECAST_SLOTS];
+    int n = parseForecast(payload.c_str(), payload.length(), slots, FORECAST_SLOTS);
+    if (n < 0) {
+        USE_SERIAL.println("[OWM] forecast JSON error");
+        return;
+    }
+    memcpy(out.forecast, slots, sizeof(slots));
+    out.forecastCount = n;
+}
+
+bool fetchWeather(weatherType &out)
+{
+    String payload;
+    if (!owmGet(String(WEATHER_API_URL) + locationQuery(), payload)) return false;
 
     JsonDocument doc;
-    DeserializationError error = deserializeJson(doc, http.getString());
-    http.end();
+    DeserializationError error = deserializeJson(doc, payload);
     if (error) {
         USE_SERIAL.printf("[OWM] JSON error: %s\n", error.c_str());
         return false;
@@ -100,6 +115,7 @@ bool fetchWeather(weatherType &out)
     out.description = doc["weather"][0]["description"].as<String>();
     out.icon = mapWeatherIcon(doc["weather"][0]["icon"] | "");
     out.wind_speed = doc["wind"]["speed"];
+    fetchForecast(out);
     return true;
 }
 

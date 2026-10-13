@@ -19,7 +19,8 @@ struct WeatherLocation {
 const WeatherLocation& getWeatherLocation();
 bool saveWeatherLocation(const WeatherLocation& loc);
 
-// Returns true and fills `out` on success; leaves `out` untouched on failure.
+// Current conditions + 24 h forecast. Returns true and fills `out` on success;
+// leaves `out` untouched on failure (a failed forecast alone keeps the previous one).
 bool fetchWeather(weatherType &out);
 
 // OpenWeatherMap geocoding for the portal. Writes:

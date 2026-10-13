@@ -19,6 +19,7 @@ h1{font-size:1.3rem;margin:0 0 4px}
 .sub{color:var(--muted);margin:0 0 16px;font-size:.9rem}
 .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:14px}
 .card h2{font-size:1rem;margin:0 0 8px;display:flex;gap:8px;align-items:center}
+.card h2 .move{margin-left:auto;display:flex;gap:4px}.card h2 .move button{padding:4px 10px}
 .num{background:var(--accent);color:var(--accent-fg);border-radius:50%;width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;font-size:.8rem}
 .cur{color:var(--muted);font-size:.85rem;margin-bottom:10px;word-break:break-all}
 .row{display:flex;gap:8px}
@@ -39,12 +40,12 @@ details{margin-top:10px}summary{color:var(--muted);font-size:.85rem;cursor:point
 a{color:inherit}
 </style></head><body>
 <h1>Prochain Départ</h1>
-<p class="sub">Cherchez un arrêt, puis choisissez la ligne et la direction pour chaque panneau. <a href="/wifi">Changer de WiFi</a></p>
+<p class="sub">Cherchez un arrêt, puis choisissez la ligne et la direction pour chaque panneau. Les grands panneaux vont dans la colonne de gauche, les compacts à droite au-dessus de la météo. <a href="/wifi">Changer de WiFi</a> · <a href="/update">Mettre à jour le logiciel</a></p>
 <div id="slots"></div>
 <div id="weather"></div>
 <div class="bar"><span id="status" class="msg"></span><button class="ghost" id="exit">Terminer</button><button id="save">Enregistrer</button></div>
 <script>
-const SLOTS=["Panneau du haut (grand)","Panneau bas gauche","Panneau bas droite"];
+const SLOTS=4;
 const TYPES=["RER","METRO","TRAM","BUS"];
 let stations=[],weather=null,weatherDirty=false,dirty=false;
 const $=s=>document.querySelector(s);
@@ -61,8 +62,8 @@ async function api(url,opt){const r=await fetch(url,opt);let j=null;try{j=await 
 
 function render(){
   const root=$("#slots");root.replaceChildren();
-  SLOTS.forEach((label,i)=>{
-    const st=stations[i]||(stations[i]={name:"",ref:"",type:i?"BUS":"RER",filter:""});
+  for(let i=0;i<SLOTS;i++){
+    const st=stations[i]||(stations[i]={name:"",ref:"",type:i?"BUS":"RER",filter:"",large:!i});
     const cur=el("div",{className:"cur",textContent:describe(st)});
     const name=el("input",{value:st.name,maxLength:23,placeholder:"Titre affiché",oninput:()=>{st.name=ascii(name.value);touch()}});
     const q=el("input",{type:"search",placeholder:"Nom de l'arrêt, ex. Mairie d'Ivry",enterKeyHint:"search"});
@@ -72,16 +73,23 @@ function render(){
     const ref=el("input",{value:st.ref,placeholder:"STIF:StopPoint:Q:12345:",oninput:()=>{st.ref=ref.value.trim();touch()}});
     const type=el("select",{onchange:()=>{st.type=type.value;touch()}},...TYPES.map(t=>el("option",{value:t,textContent:t,selected:st.type===t})));
     const filter=el("input",{value:st.filter,placeholder:"Quai (RER) ou STIF:Line::C01234:",oninput:()=>{st.filter=filter.value.trim();touch()}});
+    const size=el("select",{onchange:()=>{st.large=size.value==="1";touch()}},
+      el("option",{value:"1",textContent:"Grand : colonne de gauche, avec les noms des trains",selected:!!st.large}),
+      el("option",{value:"0",textContent:"Compact : colonne de droite",selected:!st.large}));
     const clear=el("button",{className:"ghost",textContent:"Vider ce panneau",onclick:()=>{Object.assign(st,{name:"",ref:"",filter:""});refresh()}});
-    function refresh(){cur.textContent=describe(st);name.value=st.name;ref.value=st.ref;type.value=st.type;filter.value=st.filter;touch()}
+    function refresh(){cur.textContent=describe(st);name.value=st.name;ref.value=st.ref;type.value=st.type;filter.value=st.filter;size.value=st.large?"1":"0";touch()}
+    const move=d=>{const j=i+d;if(j<0||j>=SLOTS)return;[stations[i],stations[j]]=[stations[j],stations[i]];render();touch()};
     root.append(el("section",{className:"card"},
-      el("h2",{},el("span",{className:"num",textContent:i+1}),label),cur,
+      el("h2",{},el("span",{className:"num",textContent:i+1}),"Panneau "+(i+1),
+        el("span",{className:"move"},el("button",{className:"ghost",textContent:"↑",title:"Monter",disabled:i===0,onclick:()=>move(-1)}),
+          el("button",{className:"ghost",textContent:"↓",title:"Descendre",disabled:i===SLOTS-1,onclick:()=>move(1)}))),cur,
       el("div",{className:"row"},q,go),msg,list,
       el("label",{textContent:"Titre affiché sur l'écran"}),name,
+      el("label",{textContent:"Taille du panneau"}),size,
       el("details",{},el("summary",{textContent:"Réglages avancés"}),
         el("label",{textContent:"MonitoringRef"}),ref,el("label",{textContent:"Type"}),type,
         el("label",{textContent:"Filtre"}),filter,el("div",{style:"margin-top:10px"},clear))));
-  });
+  }
 }
 function touch(){dirty=true;status("Modifications non enregistrées")}
 
@@ -128,6 +136,7 @@ async function directions(stop,list,msg,slot,refresh){
   const area=`STIF:StopArea:SP:${stop.id}:`,lineOf=id=>stop.lines.find(l=>l.id===id);
   const pick=(ref,line,platform)=>{
     const st=stations[slot],train=platform&&modeType(line&&line.mode)==="RER";
+    if(!st.ref)st.large=!!train;
     st.ref=ref;st.type=train?"RER":modeType(line&&line.mode);
     st.filter=train?platform:(line?`STIF:Line::${line.id}:`:"");
     st.name=ascii(`${line?line.code+" ":""}${shortName(stop.name)}`).slice(0,23);
@@ -146,7 +155,7 @@ async function directions(stop,list,msg,slot,refresh){
 
 $("#save").onclick=async()=>{
   status("Enregistrement…");
-  try{await api("/api/stations",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(stations.map(s=>s.ref?{name:s.name,ref:s.ref,type:s.type,filter:s.filter}:{}))});
+  try{await api("/api/stations",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(stations.map(s=>s.ref?{name:s.name,ref:s.ref,type:s.type,filter:s.filter,large:!!s.large}:{}))});
     if(weatherDirty){await api("/api/weather",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(weather)});weatherDirty=false}
     dirty=false;status("Enregistré ✓ Touchez « Terminer » pour revenir aux horaires.")}
   catch(e){status("Échec de l'enregistrement ("+e.message+")",true)}

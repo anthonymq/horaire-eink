@@ -8,18 +8,20 @@
 #define USE_SERIAL Serial
 
 // M5Paper S3: 960x540 (landscape). The countdowns are what matters from across
-// the room, so they get the big type; everything else is secondary.
+// the room, so they get the big type; everything else is secondary. Where the
+// boards go is decided by computeLayout() (lib/transit_core/board_layout.h);
+// the default (one large board, two compact ones) looks like this:
 //
 //  +----------------------------------------------------------------------+
 //  | 14:32  lundi 13 octobre                  MAJ il y a 2 min  .ill [##] |  header
 //  |======================================================================|
 //  | RER title                                  | Bus title               |
 //  | ------------------------------------------ | ----------------------- |
-//  |  4 min   Destination              14:36    |  3 min           14:35  |
-//  | 12 min   Destination              14:44    |  ...                    |
-//  | 19 min   Destination              14:51    | Bus title               |
-//  | 25 min   Destination              14:57    |  ...                    |
-//  | 31 min   Destination              15:03    | City                    |
+//  |  4 min   ROMI                     14:36    |  3 min           14:35  |
+//  | 12 min   ROMI                +3   14:44    |  ...                    |
+//  | Supprime ----------------------  -14:51-   | Bus title               |
+//  | 25 min   ROMI                     14:57    |  ...                    |
+//  | 31 min   ROMI                     15:03    | City                    |
 //  |                                            | [icon] 12°  Ressenti... |
 //  +----------------------------------------------------------------------+
 //
@@ -29,38 +31,10 @@
 //
 //  |#### RER C ############################ /!\ #|
 //  | /!\ 6 gares non desservies     9h40 - 16h00 |  one line per incident
-//  |  4 min   Destination              14:36     |
-
-// ============================================================
-// LAYOUT CONSTANTS
-// ============================================================
-static const int SCREEN_WIDTH = 960;
-static const int SCREEN_HEIGHT = 540;
-static const int MARGIN = 20;
-
-static const int HEADER_H = 44;
-static const int BODY_Y = HEADER_H + 12;
-static const int BODY_BOTTOM = SCREEN_HEIGHT - 12;
-
-static const int TITLE_H = 32;          // Card title + rule
-static const int CARD_GAP = 14;
-
-// Left: RER board, full height
-static const int RER_X = MARGIN;
-static const int RER_W = 604;
-static const int RER_ROWS = 5;
-static const int RER_H = BODY_BOTTOM - BODY_Y;
-
-// Right: two bus boards, then the weather
-static const int DIVIDER_X = RER_X + RER_W + 12;
-static const int SIDE_X = DIVIDER_X + 12;
-static const int SIDE_W = SCREEN_WIDTH - MARGIN - SIDE_X;
-static const int BUS_ROWS = 3;
-static const int BUS_H = TITLE_H + BUS_ROWS * 46;
-static const int BUS1_Y = BODY_Y;
-static const int BUS2_Y = BUS1_Y + BUS_H + CARD_GAP;
-static const int WEATHER_Y = BUS2_Y + BUS_H + CARD_GAP;
-static const int WEATHER_H = BODY_BOTTOM - WEATHER_Y;
+//  |  4 min   ROMI                     14:36     |
+//
+//  A tall weather card (no compact board in the right column) adds the 3-hour
+//  forecast: hour, icon, temperature, chance of rain.
 
 // E-ink palette: secondary text stays dark enough to survive the text waveform
 static const uint16_t INK = TFT_BLACK;
@@ -73,11 +47,11 @@ static const uint16_t PAPER = TFT_WHITE;
 // ============================================================
 // What each row currently shows on the panel; a row is redrawn only when its
 // rendered text changes, so M5GFX only refreshes the dirty area.
-static String prevRerRows[RER_ROWS];
-static String prevBusRows[2][BUS_ROWS];
-static String prevIncidents[3];  // Incidents shown per board: a change redraws the whole board
-static weatherType prevWeather;
-static bool weatherDrawn = false;
+static String prevRows[LAYOUT_MAX_BOARDS][MAX_BOARD_ROWS];
+static String prevIncidents[LAYOUT_MAX_BOARDS];  // Incidents shown per board: a change redraws the whole board
+static String prevWeatherKey;
+static ScreenLayout prevLayout;
+static bool layoutDrawn = false;
 
 // ============================================================
 // HELPER: Draw 2-bit PROGMEM icon with full 4-level grayscale
@@ -251,6 +225,7 @@ static void drawWifiIcon(int x, int bottom, int rssi) {
     }
 }
 
+
 static void drawHeader(const StatusInfo& status, time_t now) {
     static const char* const DAYS[] = {"dimanche", "lundi", "mardi", "mercredi",
                                        "jeudi", "vendredi", "samedi"};
@@ -258,10 +233,11 @@ static void drawHeader(const StatusInfo& status, time_t now) {
                                          "juillet", "aout", "septembre", "octobre",
                                          "novembre", "decembre"};
     clearRegion(0, 0, SCREEN_WIDTH, HEADER_H);
-    
+
     const lgfx::GFXfont* text = &FreeSans12pt7b;
+    const lgfx::GFXfont* bold = &FreeSansBold12pt7b;
     const int baseline = centeredBaseline(0, HEADER_H - 2, &FreeSansBold18pt7b);
-    
+
     // Clock + date
     drawText(status.timeStr, MARGIN, baseline, &FreeSansBold18pt7b, INK, textdatum_t::baseline_left);
     int x = MARGIN + M5.Display.textWidth(status.timeStr) + 14;
@@ -271,82 +247,175 @@ static void drawHeader(const StatusInfo& status, time_t now) {
     snprintf(dateStr, sizeof(dateStr), "%s %d %s", DAYS[local.tm_wday], local.tm_mday,
              MONTHS[local.tm_mon]);
     drawText(dateStr, x, baseline, text, INK_SOFT, textdatum_t::baseline_left);
-    
-    // Right side, laid out from the right edge: battery %, battery, WiFi, freshness
+    const int leftEnd = x + M5.Display.textWidth(dateStr);
+
+    // Right side, laid out from the right edge: battery %, battery, WiFi, freshness.
+    // Battery saving mode shows the percentage in bold.
     int right = SCREEN_WIDTH - MARGIN;
     char battText[8];
     snprintf(battText, sizeof(battText), "%d%%", status.batteryLevel);
-    drawText(battText, right, baseline, text, INK_SOFT, textdatum_t::baseline_right);
+    drawText(battText, right, baseline, status.batteryLow ? bold : text,
+             status.batteryLow ? INK : INK_SOFT, textdatum_t::baseline_right);
     right -= M5.Display.textWidth(battText) + 8 + 33;
     drawBatteryIcon(right, baseline - 16, status.batteryLevel, status.isCharging);
     right -= 18 + 25;
     drawWifiIcon(right, baseline, status.wifiRssi);
     right -= 18;
-    
-    // Fresh data stays quiet (gray); stale data (missed a fetch) is shown in bold black
-    char freshStr[24];
+
+    // Fresh data stays quiet (gray); stale data (missed a fetch) is shown in bold
+    // black, with the reason of the last failure
+    char ago[24] = "";
     int age = status.dataAgeSecs;
     bool stale = age < 0 || age > 300;
-    if (age < 0) {
+    if (age >= 3600) {
+        snprintf(ago, sizeof(ago), "il y a %d h", age / 3600);
+    } else if (age >= 60) {
+        snprintf(ago, sizeof(ago), "il y a %d min", age / 60);
+    }
+    char freshStr[80];
+    bool hasError = status.error && status.error[0];
+    if (stale && hasError) {
+        snprintf(freshStr, sizeof(freshStr), age < 0 ? "%s" : "%s - MAJ %s", status.error, ago);
+    } else if (age < 0) {
         snprintf(freshStr, sizeof(freshStr), "Hors ligne");
     } else if (age < 60) {
         snprintf(freshStr, sizeof(freshStr), "A jour");
-    } else if (age < 3600) {
-        snprintf(freshStr, sizeof(freshStr), "MAJ il y a %d min", age / 60);
     } else {
-        snprintf(freshStr, sizeof(freshStr), "MAJ il y a %d h", age / 3600);
+        snprintf(freshStr, sizeof(freshStr), "MAJ %s", ago);
     }
-    drawText(freshStr, right, baseline, stale ? &FreeSansBold12pt7b : text,
-             stale ? INK : INK_SOFT, textdatum_t::baseline_right);
-    
+    M5.Display.setFont(stale ? bold : text);
+    char fitted[80];
+    fitText(freshStr, right - leftEnd - 24, fitted, sizeof(fitted));
+    drawText(fitted, right, baseline, stale ? bold : text, stale ? INK : INK_SOFT, textdatum_t::baseline_right);
+
     M5.Display.fillRect(MARGIN, HEADER_H - 2, SCREEN_WIDTH - 2 * MARGIN, 2, INK);
 }
 
 // ============================================================
-// WEATHER (bottom right): city, icon, temperature, details
+// WEATHER: city, icon, temperature, details, then the forecast if there is room
 // ============================================================
-static void drawWeather(const weatherType& weather, bool forceRedraw) {
-    bool changed = forceRedraw || !weatherDrawn ||
-                   fabsf(weather.temperature - prevWeather.temperature) > 0.05f ||
-                   fabsf(weather.feels_like - prevWeather.feels_like) > 0.05f ||
-                   fabsf(weather.wind_speed - prevWeather.wind_speed) > 0.05f ||
-                   weather.humidity != prevWeather.humidity ||
-                   weather.icon != prevWeather.icon ||
-                   weather.description != prevWeather.description;
-    if (!changed) return;
-    prevWeather = weather;
-    weatherDrawn = true;
-    
-    clearRegion(SIDE_X, WEATHER_Y, SIDE_W, WEATHER_H);
-    drawCardTitle(SIDE_X, WEATHER_Y, SIDE_W, getWeatherLocation().name);
-    
-    const int y = WEATHER_Y + TITLE_H;
-    const int h = WEATHER_H - TITLE_H;
+static const int WEATHER_MAIN_H = 72;      // Icon + temperature block
+static const int FORECAST_ROW_H = 118;     // Hour, icon, temperature, rain chance
+static const int FORECAST_COLUMNS = 4;
+
+static String weatherKey(const LayoutRect& r, const weatherType& w, bool valid) {
+    String key = String(r.x) + ',' + r.y + ',' + r.w + ',' + r.h + '|';
+    if (!valid) return key;
+    key += String((int)lroundf(w.temperature)) + '|' + (int)lroundf(w.feels_like) + '|' +
+           (int)lroundf(w.wind_speed * 3.6f) + '|' + w.icon;
+    for (int i = 0; i < w.forecastCount; i++) {
+        const ForecastSlot& s = w.forecast[i];
+        key += String('|') + (long)s.time + ',' + (int)lroundf(s.temp) + ',' + s.pop + ',' + s.icon + ',' +
+               (isRainy(s) ? 'r' : '-');
+    }
+    return key;
+}
+
+static void drawTemperature(int x, int baseline, float temp, const lgfx::GFXfont* font, int ring, int thick) {
+    char buf[8];
+    snprintf(buf, sizeof(buf), "%d", (int)lroundf(temp));
+    drawText(buf, x, baseline, font, INK, textdatum_t::baseline_center);
+    drawDegree(x + M5.Display.textWidth(buf) / 2 + 2, baseline - capHeight(font), ring, thick, INK);
+}
+
+// One row of forecast columns: "15h", icon, "14°", "70%"
+static void drawForecastRow(int x, int y, int w, const ForecastSlot* slots, int count) {
+    const int colW = w / FORECAST_COLUMNS;
+    for (int i = 0; i < count; i++) {
+        const ForecastSlot& s = slots[i];
+        const int cx = x + i * colW + colW / 2;
+        struct tm local;
+        localtime_r(&s.time, &local);
+        char buf[8];
+        snprintf(buf, sizeof(buf), "%dh", local.tm_hour);
+        drawText(buf, cx, y + 16, &FreeSans9pt7b, INK_SOFT, textdatum_t::baseline_center);
+        const char* icon = getMiniMeteoconIconFromProgmem(s.icon);
+        if (icon != nullptr) draw2BitIcon(cx - 25, y + 22, icon, 50, 50, INK);
+        drawTemperature(cx, y + 96, s.temp, &FreeSansBold12pt7b, 3, 2);
+        if (s.pop >= 20) {
+            snprintf(buf, sizeof(buf), "%d%%", s.pop);
+            drawText(buf, cx, y + 114, isRainy(s) ? &FreeSansBold9pt7b : &FreeSans9pt7b,
+                     isRainy(s) ? INK : INK_SOFT, textdatum_t::baseline_center);
+        }
+    }
+}
+
+static void drawWeather(const LayoutRect& r, const weatherType& weather, bool valid, bool forceRedraw) {
+    String key = weatherKey(r, weather, valid);
+    if (!forceRedraw && key == prevWeatherKey) return;
+    prevWeatherKey = key;
+
+    clearRegion(r.x, r.y, r.w, r.h);
+    drawCardTitle(r.x, r.y, r.w, getWeatherLocation().name);
+    if (!valid) return;
+
+    const int y = r.y + TITLE_H;
+    const int h = min(r.h - TITLE_H, WEATHER_MAIN_H);
     const char* iconData = getMiniMeteoconIconFromProgmem(weather.icon);
     if (iconData != nullptr) {
-        draw2BitIcon(SIDE_X, y + (h - 50) / 2, iconData, 50, 50, INK);
+        draw2BitIcon(r.x, y + (h - 50) / 2, iconData, 50, 50, INK);
     }
-    
+
     // Temperature
     const lgfx::GFXfont* big = &InterBoldDigits36;
     const int baseline = centeredBaseline(y, h, big);
-    char buf[24];
+    char buf[48];
     snprintf(buf, sizeof(buf), "%d", (int)lroundf(weather.temperature));
-    int x = SIDE_X + 60;
+    int x = r.x + 60;
     drawText(buf, x, baseline, big, INK, textdatum_t::baseline_left);
     x += M5.Display.textWidth(buf) + 3;
     drawDegree(x, baseline - capHeight(big), 5, 3, INK);
     x += 24;
-    
-    // Feels-like over humidity + wind
+
+    // Rain outlook on top, the largest wording that fits (humidity when there is
+    // no forecast), then feels-like + wind
+    const int textW = r.x + r.w - x;
     const lgfx::GFXfont* small = &FreeSans9pt7b;
-    const int line1 = baseline - capHeight(big) + capHeight(small);
+    const int line1 = baseline - capHeight(big) + capHeight(&FreeSans12pt7b);
+    char outlook[48];
+    const lgfx::GFXfont* outlookFont = nullptr;
+    bool rain = false;
+    if (weather.forecastCount > 0) {
+        struct Option { bool brief; const lgfx::GFXfont* regular; const lgfx::GFXfont* bold; };
+        static const Option OPTIONS[] = {
+            {false, &FreeSans12pt7b, &FreeSansBold12pt7b},
+            {true, &FreeSans12pt7b, &FreeSansBold12pt7b},
+            {true, &FreeSans9pt7b, &FreeSansBold9pt7b},
+        };
+        for (const Option& o : OPTIONS) {
+            rainSummary(weather.forecast, weather.forecastCount, 12, o.brief, outlook, sizeof(outlook));
+            rain = strncmp(outlook, "Pluie", 5) == 0;
+            outlookFont = rain ? o.bold : o.regular;
+            M5.Display.setFont(outlookFont);
+            if (M5.Display.textWidth(outlook) <= textW) break;
+        }
+    } else {
+        snprintf(outlook, sizeof(outlook), "Humidite %d%%", weather.humidity);
+        outlookFont = &FreeSans12pt7b;
+    }
+    M5.Display.setFont(outlookFont);
+    char fitted[48];
+    fitText(outlook, textW, fitted, sizeof(fitted));
+    drawText(fitted, x, line1, outlookFont, INK, textdatum_t::baseline_left);
+    
     snprintf(buf, sizeof(buf), "Ressenti %d", (int)lroundf(weather.feels_like));
-    drawText(buf, x, line1, small, INK_SOFT, textdatum_t::baseline_left);
-    drawDegree(x + M5.Display.textWidth(buf) + 2, line1 - capHeight(small), 2, 1, INK_SOFT);
-    snprintf(buf, sizeof(buf), "%d%%  -  %d km/h", weather.humidity,
-             (int)lroundf(weather.wind_speed * 3.6f));
     drawText(buf, x, baseline, small, INK_SOFT, textdatum_t::baseline_left);
+    int degX = x + M5.Display.textWidth(buf) + 2;
+    drawDegree(degX, baseline - capHeight(small), 2, 1, INK_SOFT);
+    snprintf(buf, sizeof(buf), "%d km/h", (int)lroundf(weather.wind_speed * 3.6f));
+    if (degX + 16 + M5.Display.textWidth(buf) <= r.x + r.w) {
+        drawText(buf, r.x + r.w, baseline, small, INK_SOFT, textdatum_t::baseline_right);
+    }
+    
+    // Forecast rows below, as many as fit
+    int rowY = y + h + 8;
+    for (int first = 0; first < weather.forecastCount && rowY + FORECAST_ROW_H <= r.y + r.h;
+         first += FORECAST_COLUMNS) {
+        M5.Display.drawFastHLine(r.x, rowY - 4, r.w, INK_FAINT);
+        drawForecastRow(r.x, rowY, r.w, weather.forecast + first,
+                        min(FORECAST_COLUMNS, weather.forecastCount - first));
+        rowY += FORECAST_ROW_H + 8;
+    }
 }
 
 // ============================================================
@@ -369,12 +438,23 @@ static void drawCountdown(int numRight, int maxW, int baseline, long mins, const
     drawText("min", numRight + 8, baseline, unitFont, INK_SOFT, textdatum_t::baseline_left);
 }
 
-static void drawClockTime(int right, int baseline, time_t t) {
+// Horizontal line through text drawn at (left..right, baseline) with `font`
+static void strikeThrough(int left, int right, int baseline, const lgfx::GFXfont* font, uint16_t color) {
+    int y = baseline - capHeight(font) / 2;
+    M5.Display.fillRect(left, y - 1, right - left, 2, color);
+}
+
+// Clock time right-aligned on `right`; returns its left edge
+static int drawClockTime(int right, int baseline, time_t t, bool struck) {
     struct tm local;
     localtime_r(&t, &local);
     char hhmm[8];
     snprintf(hhmm, sizeof(hhmm), "%02d:%02d", local.tm_hour, local.tm_min);
-    drawText(hhmm, right, baseline, &FreeSans12pt7b, INK_SOFT, textdatum_t::baseline_right);
+    const lgfx::GFXfont* font = &FreeSans12pt7b;
+    drawText(hhmm, right, baseline, font, INK_SOFT, textdatum_t::baseline_right);
+    int left = right - M5.Display.textWidth(hhmm);
+    if (struck) strikeThrough(left - 2, right + 2, baseline, font, INK);
+    return left;
 }
 
 static void drawEmptyRow(int x, int y, int h, const char* text) {
@@ -384,60 +464,69 @@ static void drawEmptyRow(int x, int y, int h, const char* text) {
     }
 }
 
-// RER row:  [ 12 min ]  Destination ................  14:44
-static void drawTrainRow(int x, int y, int w, int h, const departureType* dep, time_t now,
-                         const char* emptyText) {
+// One departure:  [ 12 min ]  Name ..............  +3  14:44
+//   cancelled:    Supprime    -Name-----------------  -14:51-
+// Rows of BIG_ROW_MIN_H and more use the big digits; the name is only shown on
+// boards with showNames.
+static void drawDepartureRow(int x, int y, int w, int h, const departureType* dep, time_t now,
+                             bool showNames, const char* emptyText) {
     clearRegion(x, y + 1, w, h - 1);
     if (dep == nullptr) {
         drawEmptyRow(x, y, h, emptyText);
         return;
     }
-    
-    const int baseline = centeredBaseline(y, h, &InterBoldDigits60);
-    drawCountdown(x + 118, 118, baseline, (long)(dep->expected - now) / 60, &InterBoldDigits60,
-                  &InterBoldDigits36, &FreeSans12pt7b);
-    
-    // Destination: large if it fits, otherwise smaller, truncated as a last resort
-    const int nameX = x + 186;
-    const int nameW = w - (nameX - x) - 72 - 12;  // Leave room for the clock time
-    const lgfx::GFXfont* nameFont = &FreeSansBold18pt7b;
+
+    const bool big = h >= BIG_ROW_MIN_H;
+    const lgfx::GFXfont* numFont = big ? &InterBoldDigits60 : &InterBoldDigits36;
+    const int numW = big ? 118 : 72;
+    const int baseline = centeredBaseline(y, h, numFont);
+
+    // Right edge: clock time, and the delay just before it
+    int right = drawClockTime(x + w, baseline, dep->expected, dep->cancelled) - 10;
+    long delay = dep->delayMinutes();
+    if (delay > 0) {
+        char buf[8];
+        snprintf(buf, sizeof(buf), "+%ld", delay);
+        drawText(buf, right, baseline, &FreeSansBold12pt7b, INK, textdatum_t::baseline_right);
+        right -= M5.Display.textWidth(buf) + 10;
+    }
+
+    if (dep->cancelled) {
+        drawText("Supprime", x, baseline, big ? &FreeSansBold12pt7b : &FreeSansBold9pt7b, INK,
+                 textdatum_t::baseline_left);
+    } else {
+        drawCountdown(x + numW, numW, baseline, (long)(dep->expected - now) / 60, numFont,
+                      big ? &InterBoldDigits36 : &FreeSansBold18pt7b,
+                      big ? &FreeSans12pt7b : &FreeSans9pt7b);
+    }
+    if (!showNames || dep->name.empty()) return;
+
+    // Name: large if it fits, otherwise smaller, truncated as a last resort
+    const int nameX = x + numW + (big ? 68 : 50);
+    const int nameW = right - nameX - 2;
+    if (nameW < 30) return;
+    const lgfx::GFXfont* nameFont = big ? &FreeSansBold18pt7b : &FreeSansBold12pt7b;
     M5.Display.setFont(nameFont);
     if (M5.Display.textWidth(dep->name.c_str()) > nameW) {
-        nameFont = &FreeSansBold12pt7b;
+        nameFont = big ? &FreeSansBold12pt7b : &FreeSansBold9pt7b;
         M5.Display.setFont(nameFont);
     }
     char name[48];
     fitText(dep->name.c_str(), nameW, name, sizeof(name));
-    drawText(name, nameX, baseline, nameFont, INK, textdatum_t::baseline_left);
-    
-    drawClockTime(x + w, baseline, dep->expected);
-}
-
-// Bus row:  [ 7 min ]  ............  14:39
-static void drawBusRow(int x, int y, int w, int h, const departureType* dep, time_t now,
-                       const char* emptyText) {
-    clearRegion(x, y + 1, w, h - 1);
-    if (dep == nullptr) {
-        drawEmptyRow(x, y, h, emptyText);
-        return;
-    }
-    
-    const int baseline = centeredBaseline(y, h, &InterBoldDigits36);
-    drawCountdown(x + 72, 72, baseline, (long)(dep->expected - now) / 60, &InterBoldDigits36,
-                  &FreeSansBold18pt7b, &FreeSans9pt7b);
-    drawClockTime(x + w, baseline, dep->expected);
+    drawText(name, nameX, baseline, nameFont, dep->cancelled ? INK_SOFT : INK, textdatum_t::baseline_left);
+    if (dep->cancelled) strikeThrough(nameX - 2, nameX + M5.Display.textWidth(name) + 2, baseline, nameFont, INK);
 }
 
 // Incidents in the first row of a board, one line each: warning sign (filled =
 // blocking, outline = delays), text cut to fit, time window right-aligned.
-static void drawIncidents(int x, int y, int w, int h, bool isTrain,
-                          const std::vector<incidentType>& incidents) {
-    const lgfx::GFXfont* bold = isTrain ? &FreeSansBold12pt7b : &FreeSansBold9pt7b;
-    const lgfx::GFXfont* regular = isTrain ? &FreeSans12pt7b : &FreeSans9pt7b;
-    const int maxLines = isTrain ? 3 : 2;
-    const int iconSize = isTrain ? 22 : 16;
+static void drawIncidents(int x, int y, int w, int h, const std::vector<incidentType>& incidents) {
+    const bool roomy = h >= BIG_ROW_MIN_H;
+    const lgfx::GFXfont* bold = roomy ? &FreeSansBold12pt7b : &FreeSansBold9pt7b;
+    const lgfx::GFXfont* regular = roomy ? &FreeSans12pt7b : &FreeSans9pt7b;
+    const int maxLines = constrain((h - 4) / (roomy ? 28 : 21), 1, 3);
+    const int iconSize = roomy ? 22 : 16;
     const int textX = x + iconSize + 10;
-    
+
     const int count = min((int)incidents.size(), maxLines);
     const int lineH = (h - 4) / maxLines;
     const int top = y + (h - lineH * count) / 2;
@@ -446,7 +535,7 @@ static void drawIncidents(int x, int y, int w, int h, bool isTrain,
         const incidentType& inc = incidents[i];
         const int baseline = centeredBaseline(top + i * lineH, lineH, bold);
         drawWarningIcon(x + 2, baseline, iconSize, inc.blocking, INK, PAPER);
-        
+
         int textRight = x + w;
         if (inc.when.length()) {
             drawText(inc.when.c_str(), x + w, baseline, regular, INK, textdatum_t::baseline_right);
@@ -461,12 +550,12 @@ static void drawIncidents(int x, int y, int w, int h, bool isTrain,
 
 // Title, then rows separated by light rules. Only rows whose content changed are
 // redrawn, except when the incidents change: then the whole board is.
-static void drawBoard(int x, int y, int w, int h, int rows, const BoardView& board, bool isTrain,
-                      time_t now, String* prevRows, String& prevIncidentKey, bool forceRedraw) {
-    const int rowsY = y + TITLE_H;
-    const int rowH = (h - TITLE_H) / rows;
-    const char* emptyText = isTrain ? "Aucun train annonce" : "Aucun passage annonce";
-    
+static void drawBoard(const BoardPlacement& place, const BoardView& board, time_t now,
+                      String* rowKeys, String& prevIncidentKey, bool forceRedraw) {
+    const LayoutRect& r = place.rect;
+    const int rowsY = r.y + TITLE_H;
+    const char* emptyText = board.isTrain ? "Aucun train annonce" : "Aucun passage annonce";
+
     static const std::vector<incidentType> none;
     const std::vector<incidentType>& incidents = board.incidents ? *board.incidents : none;
     String incidentKey;
@@ -480,79 +569,86 @@ static void drawBoard(int x, int y, int w, int h, int rows, const BoardView& boa
     if (incidentKey != prevIncidentKey) forceRedraw = true;
     prevIncidentKey = incidentKey;
     const int firstRow = incidents.empty() ? 0 : 1;  // Departures start after the incident row
-    
+
     if (forceRedraw) {
-        clearRegion(x, y, w, h);
+        clearRegion(r.x, r.y, r.w, r.h);
         if (incidents.empty()) {
-            drawCardTitle(x, y, w, board.title);
+            drawCardTitle(r.x, r.y, r.w, board.title);
         } else {
-            drawAlertCardTitle(x, y, w, board.title, incidents.size());
-            drawIncidents(x, rowsY, w, rowH, isTrain, incidents);
+            drawAlertCardTitle(r.x, r.y, r.w, board.title, incidents.size());
+            drawIncidents(r.x, rowsY, r.w, place.rowH, incidents);
         }
-        for (int i = 1; i < rows; i++) {
-            M5.Display.drawFastHLine(x, rowsY + i * rowH, w, INK_FAINT);
+        for (int i = 1; i < place.rows; i++) {
+            M5.Display.drawFastHLine(r.x, rowsY + i * place.rowH, r.w, INK_FAINT);
         }
-        for (int i = 0; i < rows; i++) prevRows[i] = "";
+        for (int i = 0; i < place.rows; i++) rowKeys[i] = "";
     }
-    
+
     const std::vector<departureType>& deps = *board.departures;
-    for (int i = firstRow; i < rows; i++) {
+    for (int i = firstRow; i < place.rows; i++) {
         size_t depIndex = i - firstRow;
         const departureType* dep = depIndex < deps.size() ? &deps[depIndex] : nullptr;
-        
+
         String key;
         if (dep) {
             long mins = (long)(dep->expected - now) / 60;
-            key = String((long)dep->expected) + '|' + String(mins < 1 ? 0 : mins) + '|' + dep->name;
+            key = String((long)dep->expected) + '|' + String(mins < 1 ? 0 : mins) + '|' + dep->name.c_str() +
+                  '|' + (dep->cancelled ? 'x' : '-') + dep->delayMinutes();
         } else if (depIndex == 0) {
             key = "empty";
         }
-        if (key == prevRows[i]) continue;
-        prevRows[i] = key;
-        
-        const char* empty = depIndex == 0 ? emptyText : nullptr;
-        int rowY = rowsY + i * rowH;
-        if (isTrain) {
-            drawTrainRow(x, rowY, w, rowH, dep, now, empty);
-        } else {
-            drawBusRow(x, rowY, w, rowH, dep, now, empty);
-        }
+        if (key == rowKeys[i]) continue;
+        rowKeys[i] = key;
+
+        drawDepartureRow(r.x, rowsY + i * place.rowH, r.w, place.rowH, dep, now, board.showNames,
+                         depIndex == 0 ? emptyText : nullptr);
     }
+}
+
+// No station at all: say how to add one
+static void drawNoStations() {
+    const int y = BODY_Y + 120;
+    drawText("Aucun arret configure", LEFT_X, y, &FreeSansBold18pt7b, INK, textdatum_t::baseline_left);
+    drawText("Maintenez l'ecran appuye 5 s pour choisir vos arrets.", LEFT_X, y + 44,
+             &FreeSans12pt7b, INK_SOFT, textdatum_t::baseline_left);
 }
 
 // ============================================================
 // MAIN: Draw screen with partial refresh support
 // ============================================================
-void drawScreen(const BoardView boards[3], const weatherType& weather, const StatusInfo& status,
-                time_t now, bool fullRefresh)
+void drawScreen(const ScreenLayout& layout, const BoardView* boards, const weatherType& weather,
+                bool weatherValid, const StatusInfo& status, time_t now, bool fullRefresh)
 {
+    if (!layoutDrawn || layout != prevLayout) fullRefresh = true;
+
     // Full refreshes use the high-quality waveform to clear ghosting; the
     // per-minute updates use the shorter text waveform (less time driving the panel).
     M5.Display.setEpdMode(fullRefresh ? epd_mode_t::epd_quality : epd_mode_t::epd_text);
-    
+
     if (fullRefresh) {
         M5.Display.fillScreen(PAPER);
     }
-    
+
     M5.Display.startWrite();
-    
+
     drawHeader(status, now);
-    
-    drawBoard(RER_X, BODY_Y, RER_W, RER_H, RER_ROWS, boards[0], true,
-              now, prevRerRows, prevIncidents[0], fullRefresh);
-    drawBoard(SIDE_X, BUS1_Y, SIDE_W, BUS_H, BUS_ROWS, boards[1], false,
-              now, prevBusRows[0], prevIncidents[1], fullRefresh);
-    drawBoard(SIDE_X, BUS2_Y, SIDE_W, BUS_H, BUS_ROWS, boards[2], false,
-              now, prevBusRows[1], prevIncidents[2], fullRefresh);
-    
-    drawWeather(weather, fullRefresh);
-    
+
+    for (int i = 0; i < layout.count; i++) {
+        const BoardPlacement& place = layout.boards[i];
+        drawBoard(place, boards[place.station], now, prevRows[i], prevIncidents[i], fullRefresh);
+    }
+    if (layout.count == 0 && fullRefresh) drawNoStations();
+
+    drawWeather(layout.weather, weather, weatherValid, fullRefresh);
+
     if (fullRefresh) {
         M5.Display.drawFastVLine(DIVIDER_X, BODY_Y, BODY_BOTTOM - BODY_Y, INK_FAINT);
     }
-    
+
     M5.Display.endWrite();
     M5.Display.display();
+    prevLayout = layout;
+    layoutDrawn = true;
     USE_SERIAL.println(fullRefresh ? "Full refresh" : "Partial refresh");
 }
 
@@ -573,7 +669,7 @@ void displayLoader(const char* message)
     M5.Display.setTextDatum(textdatum_t::top_left);
 
     M5.Display.display();
-    weatherDrawn = false;
+    layoutDrawn = false;  // Next drawScreen() redraws everything
 }
 
 // ============================================================
@@ -593,7 +689,7 @@ void drawSetupScreen(const char* title, const SetupQr* qrs, int qrCount,
              &FreeSansBold18pt7b, INK, textdatum_t::baseline_left);
     M5.Display.fillRect(MARGIN, HEADER_H - 2, SCREEN_WIDTH - 2 * MARGIN, 2, INK);
 
-    int x = MARGIN + 20;
+    int x = qrCount > 0 ? MARGIN + 20 : MARGIN - 10;
     M5.Display.setFont(&FreeSans9pt7b);
     M5.Display.setTextColor(INK_SOFT);
     M5.Display.setTextDatum(textdatum_t::top_center);
@@ -620,5 +716,5 @@ void drawSetupScreen(const char* title, const SetupQr* qrs, int qrCount,
     }
 
     M5.Display.display();
-    weatherDrawn = false;
+    layoutDrawn = false;  // Next drawScreen() redraws everything
 }

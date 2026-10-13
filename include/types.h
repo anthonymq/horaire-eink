@@ -3,11 +3,8 @@
 
 #include <Arduino.h>
 #include <ctime>
-
-struct departureType {
-    String name;
-    time_t expected;  // UTC epoch of expected departure/arrival
-};
+#include "departures.h"  // departureType, StopSeen (lib/transit_core)
+#include "forecast.h"    // ForecastSlot (lib/transit_core)
 
 // Active traffic incident (PRIM Navitia line report) affecting a board
 struct incidentType {
@@ -23,6 +20,8 @@ struct weatherType {
     String description;
     String icon;
     float wind_speed;
+    ForecastSlot forecast[FORECAST_SLOTS];  // Next 3-hour steps, soonest first
+    int forecastCount;                       // 0 when the forecast fetch failed
 };
 
 #endif

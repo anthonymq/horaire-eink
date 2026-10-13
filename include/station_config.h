@@ -11,14 +11,16 @@
  * configure transit stops via WiFiManager portal instead of hardcoding in config.h.
  * 
  * Storage Schema (NVS namespace: "stations"):
- *   - station_count: int (0-3)
- *   - station_0_name, station_0_ref, station_0_type, etc.
- *   - station_1_name, station_1_ref, station_1_type, etc.
- *   - station_2_name, station_2_ref, station_2_type, etc.
+ *   - count: int (0-4), highest configured slot + 1
+ *   - s0_name, s0_ref, s0_type, s0_filter, s0_disp, s0_names, s0_max
+ *   - s1_..., s2_..., s3_...
+ *
+ * Slot order is the order on screen; `showNames` picks the board size (large
+ * boards in the left column, see board_layout.h).
  */
 
 // Maximum number of configurable stations
-#define MAX_STATIONS 3
+#define MAX_STATIONS 4
 
 // Maximum string lengths for station fields
 #define STATION_NAME_LEN 32
@@ -36,7 +38,7 @@ struct RuntimeStationConfig {
     char monitoringRef[STATION_REF_LEN];   // STIF:StopPoint:Q:XXXXX: format
     char type[STATION_TYPE_LEN];           // "RER", "BUS", "METRO", "TRAM"
     char filter[STATION_FILTER_LEN];       // Platform name or operator filter
-    bool showNames;                         // Show destination names in UI
+    bool showNames;                         // Large board (left column, journey names shown)
     int maxEntries;                        // Max departures to display (1-6)
     char displayName[STATION_DISPLAY_LEN]; // Name shown in UI banner
     bool isConfigured;                     // True if this slot has valid config
@@ -57,7 +59,7 @@ bool hasNVSStationConfig();
 
 /**
  * Get the number of configured stations.
- * @return Number of stations (0-3)
+ * @return Number of stations (0-4)
  */
 int getStationCount();
 
@@ -77,7 +79,7 @@ void buildEndpointUrl(const char* monitoringRef, char* outBuffer, size_t bufferS
 
 /**
  * Save a station configuration to NVS.
- * @param index Station slot (0-2)
+ * @param index Station slot (0-3)
  * @param config Station configuration to save
  * @return true if save succeeded
  */
@@ -85,7 +87,7 @@ bool saveStationConfig(int index, const RuntimeStationConfig& config);
 
 /**
  * Remove one station slot from NVS and the runtime array.
- * @param index Station slot (0-2)
+ * @param index Station slot (0-3)
  * @return true if clear succeeded
  */
 bool clearStationSlot(int index);
