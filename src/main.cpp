@@ -50,7 +50,9 @@ long lastStatusBarEpoch = 0;      // Track last status bar update
 int lastStatusBarMinute = -1;     // Track minute for clock updates
 bool ntpSynced = false;
 bool configPortalActive = false;  // Track if config portal is running
-#define DELAY_BETWEEN_CALLS 30  // in seconds
+bool wifiConnected = false;       // Track WiFi state for power management
+bool needWifiReconnect = true;   // Flag to trigger WiFi reconnection
+#define DELAY_BETWEEN_CALLS 60  // in seconds
 #define STATUS_BAR_INTERVAL 60  // Status bar refresh every 60 seconds (saves E-Ink refreshes)
 #define CONFIG_PORTAL_TIMEOUT 120  // Portal timeout in seconds
 #define AP_NAME "ProchainDepart-Setup"  // AP name for configuration
@@ -58,11 +60,8 @@ bool configPortalActive = false;  // Track if config portal is running
 // Power Management Configuration (P4)
 // Light sleep is used between refresh cycles to conserve battery.
 // When charging via USB, sleep is disabled for better responsiveness.
-// NOTE: Set to false to test battery operation - light sleep may cause issues on M5Paper S3
-#define POWER_SAVE_ENABLED false      // DISABLED: Light sleep causes display issues on M5Paper S3
-#define SLEEP_DURATION_US 10000000ULL // Sleep 10 seconds (10,000,000 microseconds)
-                                       // Status bar updates every 10s for data freshness
-                                       // Clock updates every minute
+#define POWER_SAVE_ENABLED true       // ENABLED: Light sleep for battery conservation
+#define SLEEP_DURATION_US 30000000ULL // Sleep 30 seconds
 
 /**
  * Enter light sleep to conserve power between refresh cycles.
@@ -420,7 +419,7 @@ void setup()
 {
     // Initialize M5Paper S3 with auto-detection
     auto cfg = M5.config();
-    cfg.serial_baudrate = 0;  // Disable serial to prevent blocking on battery
+    cfg.serial_baudrate = 115200;
     M5.begin(cfg);
 
     // M5Paper S3 display is automatically initialized by M5.begin()
@@ -437,7 +436,7 @@ void setup()
     for (int i = 0; i < NUM_WIFI_CREDENTIALS; i++) {
         wifiMulti.addAP(WIFI_CREDENTIALS[i].ssid, WIFI_CREDENTIALS[i].password);
     }
-    lastSuccessfullCallEpoch = rtc.getEpoch();
+    lastSuccessfullCallEpoch = time(nullptr);
 }
 
 #include <weather_api.h>
@@ -479,29 +478,28 @@ void loop()
         lastCallEpoch = 0;  // Force immediate refresh
     }
 
-    if (wifiMulti.run() == WL_CONNECTED)
+    struct tm timeinfo;
+    getLocalTime(&timeinfo);
+    int currentMinute = timeinfo.tm_min;
+    long currentEpoch = time(nullptr);
+    
+    bool needsDataFetch = (currentEpoch - lastCallEpoch) >= DELAY_BETWEEN_CALLS || lastCallEpoch == 0;
+    bool needsStatusBarUpdate = currentMinute != lastStatusBarMinute;
+    
+    if (needsDataFetch)
     {
-        // Sync time with NTP on first WiFi connection
+        if (wifiMulti.run() != WL_CONNECTED)
+        {
+            displayLoader("Connection au WIFI...");
+            delay(500);
+            return;
+        }
+        
         if (!ntpSynced) {
             syncTimeWithNTP();
         }
         
-        // Get current time info for both data fetch and status bar decisions
-        struct tm timeinfo;
-        getLocalTime(&timeinfo);
-        int currentMinute = timeinfo.tm_min;
-        long currentEpoch = rtc.getEpoch();
-        
-        // Check if we need a full data fetch (every 30s)
-        bool needsDataFetch = (currentEpoch - lastCallEpoch) > 29 || lastCallEpoch == 0;
-        
-        // Check if we need status bar update (every 10s for freshness, or minute changed for clock)
-        bool needsStatusBarUpdate = (currentEpoch - lastStatusBarEpoch) >= STATUS_BAR_INTERVAL || 
-                                     currentMinute != lastStatusBarMinute;
-        
-        if (needsDataFetch)
-        {
-            std::vector<std::vector<departureType>> allDepartures;
+        std::vector<std::vector<departureType>> allDepartures;
             
             // Get stations from NVS config or config.h fallback (FR-SC1)
             RuntimeStationConfig* stations = getStations();
@@ -527,16 +525,16 @@ void loop()
             static weatherType currentWeather = {};
             
             // Fetch weather data only every 30 minutes
-            if ((rtc.getEpoch() - lastWeatherCallEpoch) > 1800 || lastWeatherCallEpoch == 0)
+            if ((time(nullptr) - lastWeatherCallEpoch) > 1800 || lastWeatherCallEpoch == 0)
             {
                 USE_SERIAL.println("Fetching weather data...");
                 currentWeather = fetchWeather(WEATHER_CITY);
-                lastWeatherCallEpoch = rtc.getEpoch();
+                lastWeatherCallEpoch = time(nullptr);
             }
 
             // Full refresh every 30 minutes to clear ghosting (1800 seconds)
             // Partial refresh handles individual row updates
-            bool fullScreenRefresh = (rtc.getEpoch() - lastScreenRefreshEpoch) > 1800 || lastScreenRefreshEpoch == 0;
+            bool fullScreenRefresh = (time(nullptr) - lastScreenRefreshEpoch) > 1800 || lastScreenRefreshEpoch == 0;
             
             // Format time string
             char timeStr[6];
@@ -547,49 +545,40 @@ void loop()
             bool isCharging = M5.Power.isCharging();
             
             // Calculate data age (seconds since last successful call)
-            int dataAgeSecs = (int)(rtc.getEpoch() - lastSuccessfullCallEpoch);
+            int dataAgeSecs = (int)(time(nullptr) - lastSuccessfullCallEpoch);
             if (dataAgeSecs < 0) dataAgeSecs = 0;  // Handle edge case
             
             // Get WiFi signal strength
             int wifiRssi = WiFi.RSSI();
             
             drawScreen(allDepartures, currentWeather, fullScreenRefresh, timeStr, batteryLevel, isCharging, dataAgeSecs, wifiRssi);
-            lastSuccessfullCallEpoch = rtc.getEpoch();
-            displayDataFreshness(true, lastSuccessfullCallEpoch, rtc.getEpoch());
-            lastCallEpoch = rtc.getEpoch();
-            lastStatusBarEpoch = rtc.getEpoch();
+            lastSuccessfullCallEpoch = time(nullptr);
+            displayDataFreshness(true, lastSuccessfullCallEpoch, time(nullptr));
+            lastCallEpoch = time(nullptr);
+            lastStatusBarEpoch = time(nullptr);
             lastStatusBarMinute = currentMinute;
             if (fullScreenRefresh)
             {
-                lastScreenRefreshEpoch = rtc.getEpoch();
+                lastScreenRefreshEpoch = time(nullptr);
             }
-        }
-        else if (needsStatusBarUpdate)
-        {
-            // Only update status bar (time, battery, data freshness) - no API calls
-            char timeStr[6];
-            strftime(timeStr, sizeof(timeStr), "%H:%M", &timeinfo);
             
-            int batteryLevel = M5.Power.getBatteryLevel();
-            bool isCharging = M5.Power.isCharging();
-            int dataAgeSecs = (int)(currentEpoch - lastSuccessfullCallEpoch);
-            if (dataAgeSecs < 0) dataAgeSecs = 0;
-            int wifiRssi = WiFi.RSSI();
-            
-            updateStatusBarOnly(timeStr, batteryLevel, isCharging, dataAgeSecs, wifiRssi);
-            lastStatusBarEpoch = currentEpoch;
-            lastStatusBarMinute = currentMinute;
-        }
-        
-        // Power Management: Enter light sleep to conserve battery
-        // Sleep for 10 seconds for responsive status bar updates
-        // Light sleep is skipped when charging for better responsiveness
-        enterLightSleep(SLEEP_DURATION_US);
+            WiFi.disconnect(true);
+            WiFi.mode(WIFI_OFF);
+            USE_SERIAL.println("WiFi disconnected for power saving");
     }
-    else
+    else if (needsStatusBarUpdate)
     {
-        displayLoader("Connection au WIFI...");
-        // Brief delay when not connected to avoid busy loop
-        delay(500);
+        char timeStr[6];
+        strftime(timeStr, sizeof(timeStr), "%H:%M", &timeinfo);
+        
+        int batteryLevel = M5.Power.getBatteryLevel();
+        bool isCharging = M5.Power.isCharging();
+        int dataAgeSecs = (int)(currentEpoch - lastSuccessfullCallEpoch);
+        if (dataAgeSecs < 0) dataAgeSecs = 0;
+        
+        updateStatusBarOnly(timeStr, batteryLevel, isCharging, dataAgeSecs, 0);
+        lastStatusBarMinute = currentMinute;
     }
+    
+    enterLightSleep(SLEEP_DURATION_US);
 }
