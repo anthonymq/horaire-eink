@@ -29,6 +29,7 @@
 //
 //  |#### RER C ############################ /!\ #|
 //  | /!\ 6 gares non desservies                  |
+//  |     9h40 - 16h00                             |
 //  |  4 min   Destination              14:36     |
 
 // ============================================================
@@ -454,36 +455,40 @@ static void drawBusRow(int x, int y, int w, int h, const departureType* dep, tim
     drawClockTime(x + w, baseline, dep->expected);
 }
 
-// Incident text in the first row of a board, each line led by a warning sign
-// (filled = blocking, outline = delays). A single incident may wrap over both
-// lines; several get one truncated line each.
+// Incident text in the first row of a board, led by a warning sign (filled =
+// blocking, outline = delays). A single incident wraps over the lines, with its
+// time window on the last one; several get one truncated line each.
 static void drawIncidents(int x, int y, int w, int h, bool isTrain,
                           const std::vector<incidentType>& incidents) {
-    const lgfx::GFXfont* font = isTrain ? &FreeSansBold18pt7b : &FreeSansBold9pt7b;
-    const int maxLines = 2;
-    const int iconSize = isTrain ? 30 : 16;
+    const lgfx::GFXfont* bold = isTrain ? &FreeSansBold12pt7b : &FreeSansBold9pt7b;
+    const lgfx::GFXfont* regular = isTrain ? &FreeSans12pt7b : &FreeSans9pt7b;
+    const int maxLines = isTrain ? 3 : 2;
+    const int iconSize = isTrain ? 22 : 16;
     const int textX = x + iconSize + 10;
     const int textW = w - (textX - x);
     
-    M5.Display.setFont(font);
-    String lines[maxLines];
-    bool lineBlocking[maxLines];
-    bool lineIcon[maxLines];
+    struct Line {
+        String text;
+        const lgfx::GFXfont* font;
+        bool icon;
+        bool blocking;
+    };
+    Line lines[3];
     int count = 0;
+    M5.Display.setFont(bold);
     if (incidents.size() == 1) {
-        count = wrapText(incidents[0].text.c_str(), textW, lines, maxLines);
-        for (int i = 0; i < count; i++) {
-            lineBlocking[i] = incidents[0].blocking;
-            lineIcon[i] = i == 0;
-        }
+        const incidentType& inc = incidents[0];
+        String wrapped[3];
+        int textLines = wrapText(inc.text.c_str(), textW, wrapped, maxLines - (inc.when.length() ? 1 : 0));
+        for (int i = 0; i < textLines; i++) lines[count++] = {wrapped[i], bold, i == 0, inc.blocking};
+        if (inc.when.length()) lines[count++] = {inc.when, regular, false, inc.blocking};
     } else {
         for (size_t i = 0; i < incidents.size() && count < maxLines; i++) {
+            String text = incidents[i].when.length() ? incidents[i].when + " : " + incidents[i].text
+                                                     : incidents[i].text;
             char fitted[96];
-            fitText(incidents[i].text.c_str(), textW, fitted, sizeof(fitted));
-            lines[count] = fitted;
-            lineBlocking[count] = incidents[i].blocking;
-            lineIcon[count] = true;
-            count++;
+            fitText(text.c_str(), textW, fitted, sizeof(fitted));
+            lines[count++] = {fitted, bold, true, incidents[i].blocking};
         }
     }
     
@@ -491,9 +496,9 @@ static void drawIncidents(int x, int y, int w, int h, bool isTrain,
     const int top = y + (h - lineH * count) / 2;
     clearRegion(x, y + 1, w, h - 1);
     for (int i = 0; i < count; i++) {
-        int baseline = centeredBaseline(top + i * lineH, lineH, font);
-        if (lineIcon[i]) drawWarningIcon(x + 2, baseline, iconSize, lineBlocking[i], INK, PAPER);
-        drawText(lines[i].c_str(), textX, baseline, font, INK, textdatum_t::baseline_left);
+        int baseline = centeredBaseline(top + i * lineH, lineH, bold);
+        if (lines[i].icon) drawWarningIcon(x + 2, baseline, iconSize, lines[i].blocking, INK, PAPER);
+        drawText(lines[i].text.c_str(), textX, baseline, lines[i].font, INK, textdatum_t::baseline_left);
     }
 }
 
@@ -511,6 +516,8 @@ static void drawBoard(int x, int y, int w, int h, int rows, const BoardView& boa
     for (const auto& inc : incidents) {
         incidentKey += inc.blocking ? '!' : '~';
         incidentKey += inc.text;
+        incidentKey += '|';
+        incidentKey += inc.when;
         incidentKey += '\n';
     }
     if (incidentKey != prevIncidentKey) forceRedraw = true;

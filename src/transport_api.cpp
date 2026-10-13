@@ -269,6 +269,7 @@ static void buildIncidentFilter(JsonDocument &filter)
 {
     filter["status"] = true;
     filter["tags"] = true;
+    filter["application_periods"] = true;
     filter["severity"]["effect"] = true;
     JsonObject message = filter["messages"][0].to<JsonObject>();
     message["text"] = true;
@@ -297,6 +298,40 @@ static bool stifToNavitia(const char *stif, char *out, size_t outSize)
         return true;
     }
     return false;
+}
+
+// Navitia local time "20261016T094000" (Europe/Paris, the device TZ) -> epoch
+static time_t parseNavitiaLocal(const char *s)
+{
+    struct tm t = {};
+    if (!s || sscanf(s, "%4d%2d%2dT%2d%2d%2d", &t.tm_year, &t.tm_mon, &t.tm_mday,
+                     &t.tm_hour, &t.tm_min, &t.tm_sec) != 6) return 0;
+    t.tm_year -= 1900;
+    t.tm_mon -= 1;
+    t.tm_isdst = -1;
+    return mktime(&t);
+}
+
+// The period running now, as "9h40 - 16h00" when it ends the day it started,
+// otherwise "jusqu'au 23/10". Empty if none matches (clock not set...).
+static String currentPeriod(JsonArrayConst periods, time_t now)
+{
+    for (JsonObjectConst p : periods) {
+        time_t begin = parseNavitiaLocal(p["begin"]);
+        time_t end = parseNavitiaLocal(p["end"]);
+        if (begin == 0 || end == 0 || now < begin || now >= end) continue;
+        struct tm b, e;
+        localtime_r(&begin, &b);
+        localtime_r(&end, &e);
+        char buf[24];
+        if (b.tm_yday == e.tm_yday && b.tm_year == e.tm_year) {
+            snprintf(buf, sizeof(buf), "%dh%02d - %dh%02d", b.tm_hour, b.tm_min, e.tm_hour, e.tm_min);
+        } else {
+            snprintf(buf, sizeof(buf), "jusqu'au %02d/%02d", e.tm_mday, e.tm_mon + 1);
+        }
+        return buf;
+    }
+    return "";
 }
 
 // "RER C : 6 gares non desservies" -> "6 gares non desservies"
@@ -330,7 +365,7 @@ static bool concernsStop(JsonArrayConst objects, const char *stopId)
     return false;
 }
 
-static void addIncident(std::vector<incidentType> &list, const String &text, bool blocking)
+static void addIncident(std::vector<incidentType> &list, const String &text, bool blocking, const String &when)
 {
     for (auto &inc : list) {
         if (inc.text == text) {  // The same notice is often published once per direction
@@ -338,7 +373,7 @@ static void addIncident(std::vector<incidentType> &list, const String &text, boo
             return;
         }
     }
-    list.push_back({text, blocking});
+    list.push_back({text, blocking, when});
 }
 
 bool fetchIncidents(const char *lineRef, const char *monitoringRef, std::vector<incidentType> &out)
@@ -429,7 +464,9 @@ bool fetchIncidents(const char *lineRef, const char *monitoringRef, std::vector<
         if (!text) continue;
         String folded = stripLinePrefix(asciiFold(text));
         folded.trim();
-        if (folded.length()) addIncident(found, folded, level == 2);
+        if (folded.length()) {
+            addIncident(found, folded, level == 2, currentPeriod(doc["application_periods"], time(nullptr)));
+        }
     }
     if (reader.failed()) {
         USE_SERIAL.println("[INCIDENTS] inflate error");

@@ -13,6 +13,7 @@ struct departureType {
 struct incidentType {
     String text;    // Short ASCII title, line prefix removed ("6 gares non desservies")
     bool blocking;  // No service / stops skipped / detour, as opposed to delays
+    String when;    // Current application period: "9h40 - 16h00", "jusqu'au 23/10" (may be empty)
 };
 
 struct weatherType {
