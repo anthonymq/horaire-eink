@@ -206,6 +206,30 @@ bool saveStationConfig(int index, const RuntimeStationConfig& config) {
     return true;
 }
 
+bool clearStationSlot(int index) {
+    if (index < 0 || index >= MAX_STATIONS) {
+        return false;
+    }
+    
+    Preferences prefs;
+    if (!prefs.begin(NVS_NAMESPACE, false)) {
+        USE_SERIAL.println("Failed to open NVS for clearing slot");
+        return false;
+    }
+    
+    static const char* const fields[] = { "name", "ref", "type", "filter", "disp", "names", "max" };
+    for (const char* field : fields) {
+        char key[24];
+        snprintf(key, sizeof(key), "s%d_%s", index, field);
+        prefs.remove(key);
+    }
+    prefs.end();
+    
+    memset(&runtimeStations[index], 0, sizeof(runtimeStations[index]));
+    USE_SERIAL.printf("Cleared station %d from NVS\n", index);
+    return true;
+}
+
 bool saveStationCount(int count) {
     if (count < 0 || count > MAX_STATIONS) {
         return false;
@@ -252,14 +276,13 @@ void initStationConfig() {
     
     USE_SERIAL.println("Initializing station configuration...");
     
-    // Try to load from NVS first
+    // Try to load from NVS first. A saved count of 0 means the user cleared
+    // every slot, which is kept rather than replaced by the config.h defaults.
     if (hasNVSStationConfig()) {
         int loaded = loadStationConfigs();
-        if (loaded > 0) {
-            USE_SERIAL.printf("Loaded %d stations from NVS\n", loaded);
-            initialized = true;
-            return;
-        }
+        USE_SERIAL.printf("Loaded %d stations from NVS\n", loaded);
+        initialized = true;
+        return;
     }
     
     // Fallback to config.h defaults

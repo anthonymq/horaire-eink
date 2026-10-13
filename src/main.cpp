@@ -14,22 +14,24 @@
  *  - WiFi is only powered for a fetch every FETCH_INTERVAL_S, with fast
  *    reconnect to the last AP (no scan) and one TLS session for all PRIM calls.
  *  - Nothing is fetched or redrawn during quiet hours.
- *  - Touching the screen wakes the device: tap = refresh, hold 5 s = setup portal.
+ *  - Touching the screen wakes the device: tap = refresh, hold 5 s = setup portal
+ *    (QR code on screen; stop search when the device is online).
  */
 #include <Arduino.h>
 #include <M5Unified.h>
 #include <WiFi.h>
 #include <WiFiMulti.h>
-#include <WiFiManager.h>  // tzapu/WiFiManager - captive portal for WiFi configuration
 #include <esp_sleep.h>
 #include <esp_wifi.h>
 #include <esp_sntp.h>
 #include <driver/gpio.h>
+#include <driver/usb_serial_jtag.h>
 
 #include <config.h>
 #include <transport_api.h>
 #include <weather_api.h>
 #include <station_config.h>  // NVS-based station configuration (FR-SC1)
+#include <setup_portal.h>
 #include "types.h"
 #include "display.h"
 
@@ -54,11 +56,9 @@
 #define WIFI_FAST_CONNECT_MS    4000    // Reconnect to cached AP/channel (no scan)
 #define WIFI_SCAN_CONNECT_MS    8000    // Fallback: WiFiMulti scan + connect
 
+#define USB_HOST_PROBE_MS       500     // After light sleep, time for a computer to resume talking to the USB port
 #define LONG_PRESS_MS           5000    // Hold to open the configuration portal
 #define TOUCH_INT_PIN           GPIO_NUM_48  // GT911 INT on M5Paper S3 (active low)
-
-#define CONFIG_PORTAL_TIMEOUT   120     // Portal timeout in seconds
-#define AP_NAME "ProchainDepart-Setup"  // AP name for configuration
 
 #define TZ_PARIS "CET-1CEST,M3.5.0,M10.5.0/3"
 #define MIN_VALID_EPOCH 1700000000      // Anything earlier means the clock was never set
@@ -67,7 +67,6 @@
 // STATE (kept in RAM across light sleep)
 // ============================================================
 WiFiMulti wifiMulti;
-WiFiManager wm;
 
 static std::vector<departureType> departures[MAX_STATIONS];
 static weatherType currentWeather = {};
@@ -93,184 +92,6 @@ static uint8_t cachedBssid[6];
 static int32_t cachedChannel = 0;
 
 static volatile bool sntpSynced = false;
-
-// ============================================================
-// CONFIG PORTAL
-// ============================================================
-static void startConfigPortal() {
-    USE_SERIAL.println("Starting WiFi configuration portal...");
-    
-    // Display instructions on screen
-    M5.Display.fillScreen(TFT_WHITE);
-    M5.Display.setTextColor(TFT_BLACK);
-    
-    // Title with icon-like box
-    M5.Display.fillRect(0, 0, 960, 60, TFT_BLACK);
-    M5.Display.setFont(&FreeSansBold12pt7b);
-    M5.Display.setTextColor(TFT_WHITE);
-    M5.Display.setTextDatum(textdatum_t::middle_center);
-    M5.Display.drawString("Mode Configuration WiFi", 480, 30);
-    M5.Display.setTextDatum(textdatum_t::top_left);
-    M5.Display.setTextColor(TFT_BLACK);
-    
-    int y = 100;
-    int lineHeight = 32;
-    int leftMargin = 80;
-    
-    // Step 1
-    M5.Display.setFont(&FreeSansBold12pt7b);
-    M5.Display.setCursor(leftMargin, y);
-    M5.Display.print("1. Sur votre telephone ou ordinateur:");
-    y += lineHeight;
-    
-    M5.Display.setFont(&FreeSans9pt7b);
-    M5.Display.setCursor(leftMargin + 30, y);
-    M5.Display.print("Connectez-vous au reseau WiFi:");
-    y += lineHeight;
-    
-    // AP name in a box
-    M5.Display.setFont(&FreeSansBold12pt7b);
-    int apNameWidth = M5.Display.textWidth(AP_NAME);
-    int boxX = leftMargin + 30;
-    M5.Display.drawRect(boxX, y - 5, apNameWidth + 20, 35, TFT_BLACK);
-    M5.Display.setCursor(boxX + 10, y + 18);
-    M5.Display.print(AP_NAME);
-    y += 50;
-    
-    // Step 2
-    M5.Display.setFont(&FreeSansBold12pt7b);
-    M5.Display.setCursor(leftMargin, y);
-    M5.Display.print("2. Ouvrez votre navigateur web:");
-    y += lineHeight;
-    
-    M5.Display.setFont(&FreeSans9pt7b);
-    M5.Display.setCursor(leftMargin + 30, y);
-    M5.Display.print("Allez a l'adresse:");
-    y += lineHeight;
-    
-    // URL in a box
-    M5.Display.setFont(&FreeSansBold12pt7b);
-    const char* url = "http://192.168.4.1";
-    int urlWidth = M5.Display.textWidth(url);
-    M5.Display.drawRect(boxX, y - 5, urlWidth + 20, 35, TFT_BLACK);
-    M5.Display.setCursor(boxX + 10, y + 18);
-    M5.Display.print(url);
-    y += 50;
-    
-    // Step 3
-    M5.Display.setFont(&FreeSansBold12pt7b);
-    M5.Display.setCursor(leftMargin, y);
-    M5.Display.print("3. Configurez votre WiFi et vos arrets");
-    y += lineHeight + 10;
-    
-    // Step 4
-    M5.Display.setCursor(leftMargin, y);
-    M5.Display.print("4. L'appareil redemarrera automatiquement");
-    y += lineHeight + 20;
-    
-    // Timeout info at bottom
-    M5.Display.setFont(&FreeSans9pt7b);
-    M5.Display.setTextColor(0x7BEF);  // Gray
-    char timeoutMsg[80];
-    snprintf(timeoutMsg, sizeof(timeoutMsg), "Le portail se fermera apres %d secondes d'inactivite", CONFIG_PORTAL_TIMEOUT);
-    M5.Display.setCursor(leftMargin, y);
-    M5.Display.print(timeoutMsg);
-    y += lineHeight;
-    
-    // StopPoint info
-    M5.Display.setCursor(leftMargin, y);
-    M5.Display.print("IDs des arrets: prim.iledefrance-mobilites.fr/fr/jeux-de-donnees/arrets-lignes");
-    
-    M5.Display.setTextColor(TFT_BLACK);  // Reset
-    M5.Display.display();
-    
-    RuntimeStationConfig* currentStations = getStations();
-    
-    static const char* const slotLabels[MAX_STATIONS] = {
-        "<h4>Station 1 (Top Section - RER)</h4>",
-        "<h4>Station 2 (Bottom Left - Bus)</h4>",
-        "<h4>Station 3 (Bottom Right - Bus)</h4>",
-    };
-    static const char* const defaultTypes[MAX_STATIONS] = { "RER", "BUS", "BUS" };
-    
-    // Parameter IDs must outlive the portal; they are string literals.
-    static const char* const nameIds[MAX_STATIONS]   = { "s1_name", "s2_name", "s3_name" };
-    static const char* const refIds[MAX_STATIONS]    = { "s1_ref", "s2_ref", "s3_ref" };
-    static const char* const typeIds[MAX_STATIONS]   = { "s1_type", "s2_type", "s3_type" };
-    static const char* const filterIds[MAX_STATIONS] = { "s1_filter", "s2_filter", "s3_filter" };
-    
-    WiFiManagerParameter stationHeader("<br><hr><h3>Station Configuration</h3><p>Leave blank to use defaults. Format: STIF:StopPoint:Q:12345:</p>");
-    wm.addParameter(&stationHeader);
-    
-    WiFiManagerParameter* params[MAX_STATIONS][5];
-    for (int i = 0; i < MAX_STATIONS; i++) {
-        const RuntimeStationConfig& cur = currentStations[i];
-        bool has = cur.isConfigured;
-        params[i][0] = new WiFiManagerParameter(slotLabels[i]);
-        params[i][1] = new WiFiManagerParameter(nameIds[i], "Display Name", has ? cur.displayName : "", STATION_DISPLAY_LEN);
-        params[i][2] = new WiFiManagerParameter(refIds[i], "MonitoringRef (StopPoint ID)", has ? cur.monitoringRef : "", STATION_REF_LEN);
-        params[i][3] = new WiFiManagerParameter(typeIds[i], "Type (RER/BUS/METRO)", has ? cur.type : defaultTypes[i], STATION_TYPE_LEN);
-        params[i][4] = new WiFiManagerParameter(filterIds[i], "Filter (RER platform / bus LineRef)", has ? cur.filter : "", STATION_FILTER_LEN);
-        for (auto* p : params[i]) wm.addParameter(p);
-    }
-    
-    static bool shouldSaveStationConfig;
-    shouldSaveStationConfig = false;
-    wm.setConfigPortalTimeout(CONFIG_PORTAL_TIMEOUT);
-    wm.setBreakAfterConfig(true);  // Exit portal after config saved
-    wm.setSaveConfigCallback([]() {
-        USE_SERIAL.println("Configuration saved!");
-        shouldSaveStationConfig = true;
-    });
-    
-    bool connected = wm.startConfigPortal(AP_NAME);
-    
-    if (shouldSaveStationConfig) {
-        // Stations keep their slot (slot 0 = top board). The count is the highest
-        // configured slot + 1 so that skipped slots don't hide later ones.
-        int highestSlot = -1;
-        for (int i = 0; i < MAX_STATIONS; i++) {
-            const char* ref = params[i][2]->getValue();
-            if (ref == nullptr || ref[0] == '\0') continue;
-            
-            RuntimeStationConfig cfg = {};
-            const char* name = params[i][1]->getValue();
-            if (name == nullptr || name[0] == '\0') name = ref;
-            strlcpy(cfg.name, name, sizeof(cfg.name));
-            strlcpy(cfg.displayName, name, sizeof(cfg.displayName));
-            strlcpy(cfg.monitoringRef, ref, sizeof(cfg.monitoringRef));
-            strlcpy(cfg.type, params[i][3]->getValue(), sizeof(cfg.type));
-            strlcpy(cfg.filter, params[i][4]->getValue(), sizeof(cfg.filter));
-            cfg.showNames = (strcmp(cfg.type, "RER") == 0);
-            cfg.maxEntries = 6;
-            cfg.isConfigured = true;
-            saveStationConfig(i, cfg);
-            highestSlot = i;
-            USE_SERIAL.printf("  Station %d: %s (%s)\n", i + 1, cfg.displayName, cfg.monitoringRef);
-        }
-        if (highestSlot >= 0) {
-            saveStationCount(highestSlot + 1);
-        }
-    }
-    
-    if (connected) {
-        USE_SERIAL.println("Configuration complete, restarting...");
-        displayLoader("Configuration terminee! Redemarrage...");
-        M5.Display.waitDisplay();
-        delay(1000);
-        ESP.restart();
-    }
-    
-    // ESP.restart() never returns, so the parameters only need freeing here
-    for (int i = 0; i < MAX_STATIONS; i++) {
-        for (auto* p : params[i]) delete p;
-    }
-    
-    USE_SERIAL.println("Config portal timeout or cancelled, resuming normal operation");
-    WiFi.mode(WIFI_OFF);
-    needFullRefresh = true;
-    nextFetchEpoch = 0;
-}
 
 // ============================================================
 // WIFI / TIME
@@ -375,7 +196,7 @@ static void runFetchCycle() {
         
         now = time(nullptr);
         if (!weatherValid || now - lastWeatherEpoch >= WEATHER_INTERVAL_S) {
-            if (fetchWeather(WEATHER_CITY, currentWeather)) {
+            if (fetchWeather(currentWeather)) {
                 weatherValid = true;
                 lastWeatherEpoch = now;
             }
@@ -397,6 +218,26 @@ static void runFetchCycle() {
         nextFetchEpoch = now + min(backoff, (long)FETCH_MAX_BACKOFF_S);
     }
     USE_SERIAL.printf("Fetch cycle %s in %lu ms\n", ok ? "ok" : "failed", millis() - startMs);
+}
+
+// ============================================================
+// SETUP PORTAL
+// ============================================================
+static void runSetup() {
+    // Online: stops are picked from the home network with live search.
+    // Offline: access point first to choose a network.
+    displayLoader("Configuration - connexion au WiFi...");
+    bool online = connectWifi();
+    runSetupPortal(wifiMulti, online);
+    wifiOff();
+    
+    // Stations, weather location or network may have changed: start over from fresh data
+    cachedChannel = 0;
+    for (int i = 0; i < MAX_STATIONS; i++) departures[i].clear();
+    weatherValid = false;  // Location may have changed
+    consecutiveFailures = 0;
+    needFullRefresh = true;
+    nextFetchEpoch = 0;
 }
 
 // ============================================================
@@ -456,6 +297,20 @@ static TouchAction readTouch() {
     return TOUCH_TAP;
 }
 
+// True when plugged into a computer (it polls the USB port with SOF packets; a
+// charger or power bank never does). M5.Power.isCharging() alone isn't enough:
+// the PaperS3 has no VBUS sense, and its charge pin goes idle once the battery
+// is full. Light sleep drops the USB link, so after a wake the host needs a
+// moment to see the device again before this can return true.
+static bool usbHostConnected() {
+    uint32_t start = millis();
+    while (!usb_serial_jtag_is_connected()) {
+        if (millis() - start >= USB_HOST_PROBE_MS) return false;
+        delay(20);
+    }
+    return true;
+}
+
 // Sleep (or idle when on USB) for `seconds`, waking early on touch.
 static void idleFor(uint32_t seconds) {
     // The EPD waveform runs in a background task with the panel's high-voltage
@@ -465,8 +320,9 @@ static void idleFor(uint32_t seconds) {
     wokeByTouch = false;
     if (seconds == 0) return;
     
-    if (M5.Power.isCharging()) {
-        // On USB: stay responsive, but don't spin at full speed
+    if (M5.Power.isCharging() || usbHostConnected()) {
+        // On USB: stay awake so the port stays up for flashing/serial and
+        // touch stays responsive, but don't spin at full speed
         uint32_t until = millis() + seconds * 1000UL;
         while ((int32_t)(until - millis()) > 0) {
             M5.update();
@@ -539,7 +395,7 @@ void loop()
     time_t now = time(nullptr);
     if (touch == TOUCH_LONG) {
         USE_SERIAL.println("Long press - entering configuration mode");
-        startConfigPortal();
+        runSetup();
         return;
     }
     bool forceFetch = false;

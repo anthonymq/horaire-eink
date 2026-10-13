@@ -26,4 +26,15 @@ void drawScreen(const BoardView boards[3], const weatherType& weather, const Sta
                 time_t now, bool fullRefresh);
 void displayLoader(const char* message);
 
+struct SetupQr {
+    const char* payload;  // Encoded in the QR code
+    const char* caption;  // Shown under it
+};
+
+// Setup portal screen: QR codes on the left, instruction lines on the right.
+// A line starting with '*' is drawn bold, an empty line is a spacer. Text must be
+// ASCII (the GFX fonts have no accents) and short enough for a ~330px column.
+void drawSetupScreen(const char* title, const SetupQr* qrs, int qrCount,
+                     const char* const* lines, int lineCount);
+
 #endif

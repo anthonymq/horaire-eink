@@ -16,13 +16,16 @@ horaire-eink/
 │   ├── main.cpp            # Entry point, WiFi, loop orchestration
 │   ├── display.cpp         # M5GFX rendering (960x540 layout)
 │   ├── transport_api.cpp   # PRIM API client, SIRI JSON parsing
-│   ├── weather_api.cpp     # OpenWeatherMap client
+│   ├── weather_api.cpp     # OpenWeatherMap client, weather location (NVS) + geocoding
+│   ├── setup_portal.cpp    # Long-press setup: WiFiManager AP / home-network portal, QR screens
+│   ├── stop_finder.cpp     # Stop search (PRIM Navitia places) + departures preview for /stops
 │   └── misc.cpp            # Date/time utilities
 ├── include/                # Headers
 │   ├── config.h            # SENSITIVE: API keys, WiFi, stations (not in git)
 │   ├── config.h.example    # Template for config.h
 │   ├── types.h             # departureType, weatherType structs
 │   ├── weathericons.h      # 100x100 and 50x50 2-bit PROGMEM icons
+│   ├── stops_page.h        # /stops web page (HTML/JS in PROGMEM)
 │   └── WeatherStationFonts.h
 ├── specs/                  # Feature specifications (Ralph loop)
 ├── docs/                   # Reference documentation
@@ -33,7 +36,9 @@ horaire-eink/
 
 | Task | Location | Notes |
 |------|----------|-------|
-| Add new station | `include/config.h` | Add to `STATIONS[]` array |
+| Add new station | Device: hold 5 s → scan QR → `/stops` | `include/config.h` `STATIONS[]` are only the defaults before the first save |
+| Change weather location | Device: hold 5 s → `/stops` → Météo | `WEATHER_CITY` in config.h is only the default |
+| Setup portal / stop search | `src/setup_portal.cpp`, `src/stop_finder.cpp`, `include/stops_page.h` | See "Setup Portal" below |
 | Change UI layout | `src/display.cpp` | `drawScreen()`, constants at top |
 | Modify refresh timing | `src/main.cpp` | `FETCH_INTERVAL_S`, `WEATHER_INTERVAL_S`, quiet hours (see `docs/power_optimization.md`) |
 | Add WiFi network | `include/config.h` | `WIFI_CREDENTIALS[]` array |
@@ -72,6 +77,7 @@ rm -rf .pio && pio run
 | `GxEPD2` / SPI display code | **REMOVED** - M5Paper S3 uses parallel EPD |
 | `display.firstPage()/nextPage()` | Use `M5.Display.startWrite()/endWrite()` |
 | GPIO 12 for button | **CONFLICTS with boot** - M5Unified handles button |
+| Deciding "on USB" from `M5.Power.isCharging()` only | Charge pin goes idle when the battery is full; use `usbHostConnected()` (USB Serial/JTAG SOF) too, or the device light-sleeps and drops off USB |
 | Light sleep without `M5.Display.waitDisplay()` | EPD refresh runs in a background task; sleeping mid-refresh corrupts the panel and keeps HV rails on |
 | Global STL containers (`std::map`) | Causes boot crash - use C arrays in config.h |
 | `as any`, `@ts-ignore` | N/A (C++ project) |
@@ -84,7 +90,7 @@ rm -rf .pio && pio run
 |---------|-----|
 | Display | `M5.Display.*` |
 | Button | None usable (`M5.BtnA` is a virtual touch button, disabled) |
-| Touch | GT911, INT on GPIO 48: tap = refresh, hold 5 s = config portal, wakes from light sleep |
+| Touch | GT911, INT on GPIO 48: tap = refresh, hold 5 s = setup portal (QR on screen), wakes from light sleep |
 | RTC | BM8563 available (not implemented) |
 
 ## Data Flow
@@ -95,6 +101,16 @@ main.cpp::loop()
   ├─→ render() every minute: countdowns computed from departureType.expected → drawScreen()
   └─→ idleFor(): waitDisplay() → light sleep until next minute (timer or touch)
 ```
+
+## Setup Portal
+
+Hold the screen 5 s:
+- **Online** (WiFi connects): WiFiManager web portal on the home network, QR to `http://<ip>/stops` (+ `http://prochain-depart.local/stops` via mDNS). The device proxies stop search to PRIM with `API_TOKEN`: `/api/search` → Navitia `v2/navitia/places`, `/api/preview` → `stop-monitoring` grouped by line/quay/platform. Weather location: `/api/cities` → OpenWeatherMap geocoding (`WEATHER_API_KEY`), saved as name + lat/lon in NVS namespace `weather`. Tap the screen or "Terminer" to leave; 10 min idle timeout.
+- **Offline**: WiFiManager AP `ProchainDepart-Setup` with a WiFi-join QR (`WIFI:T:nopass;S:...;;`). After a network is saved, it continues straight to the online step (no reboot).
+
+ID mapping: Navitia `stop_area:IDFM:N` → `STIF:StopArea:SP:N:`, `line:IDFM:Cxxxxx` → `STIF:Line::Cxxxxx:`.
+Station filter: empty = all; `STIF:Line::...` = line (any type); otherwise RER = platform name, others = LineRef/OperatorRef substring.
+E-ink fonts are ASCII only: the page strips accents from titles.
 
 ## Known Issues
 

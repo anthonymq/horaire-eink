@@ -20,3 +20,20 @@ time_t parseIsoUtc(const char *datetimeString)
     if (sscanf(datetimeString, "%d-%d-%dT%d:%d:%d", &y, &mo, &d, &h, &mi, &s) != 6) return 0;
     return (time_t)daysFromCivil(y, mo, d) * 86400 + h * 3600 + mi * 60 + s;
 }
+
+String urlEncode(const char *s)
+{
+    static const char hex[] = "0123456789ABCDEF";
+    String out;
+    for (; *s; s++) {
+        uint8_t c = (uint8_t)*s;
+        if (isalnum(c) || c == '-' || c == '_' || c == '.' || c == '~' || c == ':') {
+            out += (char)c;
+        } else {
+            out += '%';
+            out += hex[c >> 4];
+            out += hex[c & 0x0F];
+        }
+    }
+    return out;
+}

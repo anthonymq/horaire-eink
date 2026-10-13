@@ -1,5 +1,6 @@
 #include "display.h"
 #include "weathericons.h"
+#include "weather_api.h"
 #include <config.h>
 #include <math.h>
 #define USE_SERIAL Serial
@@ -419,7 +420,7 @@ static void drawWeatherColumn(weatherType weather, bool forceRedraw, const char*
     
     // City name at bottom (use 12pt)
     M5.Display.setFont(&FreeSansBold12pt7b);
-    const char* city = WEATHER_CITY;
+    const char* city = getWeatherLocation().name;
     int cityW = M5.Display.textWidth(city);
     int cityY = h - 20;
     M5.Display.setCursor(x + (w - cityW) / 2, cityY);
@@ -560,6 +561,51 @@ void displayLoader(const char* message)
     M5.Display.setTextDatum(textdatum_t::middle_center);
     M5.Display.drawString(message, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2);
     M5.Display.setTextDatum(textdatum_t::top_left);
+    
+    M5.Display.display();
+    weatherDrawn = false;
+}
+
+// ============================================================
+// SETUP PORTAL SCREEN
+// ============================================================
+void drawSetupScreen(const char* title, const SetupQr* qrs, int qrCount,
+                     const char* const* lines, int lineCount)
+{
+    const int titleH = 60;
+    const int margin = 40;
+    const int qrSize = qrCount > 1 ? 250 : 340;
+    const int qrY = titleH + 50;
+    
+    M5.Display.setEpdMode(epd_mode_t::epd_quality);
+    M5.Display.setRotation(1);
+    M5.Display.fillScreen(TFT_WHITE);
+    drawBanner(0, 0, SCREEN_WIDTH, titleH, title);
+    M5.Display.setTextColor(TFT_BLACK);
+    
+    int x = margin;
+    M5.Display.setFont(&FreeSansBold9pt7b);
+    M5.Display.setTextDatum(textdatum_t::top_center);
+    for (int i = 0; i < qrCount; i++) {
+        M5.Display.qrcode(qrs[i].payload, x, qrY, qrSize);
+        M5.Display.drawString(qrs[i].caption, x + qrSize / 2, qrY + qrSize + 12);
+        x += qrSize + 30;
+    }
+    M5.Display.setTextDatum(textdatum_t::top_left);
+    
+    int textX = x + 10;
+    int y = qrY;
+    for (int i = 0; i < lineCount; i++) {
+        const char* line = lines[i];
+        if (line[0] == '\0') {
+            y += 14;
+            continue;
+        }
+        bool bold = line[0] == '*';
+        M5.Display.setFont(bold ? &FreeSansBold12pt7b : &FreeSans9pt7b);
+        M5.Display.drawString(bold ? line + 1 : line, textX, y);
+        y += M5.Display.fontHeight() + 8;
+    }
     
     M5.Display.display();
     weatherDrawn = false;

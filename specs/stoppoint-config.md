@@ -13,8 +13,8 @@ Allow users to configure which transit stops to display without modifying source
 ## Current State
 - ✅ Station configs stored in NVS (FR-SC1)
 - ✅ Web interface for configuration (FR-SC2)
-- Station presets not yet implemented (FR-SC3)
-- API validation not yet implemented (FR-SC4)
+- ✅ Stop search on the `/stops` page via PRIM Navitia (replaces FR-SC3 presets)
+- ✅ Live departures preview to pick line/direction/platform (FR-SC4)
 
 ## Target State
 - Web interface for station configuration
@@ -74,9 +74,10 @@ struct StationConfig {
 | StopPoint | STIF:StopPoint:Q:39570: |
 
 ## Finding StopPoint IDs
-- PRIM API dataset: https://prim.iledefrance-mobilites.fr/fr/jeux-de-donnees/arrets-lignes
-- Download CSV and search for station name
-- Use stop_id column value
+- On the device: hold 5 s, scan the QR code, search the stop name on `/stops`
+  (Navitia `places` through PRIM, then a `stop-monitoring` preview to pick the direction)
+- Manually: PRIM dataset https://prim.iledefrance-mobilites.fr/fr/jeux-de-donnees/arrets-lignes
+  ("Réglages avancés" on `/stops` accepts any MonitoringRef/filter)
 
 ## Acceptance Criteria
 
@@ -84,10 +85,10 @@ struct StationConfig {
 - [x] Web interface lists configured stations
 - [x] User can add new station with custom MonitoringRef
 - [x] User can edit existing station configuration
-- [ ] User can remove a station (clear NVS to reset)
-- [ ] Station presets available for quick setup
-- [ ] API validation before saving
-- [x] Changes take effect on next restart
+- [x] User can remove a station ("Vider ce panneau")
+- [x] Stop search instead of presets (PRIM Navitia)
+- [x] Departures preview before saving
+- [x] Changes take effect when leaving the portal (no restart)
 
 ## Priority
 P5 - Enhancement (COMPLETE)

@@ -72,24 +72,30 @@ bool fetchDepartures(const char *url, const char *type, const char *filter, std:
     JsonArray stops = delivery["StopMonitoringDelivery"][0]["MonitoredStopVisit"];
 
     const bool isRer = strcmp(type, "RER") == 0;
+    // Empty filter = every departure. A full LineRef ("STIF:Line::C01727:", as set
+    // by the portal stop finder) matches the line for any type. Otherwise RER
+    // filters on the platform name and other types on a LineRef/OperatorRef part.
+    const bool matchAll = filter[0] == '\0';
+    const bool byLine = !isRer || strncmp(filter, "STIF:", 5) == 0;
     std::vector<departureType> departures;
     for (JsonObject stop : stops) {
         if (departures.size() >= MAX_DEPARTURES) break;
         JsonObject journey = stop["MonitoredVehicleJourney"];
         JsonObject call = journey["MonitoredCall"];
-        const char *expectedTime;
 
-        if (isRer) {
-            const char *platform = call["ArrivalPlatformName"]["value"] | "";
-            if (strcmp(platform, filter) != 0) continue;
-            expectedTime = call["ExpectedArrivalTime"];
-        } else {
-            // Filter matches LineRef (e.g. "C01287" for 323, stable) or OperatorRef (legacy, IDs change)
+        if (!matchAll && byLine) {
             const char *lineRef = journey["LineRef"]["value"] | "";
             const char *operatorRef = journey["OperatorRef"]["value"] | "";
             if (strstr(lineRef, filter) == nullptr && strstr(operatorRef, filter) == nullptr) continue;
-            expectedTime = call["ExpectedDepartureTime"];
+        } else if (!matchAll) {
+            const char *platform = call["ArrivalPlatformName"]["value"] | "";
+            if (strcmp(platform, filter) != 0) continue;
         }
+
+        // Trains are shown at arrival, buses at departure; terminus calls only have one of them
+        const char *arrival = call["ExpectedArrivalTime"];
+        const char *departure = call["ExpectedDepartureTime"];
+        const char *expectedTime = isRer ? (arrival ? arrival : departure) : (departure ? departure : arrival);
 
         time_t expected = parseIsoUtc(expectedTime);
         if (expected == 0 || expected <= responseTime) continue;

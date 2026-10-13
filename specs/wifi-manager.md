@@ -6,7 +6,8 @@ The WiFi Manager provides a web-based configuration interface for WiFi credentia
 ## Implementation Status: COMPLETE (2026-01-11)
 
 **Library**: tzapu/WiFiManager (via PlatformIO)  
-**Trigger**: Long press button for 5+ seconds  
+**Trigger**: Hold the touch screen for 5+ seconds  
+**Phone setup**: QR code on screen (WiFi join in AP mode, `/stops` URL when online)  
 **AP Name**: "ProchainDepart-Setup" (open network)  
 **Timeout**: 120 seconds
 

@@ -84,6 +84,13 @@ void buildEndpointUrl(const char* monitoringRef, char* outBuffer, size_t bufferS
 bool saveStationConfig(int index, const RuntimeStationConfig& config);
 
 /**
+ * Remove one station slot from NVS and the runtime array.
+ * @param index Station slot (0-2)
+ * @return true if clear succeeded
+ */
+bool clearStationSlot(int index);
+
+/**
  * Save the station count to NVS.
  * @param count Number of configured stations
  * @return true if save succeeded
