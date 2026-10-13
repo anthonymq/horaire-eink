@@ -64,9 +64,12 @@ std::vector<departureType> fetchDepartures(const std::string &url, const std::st
                 }
                 else if (type == "BUS")
                 {
-                    std::string lineName = journey["OperatorRef"]["value"];
+                    // Filter matches LineRef (e.g. "C01287" for 323, stable) or OperatorRef (legacy, IDs change)
+                    std::string lineRef = journey["LineRef"]["value"] | "";
+                    std::string operatorRef = journey["OperatorRef"]["value"] | "";
                     expectedTime = journey["MonitoredCall"]["ExpectedDepartureTime"];
-                    if(lineName.find(filter) == std::string::npos){
+                    if (lineRef.find(filter) == std::string::npos && operatorRef.find(filter) == std::string::npos)
+                    {
                         continue;
                     }
                 }

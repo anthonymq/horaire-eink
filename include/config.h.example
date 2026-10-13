@@ -43,7 +43,7 @@ const StationConfig STATIONS[] = {
         "323 Moliere",
         "https://prim.iledefrance-mobilites.fr/marketplace/stop-monitoring?MonitoringRef=STIF:StopPoint:Q:39570:",
         "BUS",
-        "MeC_Bus_PC:Operator::100:",  // Filter by operator
+        "STIF:Line::C01287:",  // Filter by line (LineRef) - C01287 = 323
         false,     // Don't show destination names for bus
         6,
         "323 Moliere"
@@ -52,7 +52,7 @@ const StationConfig STATIONS[] = {
         "323 Jules Ferry",
         "https://prim.iledefrance-mobilites.fr/marketplace/stop-monitoring?MonitoringRef=STIF:StopPoint:Q:39571:",
         "BUS",
-        "MeC_Bus_PC:Operator::100:",
+        "STIF:Line::C01287:",
         false,
         6,
         "323 Jules F"
