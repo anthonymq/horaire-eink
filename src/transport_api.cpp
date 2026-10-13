@@ -11,6 +11,7 @@
 
 static const size_t MAX_DEPARTURES = 8;  // Keep a few spare so the list survives between fetches
 static const size_t MAX_LINES = 2;       // Lines remembered per stop (for the incident lookup)
+static const size_t MAX_DESTINATIONS = 6;
 static const size_t MAX_INCIDENTS = 4;   // Per stop
 static const size_t MAX_GZIP_BODY = 1024 * 1024;  // Compressed line report (RER C ~ 60 KB)
 static const size_t MAX_ROUTE_CACHE = 32;         // Route stop orders kept (for section incidents)
@@ -43,6 +44,7 @@ static void buildFilter(JsonDocument &filter)
     journey["JourneyNote"] = true;
     journey["LineRef"] = true;
     journey["OperatorRef"] = true;
+    journey["DestinationRef"] = true;
     JsonObject call = journey["MonitoredCall"].to<JsonObject>();
     call["ArrivalPlatformName"] = true;
     call["ExpectedArrivalTime"] = true;
@@ -50,7 +52,7 @@ static void buildFilter(JsonDocument &filter)
 }
 
 bool fetchDepartures(const char *url, const char *type, const char *filter, std::vector<departureType> &out,
-                     std::vector<String> *lines)
+                     StopSeen *seen)
 {
     ensureClient();
     if (!http.begin(client, url)) {
@@ -92,7 +94,7 @@ bool fetchDepartures(const char *url, const char *type, const char *filter, std:
     const bool matchAll = filter[0] == '\0';
     const bool byLine = !isRer || strncmp(filter, "STIF:", 5) == 0;
     std::vector<departureType> departures;
-    std::vector<String> seenLines;
+    StopSeen found;
     for (JsonObject stop : stops) {
         if (departures.size() >= MAX_DEPARTURES) break;
         JsonObject journey = stop["MonitoredVehicleJourney"];
@@ -120,12 +122,17 @@ bool fetchDepartures(const char *url, const char *type, const char *filter, std:
         dep.expected = expected;
         departures.push_back(dep);
 
-        if (lineRef[0] && seenLines.size() < MAX_LINES &&
-            std::find(seenLines.begin(), seenLines.end(), lineRef) == seenLines.end()) {
-            seenLines.push_back(lineRef);
+        const char *destination = journey["DestinationRef"]["value"] | "";
+        if (lineRef[0] && found.lines.size() < MAX_LINES &&
+            std::find(found.lines.begin(), found.lines.end(), lineRef) == found.lines.end()) {
+            found.lines.push_back(lineRef);
+        }
+        if (destination[0] && found.destinations.size() < MAX_DESTINATIONS &&
+            std::find(found.destinations.begin(), found.destinations.end(), destination) == found.destinations.end()) {
+            found.destinations.push_back(destination);
         }
     }
-    if (lines) *lines = std::move(seenLines);
+    if (seen) *seen = std::move(found);
 
     USE_SERIAL.printf("[PRIM] %u departures (%u bytes)\n", departures.size(), payload.length());
     out = std::move(departures);
@@ -396,37 +403,52 @@ static uint32_t fnv1a(const char *s)
     return h;
 }
 
-// Stop areas of a route in travel order (hashed ids), and where our stop is on it
+// Stops of a route in travel order (hashed stop point and stop area ids)
 struct RouteStops {
     uint32_t route;
-    uint32_t stop;  // Hash of the station's MonitoringRef
-    int ourIndex;   // -1 when the route doesn't serve the station
+    std::vector<uint32_t> points;
     std::vector<uint32_t> areas;
 };
 static std::vector<RouteStops> routeCache;
 
-// Is this route_schedules row our station? MonitoringRefs are quays
+// A SIRI stop ref as Navitia route stop ids (hashed). Refs are quays
 // ("STIF:StopPoint:Q:N:" -> stop_point:IDFM:N) or stop places ("STIF:StopArea:SP:N:"
 // -> stop_point:IDFM:monomodalStopPlace:N, or stop_area:IDFM:N when picked in the portal).
-static bool isOurStop(const char *pointId, const char *areaId, const char *monitoringRef)
-{
-    char nav[48];
-    if (!stifToNavitia(monitoringRef, nav, sizeof(nav))) return false;
-    if (strncmp(nav, "stop_point:", 11) == 0) return strcmp(pointId, nav) == 0;
-    if (strcmp(areaId, nav) == 0) return true;
-    const char *code = nav + strlen("stop_area:IDFM:");
-    char place[64];
-    snprintf(place, sizeof(place), "stop_point:IDFM:monomodalStopPlace:%s", code);
-    return strcmp(pointId, place) == 0;
-}
+struct StopKey {
+    uint32_t point = 0;
+    uint32_t area = 0;
+
+    explicit StopKey(const char *stifRef) {
+        char nav[48];
+        if (!stifToNavitia(stifRef, nav, sizeof(nav))) return;
+        if (strncmp(nav, "stop_point:", 11) == 0) {
+            point = fnv1a(nav);
+            return;
+        }
+        area = fnv1a(nav);
+        char place[64];
+        snprintf(place, sizeof(place), "stop_point:IDFM:monomodalStopPlace:%s", nav + strlen("stop_area:IDFM:"));
+        point = fnv1a(place);
+    }
+
+    bool valid() const { return point || area; }
+
+    // Index of this stop on the route at or after `from`, -1 if absent
+    int indexOn(const RouteStops &r, size_t from = 0) const {
+        for (size_t i = from; i < r.points.size(); i++) {
+            if ((point && r.points[i] == point) || (area && r.areas[i] == area)) return i;
+        }
+        return -1;
+    }
+};
 
 // Ordered stops of a route, fetched once (route_schedules lists every stop of the
 // route in order; ~90 KB for an RER route, filtered down to the ids)
-static const RouteStops *routeStops(const char *routeId, const char *monitoringRef)
+static const RouteStops *routeStops(const char *routeId)
 {
-    uint32_t route = fnv1a(routeId), stop = fnv1a(monitoringRef);
+    uint32_t route = fnv1a(routeId);
     for (const auto &r : routeCache) {
-        if (r.route == route && r.stop == stop) return &r;
+        if (r.route == route) return &r;
     }
 
     char url[224];
@@ -454,46 +476,57 @@ static const RouteStops *routeStops(const char *routeId, const char *monitoringR
         return nullptr;
     }
 
-    RouteStops r{route, stop, -1, {}};
+    RouteStops r{route, {}, {}};
     for (JsonObjectConst row : doc["route_schedules"][0]["table"]["rows"].as<JsonArrayConst>()) {
-        const char *pointId = row["stop_point"]["id"] | "";
-        const char *areaId = row["stop_point"]["stop_area"]["id"] | "";
-        if (r.ourIndex < 0 && isOurStop(pointId, areaId, monitoringRef)) r.ourIndex = r.areas.size();
-        r.areas.push_back(fnv1a(areaId));
+        r.points.push_back(fnv1a(row["stop_point"]["id"] | ""));
+        r.areas.push_back(fnv1a(row["stop_point"]["stop_area"]["id"] | ""));
     }
     if (r.areas.empty()) return nullptr;
     if (routeCache.size() >= MAX_ROUTE_CACHE) routeCache.clear();
     routeCache.push_back(std::move(r));
-    USE_SERIAL.printf("[INCIDENTS] route %s: %u stops, station at %d\n", routeId,
-                      routeCache.back().areas.size(), routeCache.back().ourIndex);
+    USE_SERIAL.printf("[INCIDENTS] route %s: %u stops\n", routeId, routeCache.back().areas.size());
     return &routeCache.back();
 }
 
+// Where the incident lookup stands: our stop, and where its trains go
+struct StopContext {
+    StopKey stop;
+    std::vector<StopKey> destinations;
+};
+
 // Does a section of the line (from/to stop areas, on some routes) include our
-// station? Unknown cases count as yes: better a stray alert than a missed one.
-static bool sectionCoversStop(JsonObjectConst section, const char *monitoringRef)
+// station, on a route that then reaches one of our trains' destinations (i.e.
+// in our direction)? Unknown cases count as yes: better a stray alert than a
+// missed one.
+static bool sectionCoversStop(JsonObjectConst section, const StopContext &ctx)
 {
     JsonArrayConst routes = section["routes"];
-    if (routes.size() == 0) return true;
+    if (routes.size() == 0 || !ctx.stop.valid()) return true;
     uint32_t from = fnv1a(section["from"]["id"] | "");
     uint32_t to = fnv1a(section["to"]["id"] | "");
     for (JsonObjectConst route : routes) {
-        const RouteStops *r = routeStops(route["id"] | "", monitoringRef);
+        const RouteStops *r = routeStops(route["id"] | "");
         if (!r) return true;
-        if (r->ourIndex < 0) continue;  // Another branch
+        int ours = ctx.stop.indexOn(*r);
+        if (ours < 0) continue;  // Another branch
+        if (!ctx.destinations.empty()) {
+            bool ourWay = false;
+            for (const StopKey &dest : ctx.destinations) ourWay |= dest.indexOn(*r, ours + 1) >= 0;
+            if (!ourWay) continue;  // Trains that don't go where ours go (other direction)
+        }
         int a = -1, b = -1;
         for (size_t i = 0; i < r->areas.size(); i++) {
             if (a < 0 && r->areas[i] == from) a = i;
             if (b < 0 && r->areas[i] == to) b = i;
         }
         if (a < 0 || b < 0) return true;
-        if (min(a, b) <= r->ourIndex && r->ourIndex <= max(a, b)) return true;
+        if (min(a, b) <= ours && ours <= max(a, b)) return true;
     }
     return false;
 }
 
 // Is this incident about our part of the line, or about our stop?
-static bool concernsStop(JsonArrayConst objects, const char *stopId, const char *monitoringRef)
+static bool concernsStop(JsonArrayConst objects, const char *stopId, const StopContext &ctx)
 {
     for (JsonObjectConst o : objects) {
         const char *type = o["pt_object"]["embedded_type"] | "";
@@ -501,7 +534,7 @@ static bool concernsStop(JsonArrayConst objects, const char *stopId, const char 
         if (strcmp(type, "line") == 0 || strcmp(type, "route") == 0 || strcmp(type, "network") == 0) {
             JsonObjectConst section = o["impacted_rail_section"];
             if (section.isNull()) section = o["impacted_section"];
-            if (section.isNull() || sectionCoversStop(section, monitoringRef)) return true;
+            if (section.isNull() || sectionCoversStop(section, ctx)) return true;
         } else if (stopId[0] && strcmp(id, stopId) == 0) {
             return true;
         }
@@ -520,7 +553,8 @@ static void addIncident(std::vector<incidentType> &list, const String &text, boo
     list.push_back({text, blocking, when});
 }
 
-bool fetchIncidents(const char *lineRef, const char *monitoringRef, std::vector<incidentType> &out)
+bool fetchIncidents(const char *lineRef, const char *monitoringRef, const std::vector<String> &destinations,
+                    std::vector<incidentType> &out)
 {
     char lineId[32], stopId[40] = "";
     if (!stifToNavitia(lineRef, lineId, sizeof(lineId))) return false;
@@ -543,6 +577,12 @@ bool fetchIncidents(const char *lineRef, const char *monitoringRef, std::vector<
     if (!reader.begin(body.data, body.len) || !reader.skipPast("\"disruptions\":") || reader.readNonSpace() != '[') {
         USE_SERIAL.println("[INCIDENTS] no disruptions array");
         return false;
+    }
+
+    StopContext ctx{StopKey(monitoringRef), {}};
+    for (const String &d : destinations) {
+        StopKey key(d.c_str());
+        if (key.valid()) ctx.destinations.push_back(key);
     }
 
     // One disruption at a time keeps the parse memory to a few KB
@@ -575,7 +615,7 @@ bool fetchIncidents(const char *lineRef, const char *monitoringRef, std::vector<
         }
         if (lift) continue;  // Lift outages: dozens per RER line, not about departures
         int level = incidentLevel(doc["severity"]["effect"] | "");
-        if (level == 0 || !concernsStop(doc["impacted_objects"], stopId, monitoringRef)) continue;
+        if (level == 0 || !concernsStop(doc["impacted_objects"], stopId, ctx)) continue;
 
         // Short plain-text title; "pids" (station screens) is even shorter but vaguer
         const char *title = nullptr, *notification = nullptr, *pids = nullptr;

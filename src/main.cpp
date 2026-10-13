@@ -71,7 +71,7 @@ WiFiMulti wifiMulti;
 
 static std::vector<departureType> departures[MAX_STATIONS];
 static std::vector<incidentType> incidents[MAX_STATIONS];
-static std::vector<String> stationLines[MAX_STATIONS];  // LineRefs seen at each stop
+static StopSeen stationSeen[MAX_STATIONS];  // Lines and destinations seen at each stop
 static weatherType currentWeather = {};
 static bool weatherValid = false;
 
@@ -175,8 +175,9 @@ static uint32_t secondsUntilQuietEnd(time_t now) {
 // ============================================================
 // FETCH CYCLE (the only time WiFi is powered)
 // ============================================================
-// Incidents of the lines each stop shows: the line of its filter, or the lines
-// of its recent departures. A failed lookup keeps the previous list.
+// Incidents of the lines each stop shows (the line of its filter, or the lines
+// of its recent departures), in the direction its trains go. A failed lookup
+// keeps the previous list.
 static void fetchStationIncidents() {
     RuntimeStationConfig* stations = getStations();
     bool allOk = true;
@@ -189,14 +190,14 @@ static void fetchStationIncidents() {
         if (strncmp(stations[i].filter, "STIF:Line::", 11) == 0) {
             lines.push_back(stations[i].filter);
         } else {
-            lines = stationLines[i];
+            lines = stationSeen[i].lines;
         }
         if (lines.empty()) continue;  // No departure seen yet: nothing to look up
 
         std::vector<incidentType> found;
         bool ok = true;
         for (const String& line : lines) {
-            ok &= fetchIncidents(line.c_str(), stations[i].monitoringRef, found);
+            ok &= fetchIncidents(line.c_str(), stations[i].monitoringRef, stationSeen[i].destinations, found);
         }
         if (ok) incidents[i] = std::move(found);
         allOk &= ok;
@@ -223,9 +224,10 @@ static void runFetchCycle() {
             buildEndpointUrl(stations[i].monitoringRef, endpoint, sizeof(endpoint));
             USE_SERIAL.printf("Fetching station %d: %s\n", i, stations[i].displayName);
             // On failure the previous list is kept; past departures drop off at render time
-            std::vector<String> lines;
-            if (fetchDepartures(endpoint, stations[i].type, stations[i].filter, departures[i], &lines)) {
-                if (!lines.empty()) stationLines[i] = std::move(lines);  // Keep the last known lines
+            StopSeen seen;
+            if (fetchDepartures(endpoint, stations[i].type, stations[i].filter, departures[i], &seen)) {
+                // Keep what was last seen when no departure is announced
+                if (!seen.lines.empty()) stationSeen[i] = std::move(seen);
             } else {
                 ok = false;
             }
@@ -279,7 +281,7 @@ static void runSetup() {
     for (int i = 0; i < MAX_STATIONS; i++) {
         departures[i].clear();
         incidents[i].clear();
-        stationLines[i].clear();
+        stationSeen[i] = StopSeen();
     }
     lastIncidentEpoch = 0;
     weatherValid = false;  // Location may have changed

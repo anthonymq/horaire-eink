@@ -353,15 +353,18 @@ static void drawWeather(const weatherType& weather, bool forceRedraw) {
 // DEPARTURE BOARDS
 // ============================================================
 // Countdown as a big number with a small "min" after it, right-aligned on numRight
-// so the numbers line up.
-static void drawCountdown(int numRight, int baseline, long mins, const lgfx::GFXfont* numFont,
-                          const lgfx::GFXfont* unitFont) {
+// so the numbers line up. A number too wide for its column (3 digits) uses
+// smallFont: anything drawn left of the row would never be cleared.
+static void drawCountdown(int numRight, int maxW, int baseline, long mins, const lgfx::GFXfont* numFont,
+                          const lgfx::GFXfont* smallFont, const lgfx::GFXfont* unitFont) {
     char num[8];
     if (mins < 1) {
         snprintf(num, sizeof(num), "<1");
     } else {
         snprintf(num, sizeof(num), "%ld", mins);
     }
+    M5.Display.setFont(numFont);
+    if (M5.Display.textWidth(num) > maxW) numFont = smallFont;
     drawText(num, numRight, baseline, numFont, INK, textdatum_t::baseline_right);
     drawText("min", numRight + 8, baseline, unitFont, INK_SOFT, textdatum_t::baseline_left);
 }
@@ -391,8 +394,8 @@ static void drawTrainRow(int x, int y, int w, int h, const departureType* dep, t
     }
     
     const int baseline = centeredBaseline(y, h, &InterBoldDigits60);
-    drawCountdown(x + 118, baseline, (long)(dep->expected - now) / 60, &InterBoldDigits60,
-                  &FreeSans12pt7b);
+    drawCountdown(x + 118, 118, baseline, (long)(dep->expected - now) / 60, &InterBoldDigits60,
+                  &InterBoldDigits36, &FreeSans12pt7b);
     
     // Destination: large if it fits, otherwise smaller, truncated as a last resort
     const int nameX = x + 186;
@@ -420,8 +423,8 @@ static void drawBusRow(int x, int y, int w, int h, const departureType* dep, tim
     }
     
     const int baseline = centeredBaseline(y, h, &InterBoldDigits36);
-    drawCountdown(x + 72, baseline, (long)(dep->expected - now) / 60, &InterBoldDigits36,
-                  &FreeSans9pt7b);
+    drawCountdown(x + 72, 72, baseline, (long)(dep->expected - now) / 60, &InterBoldDigits36,
+                  &FreeSansBold18pt7b, &FreeSans9pt7b);
     drawClockTime(x + w, baseline, dep->expected);
 }
 
