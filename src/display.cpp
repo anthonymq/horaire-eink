@@ -5,23 +5,53 @@
 #include <math.h>
 #define USE_SERIAL Serial
 
-// M5Paper S3: 960x540 resolution (landscape)
-// Layout: Main content (560px) | Weather column (400px)
+// M5Paper S3: 960x540 (landscape)
+//
+//  +----------------------------------------------------------------------+
+//  | 14:32  lundi 13 octobre                     MAJ 2 min  .ill  [###] 85%|  header
+//  |======================================================================|
+//  | RER title                                  |  City                    |
+//  | ------------------------------------------ |  ----------------------- |
+//  |   4 min   Destination              14:36   |  [icon]   12°            |
+//  |  12 min   Destination              14:44   |  Description             |
+//  |  ...                                       |  Ressenti          11°   |
+//  | Bus title          | Bus title             |  Humidite          72 %  |
+//  | ------------------ | --------------------- |  Vent           14 km/h  |
+//  |   3 min    14:35   |   7 min    14:39      |                          |
+//  +----------------------------------------------------------------------+
 
 // ============================================================
 // LAYOUT CONSTANTS
 // ============================================================
 static const int SCREEN_WIDTH = 960;
 static const int SCREEN_HEIGHT = 540;
-static const int WEATHER_COL_WIDTH = 400;
-static const int MAIN_WIDTH = SCREEN_WIDTH - WEATHER_COL_WIDTH;  // 560px
+static const int MARGIN = 20;
 
-static const int TOP_MARGIN = 0;        // No margin - banner extends to screen edge
-static const int BANNER_HEIGHT = 42;    // Banner height for section titles
-static const int STATUS_BAR_HEIGHT = 42; // Status bar matches banner height
-static const int PADDING = 12;
+static const int HEADER_H = 64;
+static const int BODY_Y = HEADER_H + 16;
+static const int BODY_BOTTOM = SCREEN_HEIGHT - MARGIN;
+
+static const int TRANSIT_X = MARGIN;
+static const int TRANSIT_W = 584;
+static const int DIVIDER_X = TRANSIT_X + TRANSIT_W + 18;
+static const int WEATHER_X = DIVIDER_X + 18;
+static const int WEATHER_W = SCREEN_WIDTH - MARGIN - WEATHER_X;
+
+static const int TITLE_H = 40;          // Card title + rule
+static const int CARD_GAP = 20;         // Between cards
 static const int RER_ROWS = 5;
+static const int RER_ROW_H = 38;
+static const int RER_H = TITLE_H + RER_ROWS * RER_ROW_H;
 static const int BUS_ROWS = 3;
+static const int BUS_Y = BODY_Y + RER_H + CARD_GAP;
+static const int BUS_H = BODY_BOTTOM - BUS_Y;
+static const int BUS_W = (TRANSIT_W - CARD_GAP) / 2;
+
+// E-ink palette: secondary text stays dark enough to survive the text waveform
+static const uint16_t INK = TFT_BLACK;
+static const uint16_t INK_SOFT = 0x52AA;   // Dark gray (secondary text)
+static const uint16_t INK_FAINT = 0xBDF7;  // Light gray (separators)
+static const uint16_t PAPER = TFT_WHITE;
 
 // ============================================================
 // PARTIAL REFRESH TRACKING
@@ -41,7 +71,7 @@ void draw2BitIcon(int x, int y, const char* iconData, int width, int height, uin
     const int HEADER_SIZE = 6;
     int paddedWidth = ((width + 3) / 4) * 4;
     int bytesPerRow = paddedWidth / 4;
-    
+
     // 4-level grayscale palette (0=white, 1=light gray, 2=dark gray, 3=black)
     // M5GFX uses RGB565, these are grayscale equivalents
     const uint16_t grayscale[4] = {
@@ -50,16 +80,16 @@ void draw2BitIcon(int x, int y, const char* iconData, int width, int height, uin
         0x7BEF,  // 2: Dark gray (~50% gray)
         0x0000   // 3: Black
     };
-    
+
     for (int row = 0; row < height; row++) {
         for (int col = 0; col < width; col++) {
             int byteIndex = HEADER_SIZE + (row * bytesPerRow) + (col / 4);
             int pixelInByte = 3 - (col % 4);
             int shift = pixelInByte * 2;
-            
+
             uint8_t byteVal = pgm_read_byte(iconData + byteIndex);
             uint8_t pixelVal = (byteVal >> shift) & 0x03;
-            
+
             // Draw all non-white pixels with appropriate grayscale
             if (pixelVal > 0) {
                 M5.Display.drawPixel(x + col, y + row, grayscale[pixelVal]);
@@ -69,230 +99,176 @@ void draw2BitIcon(int x, int y, const char* iconData, int width, int height, uin
 }
 
 // ============================================================
-// HELPER: Clear a specific region
+// TEXT HELPERS
 // ============================================================
+// Height of a digit above the baseline: used to center text optically
+// (GFX fontHeight() is the line advance, much taller than the glyphs).
+static int capHeight(const lgfx::GFXfont* font) {
+    return font->glyph['0' - font->first].height;
+}
+
+// Baseline that vertically centers `font` digits/capitals in [y, y + h)
+static int centeredBaseline(int y, int h, const lgfx::GFXfont* font) {
+    return y + (h + capHeight(font)) / 2;
+}
+
+static void drawText(const char* text, int x, int baseline, const lgfx::GFXfont* font,
+                     uint16_t color, textdatum_t datum) {
+    M5.Display.setFont(font);
+    M5.Display.setTextColor(color);
+    M5.Display.setTextDatum(datum);
+    M5.Display.drawString(text, x, baseline);
+}
+
+// Copies `text` into `out`, cut with "..." so it fits in maxW with the current font
+static void fitText(const char* text, int maxW, char* out, size_t outSize) {
+    snprintf(out, outSize, "%s", text);
+    if (M5.Display.textWidth(out) <= maxW) return;
+    size_t len = strlen(out);
+    while (len > 0) {
+        len--;
+        while (len > 0 && out[len - 1] == ' ') len--;
+        if (len + 4 > outSize) continue;
+        memcpy(out + len, "...", 4);
+        if (M5.Display.textWidth(out) <= maxW) return;
+    }
+}
+
+// Degree sign as a ring (the GFX fonts are 7-bit ASCII). (x, top) is its top-left.
+static void drawDegree(int x, int top, int r, int thickness, uint16_t color) {
+    for (int i = 0; i < thickness; i++) {
+        M5.Display.drawCircle(x + r, top + r, r - i, color);
+    }
+}
+
 static void clearRegion(int x, int y, int w, int h) {
-    M5.Display.fillRect(x, y, w, h, TFT_WHITE);
+    M5.Display.fillRect(x, y, w, h, PAPER);
+}
+
+// Card header: bold title over a 2px rule
+static void drawCardTitle(int x, int y, int w, const char* title) {
+    const lgfx::GFXfont* font = &FreeSansBold12pt7b;
+    M5.Display.setFont(font);
+    char fitted[48];
+    fitText(title, w, fitted, sizeof(fitted));
+    drawText(fitted, x, y + 26, font, INK, textdatum_t::baseline_left);
+    M5.Display.fillRect(x, y + TITLE_H - 6, w, 2, INK);
 }
 
 // ============================================================
-// HELPER: Get text Y for vertical centering in a box
-// For GFX fonts: cursor Y = baseline position
-// Position baseline near bottom of box, leaving small margin
-// ============================================================
-static int getCenteredTextY(int boxY, int boxH, int fontH) {
-    // Position baseline at box bottom minus small margin
-    // Text renders UPWARD from baseline, so this keeps text inside box
-    (void)fontH;  // Not used in simplified formula
-    return boxY + boxH - 8;  // 8px margin from bottom
-}
-
-// ============================================================
-// HELPER: Draw degree symbol manually (FreeSans fonts lack char 176)
-// Draws a small circle at the current cursor position
-// ============================================================
-static void drawDegreeSymbol(int x, int y, int fontSize) {
-    // Scale circle size based on font - larger fonts get larger circles
-    int radius = (fontSize >= 12) ? 3 : 2;
-    // Position circle at top-right of the baseline (superscript position)
-    // For GFX fonts, y is baseline, so move up by ~70% of font height
-    int cx = x + radius + 1;
-    int cy = y - (fontSize * 7 / 10) + radius;
-    M5.Display.drawCircle(cx, cy, radius, TFT_BLACK);
-}
-
-// ============================================================
-// HELPER: Draw banner with black background - uses textdatum for centering
-// ============================================================
-static void drawBanner(int x, int y, int w, int h, const char* text) {
-    M5.Display.fillRect(x, y, w, h, TFT_BLACK);
-    M5.Display.setFont(&FreeSansBold12pt7b);
-    M5.Display.setTextColor(TFT_WHITE);
-    
-    // Use M5GFX text datum for automatic centering
-    M5.Display.setTextDatum(textdatum_t::middle_center);
-    M5.Display.drawString(text, x + w / 2, y + h / 2);
-    
-    // Reset to default datum
-    M5.Display.setTextDatum(textdatum_t::top_left);
-}
-
-// ============================================================
-// HELPER: Draw battery icon with level indicator
+// HEADER: clock, date, data freshness, WiFi, battery
 // ============================================================
 static void drawBatteryIcon(int x, int y, int level, bool charging) {
-    // Battery body: 30x16 pixels (larger for better visibility)
-    const int bw = 30;
-    const int bh = 16;
-    const int nipple = 4;  // Battery tip width
-    
-    bool lowBattery = (level < 20);
-    
-    // Draw battery outline (thicker for low battery warning)
-    M5.Display.drawRect(x, y, bw, bh, TFT_BLACK);
-    if (lowBattery) {
-        // Double outline for emphasis
-        M5.Display.drawRect(x - 1, y - 1, bw + 2, bh + 2, TFT_BLACK);
-    }
-    // Draw battery tip (positive terminal)
-    M5.Display.fillRect(x + bw, y + 4, nipple, bh - 8, TFT_BLACK);
-    
-    // Calculate fill level (inner area is bw-4 x bh-4)
-    int innerW = bw - 4;
-    int innerH = bh - 4;
-    int fillW = (innerW * level) / 100;
-    
-    // Fill color based on level (grayscale for e-ink)
-    uint16_t fillColor = TFT_BLACK;
-    if (lowBattery) {
-        // Low battery - use pattern fill for visibility
-        fillColor = 0x7BEF;  // Dark gray
-    }
-    
-    // Draw fill level
-    if (fillW > 0) {
-        M5.Display.fillRect(x + 2, y + 2, fillW, innerH, fillColor);
-    }
-    
-    // Low battery: draw exclamation mark to the left
-    if (lowBattery && !charging) {
-        int exX = x - 10;
-        int exY = y + 2;
-        M5.Display.fillRect(exX, exY, 2, 5, TFT_BLACK);      // Line
-        M5.Display.fillRect(exX, exY + 6, 2, 2, TFT_BLACK);  // Dot
-    }
-    
-    // If charging, draw a lightning bolt
+    const int bw = 34, bh = 18, tip = 3;
+    M5.Display.drawRect(x, y, bw, bh, INK);
+    M5.Display.drawRect(x + 1, y + 1, bw - 2, bh - 2, INK);
+    M5.Display.fillRect(x + bw, y + 5, tip, bh - 10, INK);
+
+    int innerW = bw - 6;
+    int fillW = innerW * constrain(level, 0, 100) / 100;
+    if (fillW > 0) M5.Display.fillRect(x + 3, y + 3, fillW, bh - 6, level < 20 ? INK_SOFT : INK);
+
     if (charging) {
-        // Simple lightning bolt in center of battery
-        int cx = x + bw/2;
-        int cy = y + bh/2;
-        M5.Display.drawLine(cx + 2, cy - 4, cx - 1, cy, TFT_WHITE);
-        M5.Display.drawLine(cx - 1, cy, cx + 2, cy, TFT_WHITE);
-        M5.Display.drawLine(cx + 2, cy, cx - 1, cy + 4, TFT_WHITE);
+        // Lightning bolt, outlined so it shows on both the fill and the empty part
+        int cx = x + bw / 2, cy = y + bh / 2;
+        M5.Display.fillTriangle(cx + 3, cy - 7, cx - 4, cy + 1, cx, cy + 1, PAPER);
+        M5.Display.fillTriangle(cx - 3, cy + 7, cx + 4, cy - 1, cx, cy - 1, PAPER);
+        M5.Display.drawLine(cx + 2, cy - 5, cx - 2, cy, INK);
+        M5.Display.drawLine(cx - 2, cy, cx + 2, cy, INK);
+        M5.Display.drawLine(cx + 2, cy, cx - 2, cy + 5, INK);
     }
 }
 
-// ============================================================
-// HELPER: Draw WiFi signal strength icon (4-bar indicator)
-// ============================================================
-static void drawWifiIcon(int x, int y, int rssi) {
-    // RSSI ranges: >-50 (excellent), -50 to -60 (good), -60 to -70 (fair), <-70 (weak)
-    int bars = 0;
-    if (rssi > -50) bars = 4;
-    else if (rssi > -60) bars = 3;
-    else if (rssi > -70) bars = 2;
-    else if (rssi > -80) bars = 1;
-    
-    // Draw 4 bars, filled based on signal strength
-    const int barWidth = 3;
-    const int barGap = 2;
-    const int maxHeight = 12;
-    
+// 4 ascending bars, unfilled bars as light outlines. Returns the icon width.
+static int drawWifiIcon(int x, int bottom, int rssi) {
+    int bars = rssi > -50 ? 4 : rssi > -60 ? 3 : rssi > -70 ? 2 : rssi > -80 ? 1 : 0;
+    const int barW = 5, gap = 3;
     for (int i = 0; i < 4; i++) {
-        int barHeight = (i + 1) * 3;  // Heights: 3, 6, 9, 12
-        int barX = x + i * (barWidth + barGap);
-        int barY = y + (maxHeight - barHeight);
-        
+        int barH = 6 + i * 5;
+        int bx = x + i * (barW + gap);
         if (i < bars) {
-            M5.Display.fillRect(barX, barY, barWidth, barHeight, TFT_BLACK);
+            M5.Display.fillRect(bx, bottom - barH, barW, barH, INK);
         } else {
-            M5.Display.drawRect(barX, barY, barWidth, barHeight, 0xC618);  // Light gray outline
+            M5.Display.drawRect(bx, bottom - barH, barW, barH, INK_FAINT);
         }
     }
+    return 4 * barW + 3 * gap;
 }
 
-// ============================================================
-// DRAW: Status bar (time + battery + data freshness) in weather column
-// ============================================================
-static void drawStatusBar(int x, int y, int w, int h, const char* timeStr, int batteryLevel, bool isCharging, int dataAgeSecs, int wifiRssi) {
-    // Clear status bar area
-    clearRegion(x, y, w, h);
-    
-    // Draw bottom border
-    M5.Display.drawFastHLine(x, y + h - 1, w, TFT_BLACK);
-    
-    int centerY = y + h / 2;
-    
-    // Time display (left side) - use larger font
-    M5.Display.setFont(&FreeSansBold12pt7b);
-    M5.Display.setTextColor(TFT_BLACK);
-    M5.Display.setTextDatum(textdatum_t::middle_left);
-    M5.Display.drawString(timeStr, x + PADDING, centerY);
-    
-    // WiFi icon (after time)
-    int timeW = M5.Display.textWidth(timeStr);
-    int wifiX = x + PADDING + timeW + 8;
-    int wifiY = y + (h - 12) / 2;  // 12px icon height
-    drawWifiIcon(wifiX, wifiY, wifiRssi);
-    
-    // Battery percentage text + icon (right side)
-    const int batteryW = 30;   // Larger battery icon
-    const int batteryH = 16;
-    const int nippleW = 4;
-    const int textIconGap = 6;
-    
-    // Format battery percentage text
+static void drawHeader(const StatusInfo& status, time_t now) {
+    static const char* const DAYS[] = {"dimanche", "lundi", "mardi", "mercredi",
+                                       "jeudi", "vendredi", "samedi"};
+    static const char* const MONTHS[] = {"janvier", "fevrier", "mars", "avril", "mai", "juin",
+                                         "juillet", "aout", "septembre", "octobre",
+                                         "novembre", "decembre"};
+    clearRegion(0, 0, SCREEN_WIDTH, HEADER_H);
+
+    const int baseline = centeredBaseline(0, HEADER_H, &FreeSansBold24pt7b);
+
+    // Clock + date
+    drawText(status.timeStr, MARGIN, baseline, &FreeSansBold24pt7b, INK, textdatum_t::baseline_left);
+    int x = MARGIN + M5.Display.textWidth(status.timeStr) + 18;
+    struct tm local;
+    localtime_r(&now, &local);
+    char dateStr[32];
+    snprintf(dateStr, sizeof(dateStr), "%s %d %s", DAYS[local.tm_wday], local.tm_mday,
+             MONTHS[local.tm_mon]);
+    drawText(dateStr, x, baseline, &FreeSans12pt7b, INK_SOFT, textdatum_t::baseline_left);
+
+    // Right side, laid out from the right edge: battery %, battery, WiFi, freshness
+    const lgfx::GFXfont* small = &FreeSans12pt7b;
+    const int smallBaseline = centeredBaseline(0, HEADER_H, small);
+    int right = SCREEN_WIDTH - MARGIN;
+
     char battText[8];
-    snprintf(battText, sizeof(battText), "%d%%", batteryLevel);
-    
-    M5.Display.setFont(&FreeSansBold12pt7b);  // Same size as clock
-    int battTextW = M5.Display.textWidth(battText);
-    
-    // Calculate positions from right edge
-    int battIconX = x + w - batteryW - nippleW - PADDING;
-    int battTextX = battIconX - textIconGap - battTextW;
-    int battY = y + (h - batteryH) / 2;
-    
-    // Draw battery percentage text (right-aligned to its position)
-    M5.Display.setTextColor(TFT_BLACK);
-    M5.Display.setTextDatum(textdatum_t::middle_right);
-    M5.Display.drawString(battText, battIconX - textIconGap, centerY);
-    
-    // Draw battery icon
-    drawBatteryIcon(battIconX, battY, batteryLevel, isCharging);
-    
-    // Data freshness between WiFi and battery text
-    M5.Display.setFont(&FreeSansBold12pt7b);  // Same size as clock
-    char freshStr[16];
-    if (dataAgeSecs < 0) {
-        snprintf(freshStr, sizeof(freshStr), "--");
-    } else if (dataAgeSecs < 60) {
-        snprintf(freshStr, sizeof(freshStr), "%ds", dataAgeSecs);
-    } else if (dataAgeSecs < 3600) {
-        snprintf(freshStr, sizeof(freshStr), "%dm", dataAgeSecs / 60);
+    snprintf(battText, sizeof(battText), "%d%%", status.batteryLevel);
+    drawText(battText, right, smallBaseline, &FreeSansBold12pt7b, INK, textdatum_t::baseline_right);
+    right -= M5.Display.textWidth(battText) + 10;
+
+    right -= 37;
+    drawBatteryIcon(right, (HEADER_H - 18) / 2, status.batteryLevel, status.isCharging);
+    right -= 24;
+
+    right -= 29;
+    drawWifiIcon(right, smallBaseline, status.wifiRssi);
+    right -= 24;
+
+    // Fresh data stays quiet (gray); stale data (missed a fetch) is shown in bold black
+    char freshStr[24];
+    int age = status.dataAgeSecs;
+    bool stale = age < 0 || age > 300;
+    if (age < 0) {
+        snprintf(freshStr, sizeof(freshStr), "Hors ligne");
+    } else if (age < 60) {
+        snprintf(freshStr, sizeof(freshStr), "A jour");
+    } else if (age < 3600) {
+        snprintf(freshStr, sizeof(freshStr), "MAJ il y a %d min", age / 60);
     } else {
-        snprintf(freshStr, sizeof(freshStr), "%dh", dataAgeSecs / 3600);
+        snprintf(freshStr, sizeof(freshStr), "MAJ il y a %d h", age / 3600);
     }
-    
-    // Show warning if data is stale (missed more than one fetch)
-    if (dataAgeSecs < 0 || dataAgeSecs > 300) {
-        M5.Display.setTextColor(0x7BEF);  // Gray for stale
-    } else {
-        M5.Display.setTextColor(TFT_BLACK);
-    }
-    
-    // Position between WiFi icon end and battery text start
-    int wifiEnd = wifiX + 20;  // WiFi icon is ~20px wide
-    int freshX = wifiEnd + (battTextX - wifiEnd) / 2;
-    
-    M5.Display.setTextDatum(textdatum_t::middle_center);
-    M5.Display.drawString(freshStr, freshX, centerY);
-    
-    // Reset
-    M5.Display.setTextColor(TFT_BLACK);
-    M5.Display.setTextDatum(textdatum_t::top_left);
+    drawText(freshStr, right, smallBaseline, stale ? &FreeSansBold12pt7b : small,
+             stale ? INK : INK_SOFT, textdatum_t::baseline_right);
+
+    M5.Display.fillRect(MARGIN, HEADER_H - 3, SCREEN_WIDTH - 2 * MARGIN, 3, INK);
 }
 
 // ============================================================
-// DRAW: Weather column (right side) with status bar
+// WEATHER COLUMN
 // ============================================================
-static void drawWeatherColumn(weatherType weather, bool forceRedraw, const char* timeStr, int batteryLevel, bool isCharging, int dataAgeSecs, int wifiRssi) {
-    int x = MAIN_WIDTH;
-    int y = TOP_MARGIN;  // Start below top margin to match RER board
-    int w = WEATHER_COL_WIDTH;
-    int h = SCREEN_HEIGHT - TOP_MARGIN;
-    
+static void drawWeatherStat(int y, int h, const char* label, const char* value, bool degree) {
+    const int baseline = centeredBaseline(y, h, &FreeSans12pt7b);
+    drawText(label, WEATHER_X, baseline, &FreeSans12pt7b, INK_SOFT, textdatum_t::baseline_left);
+
+    int right = WEATHER_X + WEATHER_W;
+    if (degree) {
+        // Leave room for the ring after the number
+        right -= 10;
+        drawDegree(right + 3, baseline - capHeight(&FreeSansBold12pt7b), 3, 2, INK);
+    }
+    drawText(value, right, baseline, &FreeSansBold12pt7b, INK, textdatum_t::baseline_right);
+}
+
+static void drawWeatherColumn(const weatherType& weather, bool forceRedraw) {
     bool changed = forceRedraw || !weatherDrawn ||
                    fabsf(weather.temperature - prevWeather.temperature) > 0.05f ||
                    fabsf(weather.feels_like - prevWeather.feels_like) > 0.05f ||
@@ -300,210 +276,176 @@ static void drawWeatherColumn(weatherType weather, bool forceRedraw, const char*
                    weather.humidity != prevWeather.humidity ||
                    weather.icon != prevWeather.icon ||
                    weather.description != prevWeather.description;
-    
-    if (!changed) {
-        // Weather unchanged: only the status bar needs updating
-        drawStatusBar(x, y, w, STATUS_BAR_HEIGHT, timeStr, batteryLevel, isCharging, dataAgeSecs, wifiRssi);
-        return;
-    }
-    
+    if (!changed) return;
     prevWeather = weather;
     weatherDrawn = true;
-    
-    // Clear region
-    clearRegion(x, y, w, h);
-    
-    // Draw border
-    M5.Display.drawRect(x, y, w, h, TFT_BLACK);
-    
-    // Draw status bar at top (time + battery + data freshness + wifi)
-    drawStatusBar(x, y, w, STATUS_BAR_HEIGHT, timeStr, batteryLevel, isCharging, dataAgeSecs, wifiRssi);
-    
-    // Adjust content Y to start below status bar
-    int contentY = y + STATUS_BAR_HEIGHT;
-    int contentH = h - STATUS_BAR_HEIGHT;
-    
-    // Weather icon (centered, 100x100 icon with 4-level grayscale)
-    // Use 100x100 icons for better visibility on 960x540 screen
+
+    clearRegion(WEATHER_X, BODY_Y, WEATHER_W, BODY_BOTTOM - BODY_Y);
+    drawCardTitle(WEATHER_X, BODY_Y, WEATHER_W, getWeatherLocation().name);
+
+    // Icon + big temperature
+    int y = BODY_Y + TITLE_H + 10;
     const char* iconData = getMeteoconIconFromProgmem(weather.icon);
     int iconSize = 100;
-    
-    // Fall back to mini (50x50) if 100x100 not found
     if (iconData == nullptr) {
         iconData = getMiniMeteoconIconFromProgmem(weather.icon);
         iconSize = 50;
     }
-    
-    int iconY = contentY + 15;
     if (iconData != nullptr) {
-        int iconX = x + (w - iconSize) / 2;
-        draw2BitIcon(iconX, iconY, iconData, iconSize, iconSize, TFT_BLACK);
+        draw2BitIcon(WEATHER_X, y + (100 - iconSize) / 2, iconData, iconSize, iconSize, INK);
     }
-    
-    // Calculate vertical spacing for text elements
-    // Available space: from after icon to bottom (minus city name area)
-    int textStartY = iconY + iconSize + 25;
-    int textEndY = h - 50;  // Reserve space for city name
-    int textAreaH = textEndY - textStartY;
-    int numTextLines = 5;  // temp, feels, humidity, description, wind
-    int lineSpacing = textAreaH / numTextLines;
-    
-    // Temperature (large - use 18pt for better visibility)
-    M5.Display.setFont(&FreeSansBold18pt7b);
-    M5.Display.setTextColor(TFT_BLACK);
-    
-    char tempStr[16];
-    snprintf(tempStr, sizeof(tempStr), "%.1fC", weather.temperature);  // No degree char - draw manually
-    // Calculate width including space for degree symbol (circle ~10px wide for 18pt)
-    int tempTextW = M5.Display.textWidth(tempStr);
-    int degreeW = 10;  // Space for degree circle
-    int tempTotalW = tempTextW + degreeW;
-    int tempY = textStartY;
-    int tempX = x + (w - tempTotalW) / 2;
-    M5.Display.setCursor(tempX, tempY);
-    // Print number only
-    char numStr[16];
-    snprintf(numStr, sizeof(numStr), "%.1f", weather.temperature);
-    M5.Display.print(numStr);
-    // Draw degree symbol after the number
-    int afterNumX = tempX + M5.Display.textWidth(numStr);
-    drawDegreeSymbol(afterNumX, tempY, 18);
-    // Print "C" after the degree symbol
-    M5.Display.setCursor(afterNumX + degreeW, tempY);
-    M5.Display.print("C");
-    
-    // Feels like (use 12pt for better readability)
-    M5.Display.setFont(&FreeSansBold12pt7b);
-    char feelsNumStr[16];
-    snprintf(feelsNumStr, sizeof(feelsNumStr), "Ressenti %.1f", weather.feels_like);
-    int feelsY = textStartY + lineSpacing;
-    // Calculate total width: "Ressenti X.X" + degree + "C"
-    int feelsTextW = M5.Display.textWidth(feelsNumStr);
-    int feelsDegreeW = 8;  // For 12pt font
-    int feelsCW = M5.Display.textWidth("C");
-    int feelsTotalW = feelsTextW + feelsDegreeW + feelsCW;
-    int feelsX = x + (w - feelsTotalW) / 2;
-    M5.Display.setCursor(feelsX, feelsY);
-    M5.Display.print(feelsNumStr);
-    // Draw degree symbol
-    int afterFeelsX = feelsX + feelsTextW;
-    drawDegreeSymbol(afterFeelsX, feelsY, 12);
-    // Print "C"
-    M5.Display.setCursor(afterFeelsX + feelsDegreeW, feelsY);
-    M5.Display.print("C");
-    
-    // Humidity (use 12pt)
-    char humStr[16];
-    snprintf(humStr, sizeof(humStr), "Humidite %d%%", weather.humidity);
-    int humW = M5.Display.textWidth(humStr);
-    int humY = textStartY + lineSpacing * 2;
-    M5.Display.setCursor(x + (w - humW) / 2, humY);
-    M5.Display.print(humStr);
-    
-    // Description (use 12pt)
-    int descY = textStartY + lineSpacing * 3;
-    if (weather.description.length() > 0) {
-        int descW = M5.Display.textWidth(weather.description.c_str());
-        int descX = x + (w - descW) / 2;
-        if (descX < x + 5) descX = x + 5;
-        M5.Display.setCursor(descX, descY);
-        M5.Display.print(weather.description);
-    }
-    
-    // Wind (use 12pt)
-    char windStr[24];
-    snprintf(windStr, sizeof(windStr), "Vent %.1f m/s", weather.wind_speed);
-    int windW = M5.Display.textWidth(windStr);
-    int windY = textStartY + lineSpacing * 4;
-    M5.Display.setCursor(x + (w - windW) / 2, windY);
-    M5.Display.print(windStr);
-    
-    // City name at bottom (use 12pt)
-    M5.Display.setFont(&FreeSansBold12pt7b);
-    const char* city = getWeatherLocation().name;
-    int cityW = M5.Display.textWidth(city);
-    int cityY = h - 20;
-    M5.Display.setCursor(x + (w - cityW) / 2, cityY);
-    M5.Display.print(city);
-}
 
-// ============================================================
-// DRAW: Single departure row - uses textdatum for vertical centering
-// ============================================================
-static void drawDepartureRow(int x, int y, int w, int h, 
-                              const char* schedule, const char* name, 
-                              const char* delay) {
-    // Clear row interior (keep grid lines)
-    M5.Display.fillRect(x + 1, y + 1, w - 2, h - 2, TFT_WHITE);
-    
-    M5.Display.setFont(&FreeSansBold12pt7b);
-    M5.Display.setTextColor(TFT_BLACK);
-    
-    int centerY = y + h / 2;
-    
+    char tempStr[8];
+    snprintf(tempStr, sizeof(tempStr), "%d", (int)lroundf(weather.temperature));
+    M5.Display.setFont(&fonts::Font8);  // 75px digits
+    M5.Display.setTextColor(INK);
     M5.Display.setTextDatum(textdatum_t::middle_left);
-    M5.Display.drawString(schedule, x + PADDING, centerY);
-    
-    if (name != nullptr && name[0] != '\0') {
-        M5.Display.setTextDatum(textdatum_t::middle_center);
-        M5.Display.drawString(name, x + w / 2, centerY);
+    int tempX = WEATHER_X + 116;
+    M5.Display.drawString(tempStr, tempX, y + 50);
+    int tempW = M5.Display.textWidth(tempStr);
+    drawDegree(tempX + tempW + 6, y + 50 - 37, 8, 4, INK);
+
+    y += 100 + 12;
+
+    // Description, capitalized
+    if (weather.description.length() > 0) {
+        String desc = weather.description;
+        desc.setCharAt(0, toupper(desc[0]));
+        M5.Display.setFont(&FreeSans12pt7b);
+        char fitted[48];
+        fitText(desc.c_str(), WEATHER_W, fitted, sizeof(fitted));
+        drawText(fitted, WEATHER_X, y + capHeight(&FreeSans12pt7b), &FreeSans12pt7b, INK,
+                 textdatum_t::baseline_left);
     }
-    
-    if (delay != nullptr && delay[0] != '\0') {
-        M5.Display.setTextDatum(textdatum_t::middle_right);
-        M5.Display.drawString(delay, x + w - PADDING, centerY);
-    }
-    
-    M5.Display.setTextDatum(textdatum_t::top_left);
+    y += 40;
+
+    // Stats, separated by light rules
+    const int statH = 48;
+    char buf[16];
+    snprintf(buf, sizeof(buf), "%d", (int)lroundf(weather.feels_like));
+    M5.Display.drawFastHLine(WEATHER_X, y, WEATHER_W, INK_FAINT);
+    drawWeatherStat(y, statH, "Ressenti", buf, true);
+    y += statH;
+
+    snprintf(buf, sizeof(buf), "%d %%", weather.humidity);
+    M5.Display.drawFastHLine(WEATHER_X, y, WEATHER_W, INK_FAINT);
+    drawWeatherStat(y, statH, "Humidite", buf, false);
+    y += statH;
+
+    snprintf(buf, sizeof(buf), "%d km/h", (int)lroundf(weather.wind_speed * 3.6f));
+    M5.Display.drawFastHLine(WEATHER_X, y, WEATHER_W, INK_FAINT);
+    drawWeatherStat(y, statH, "Vent", buf, false);
+    y += statH;
+    M5.Display.drawFastHLine(WEATHER_X, y, WEATHER_W, INK_FAINT);
 }
 
 // ============================================================
-// DRAW: Departure board (banner + grid + rows), redrawing only changed rows
+// DEPARTURE BOARDS
 // ============================================================
-static void drawBoard(int x, int y, int w, int h, int rows, const BoardView& board,
-                      bool showNames, const char* emptyText, time_t now,
-                      String* prevRows, bool forceRedraw) {
-    int boardY = y + BANNER_HEIGHT;
-    int boardH = h - BANNER_HEIGHT;
-    int rowH = boardH / rows;
-    
+// Countdown as a big number with a small "min" after it, right-aligned on numRight
+// so the numbers line up. Returns the x where the countdown ends.
+static int drawCountdown(int numRight, int baseline, long mins, const lgfx::GFXfont* font) {
+    char num[8];
+    if (mins < 1) {
+        snprintf(num, sizeof(num), "<1");
+    } else {
+        snprintf(num, sizeof(num), "%ld", mins);
+    }
+    drawText(num, numRight, baseline, font, INK, textdatum_t::baseline_right);
+    drawText("min", numRight + 6, baseline, &FreeSans9pt7b, INK_SOFT, textdatum_t::baseline_left);
+    return numRight + 6 + M5.Display.textWidth("min");
+}
+
+static void drawClockTime(int right, int baseline, time_t t) {
+    struct tm local;
+    localtime_r(&t, &local);
+    char hhmm[8];
+    snprintf(hhmm, sizeof(hhmm), "%02d:%02d", local.tm_hour, local.tm_min);
+    drawText(hhmm, right, baseline, &FreeSans12pt7b, INK_SOFT, textdatum_t::baseline_right);
+}
+
+// RER row:  [ 12 min ]  Destination ................  14:44
+static void drawTrainRow(int x, int y, int w, int h, const departureType* dep, time_t now,
+                         const char* emptyText) {
+    clearRegion(x, y + 1, w, h - 1);
+    const lgfx::GFXfont* big = &FreeSansBold18pt7b;
+    int baseline = centeredBaseline(y, h, big);
+
+    if (dep == nullptr) {
+        if (emptyText) {
+            drawText(emptyText, x, centeredBaseline(y, h, &FreeSans12pt7b), &FreeSans12pt7b,
+                     INK_SOFT, textdatum_t::baseline_left);
+        }
+        return;
+    }
+
+    drawCountdown(x + 62, baseline, (long)(dep->expected - now) / 60, big);
+
+    const int nameX = x + 120;
+    const int timeW = 70;
+    M5.Display.setFont(&FreeSansBold12pt7b);
+    char name[48];
+    fitText(dep->name.c_str(), w - (nameX - x) - timeW - 12, name, sizeof(name));
+    drawText(name, nameX, baseline, &FreeSansBold12pt7b, INK, textdatum_t::baseline_left);
+
+    drawClockTime(x + w, baseline, dep->expected);
+}
+
+// Bus row:  [ 7 min ]  ............  14:39
+static void drawBusRow(int x, int y, int w, int h, const departureType* dep, time_t now,
+                       bool first, const char* emptyText) {
+    clearRegion(x, y + 1, w, h - 1);
+    const lgfx::GFXfont* big = first ? &FreeSansBold24pt7b : &FreeSansBold18pt7b;
+    int baseline = centeredBaseline(y, h, big);
+
+    if (dep == nullptr) {
+        if (emptyText) {
+            drawText(emptyText, x, centeredBaseline(y, h, &FreeSans12pt7b), &FreeSans12pt7b,
+                     INK_SOFT, textdatum_t::baseline_left);
+        }
+        return;
+    }
+
+    drawCountdown(x + 72, baseline, (long)(dep->expected - now) / 60, big);
+    drawClockTime(x + w, baseline, dep->expected);
+}
+
+// Title, then rows separated by light rules. Only rows whose content changed are redrawn.
+static void drawBoard(int x, int y, int w, int h, int rows, const BoardView& board, bool isTrain,
+                      time_t now, String* prevRows, bool forceRedraw) {
+    const int rowsY = y + TITLE_H;
+    const int rowH = (h - TITLE_H) / rows;
+    const char* emptyText = isTrain ? "Aucun train annonce" : "Aucun passage annonce";
+
     if (forceRedraw) {
         clearRegion(x, y, w, h);
-        drawBanner(x, y, w, BANNER_HEIGHT, board.title);
-        M5.Display.drawRect(x, boardY, w, boardH, TFT_BLACK);
+        drawCardTitle(x, y, w, board.title);
         for (int i = 1; i < rows; i++) {
-            M5.Display.drawFastHLine(x, boardY + i * rowH, w, TFT_BLACK);
+            M5.Display.drawFastHLine(x, rowsY + i * rowH, w, INK_FAINT);
         }
         for (int i = 0; i < rows; i++) prevRows[i] = "";
     }
-    
+
     const std::vector<departureType>& deps = *board.departures;
     for (int i = 0; i < rows; i++) {
-        char schedule[8] = "";
-        char delay[16] = "";
-        const char* name = nullptr;
-        
-        if ((size_t)i < deps.size()) {
-            struct tm local;
-            localtime_r(&deps[i].expected, &local);
-            snprintf(schedule, sizeof(schedule), "%02d:%02d", local.tm_hour, local.tm_min);
-            long mins = (long)(deps[i].expected - now) / 60;
-            if (mins < 0) mins = 0;
-            snprintf(delay, sizeof(delay), "%ld min", mins);
-            if (showNames) name = deps[i].name.c_str();
-        } else if (i == 0 && deps.empty()) {
-            snprintf(schedule, sizeof(schedule), "%s", "--:--");
-            name = showNames ? emptyText : nullptr;
+        const departureType* dep = (size_t)i < deps.size() ? &deps[i] : nullptr;
+
+        String key;
+        if (dep) {
+            long mins = (long)(dep->expected - now) / 60;
+            key = String((long)dep->expected) + '|' + String(mins < 1 ? 0 : mins) + '|' + dep->name;
+        } else if (i == 0) {
+            key = "empty";
         }
-        
-        String key = String(schedule) + '|' + (name ? name : "") + '|' + delay;
         if (key == prevRows[i]) continue;
         prevRows[i] = key;
-        
-        int rowY = boardY + i * rowH;
-        drawDepartureRow(x, rowY, w, rowH, schedule, name, delay);
-        if (i > 0) {
-            M5.Display.drawFastHLine(x, rowY, w, TFT_BLACK);
+
+        const char* empty = i == 0 ? emptyText : nullptr;
+        int rowY = rowsY + i * rowH;
+        if (isTrain) {
+            drawTrainRow(x, rowY, w, rowH, dep, now, empty);
+        } else {
+            drawBusRow(x, rowY, w, rowH, dep, now, i == 0, empty);
         }
     }
 }
@@ -517,30 +459,28 @@ void drawScreen(const BoardView boards[3], const weatherType& weather, const Sta
     // Full refreshes use the high-quality waveform to clear ghosting; the
     // per-minute updates use the shorter text waveform (less time driving the panel).
     M5.Display.setEpdMode(fullRefresh ? epd_mode_t::epd_quality : epd_mode_t::epd_text);
-    
+
     if (fullRefresh) {
-        M5.Display.fillScreen(TFT_WHITE);
+        M5.Display.fillScreen(PAPER);
     }
-    
+
     M5.Display.startWrite();
-    
-    const int halfH = SCREEN_HEIGHT / 2;
-    const int halfW = MAIN_WIDTH / 2;
-    drawBoard(0, TOP_MARGIN, MAIN_WIDTH, halfH - TOP_MARGIN, RER_ROWS, boards[0], true,
-              "Aucun train", now, prevRerRows, fullRefresh);
-    drawBoard(0, halfH, halfW, halfH, BUS_ROWS, boards[1], false,
-              nullptr, now, prevBusRows[0], fullRefresh);
-    drawBoard(halfW, halfH, halfW, halfH, BUS_ROWS, boards[2], false,
-              nullptr, now, prevBusRows[1], fullRefresh);
-    
-    drawWeatherColumn(weather, fullRefresh, status.timeStr, status.batteryLevel,
-                      status.isCharging, status.dataAgeSecs, status.wifiRssi);
-    
+
+    drawHeader(status, now);
+
+    drawBoard(TRANSIT_X, BODY_Y, TRANSIT_W, RER_H, RER_ROWS, boards[0], true,
+              now, prevRerRows, fullRefresh);
+    drawBoard(TRANSIT_X, BUS_Y, BUS_W, BUS_H, BUS_ROWS, boards[1], false,
+              now, prevBusRows[0], fullRefresh);
+    drawBoard(TRANSIT_X + TRANSIT_W - BUS_W, BUS_Y, BUS_W, BUS_H, BUS_ROWS, boards[2], false,
+              now, prevBusRows[1], fullRefresh);
+
+    drawWeatherColumn(weather, fullRefresh);
+
     if (fullRefresh) {
-        M5.Display.drawFastVLine(MAIN_WIDTH, TOP_MARGIN, SCREEN_HEIGHT - TOP_MARGIN, TFT_BLACK);
-        M5.Display.drawFastHLine(0, SCREEN_HEIGHT / 2, MAIN_WIDTH, TFT_BLACK);
+        M5.Display.drawFastVLine(DIVIDER_X, BODY_Y, BODY_BOTTOM - BODY_Y, INK_FAINT);
     }
-    
+
     M5.Display.endWrite();
     M5.Display.display();
     USE_SERIAL.println(fullRefresh ? "Full refresh" : "Partial refresh");
@@ -554,14 +494,14 @@ void displayLoader(const char* message)
 {
     M5.Display.setEpdMode(epd_mode_t::epd_quality);
     M5.Display.setRotation(1);
-    M5.Display.fillScreen(TFT_WHITE);
-    
+    M5.Display.fillScreen(PAPER);
+
     M5.Display.setFont(&FreeSansBold12pt7b);
-    M5.Display.setTextColor(TFT_BLACK);
+    M5.Display.setTextColor(INK);
     M5.Display.setTextDatum(textdatum_t::middle_center);
     M5.Display.drawString(message, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2);
     M5.Display.setTextDatum(textdatum_t::top_left);
-    
+
     M5.Display.display();
     weatherDrawn = false;
 }
@@ -572,29 +512,31 @@ void displayLoader(const char* message)
 void drawSetupScreen(const char* title, const SetupQr* qrs, int qrCount,
                      const char* const* lines, int lineCount)
 {
-    const int titleH = 60;
-    const int margin = 40;
     const int qrSize = qrCount > 1 ? 250 : 340;
-    const int qrY = titleH + 50;
-    
+    const int qrY = HEADER_H + 40;
+
     M5.Display.setEpdMode(epd_mode_t::epd_quality);
     M5.Display.setRotation(1);
-    M5.Display.fillScreen(TFT_WHITE);
-    drawBanner(0, 0, SCREEN_WIDTH, titleH, title);
-    M5.Display.setTextColor(TFT_BLACK);
-    
-    int x = margin;
-    M5.Display.setFont(&FreeSansBold9pt7b);
+    M5.Display.fillScreen(PAPER);
+
+    drawText(title, MARGIN, centeredBaseline(0, HEADER_H, &FreeSansBold24pt7b),
+             &FreeSansBold24pt7b, INK, textdatum_t::baseline_left);
+    M5.Display.fillRect(MARGIN, HEADER_H - 3, SCREEN_WIDTH - 2 * MARGIN, 3, INK);
+
+    int x = MARGIN + 20;
+    M5.Display.setFont(&FreeSans9pt7b);
+    M5.Display.setTextColor(INK_SOFT);
     M5.Display.setTextDatum(textdatum_t::top_center);
     for (int i = 0; i < qrCount; i++) {
         M5.Display.qrcode(qrs[i].payload, x, qrY, qrSize);
         M5.Display.drawString(qrs[i].caption, x + qrSize / 2, qrY + qrSize + 12);
         x += qrSize + 30;
     }
-    M5.Display.setTextDatum(textdatum_t::top_left);
-    
+
     int textX = x + 10;
     int y = qrY;
+    M5.Display.setTextColor(INK);
+    M5.Display.setTextDatum(textdatum_t::top_left);
     for (int i = 0; i < lineCount; i++) {
         const char* line = lines[i];
         if (line[0] == '\0') {
@@ -606,7 +548,7 @@ void drawSetupScreen(const char* title, const SetupQr* qrs, int qrCount,
         M5.Display.drawString(bold ? line + 1 : line, textX, y);
         y += M5.Display.fontHeight() + 8;
     }
-    
+
     M5.Display.display();
     weatherDrawn = false;
 }
