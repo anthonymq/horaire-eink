@@ -2,14 +2,9 @@
 #define WEATHER_API_H
 
 #include <Arduino.h>
-#include <HTTPClient.h>
-#include <ArduinoJson.h>
 #include "types.h"
-#include "config.h"
 
-// Add this declaration
-String mapWeatherIcon(String owmIcon);
-
-weatherType fetchWeather(const String& city);
+// Returns true and fills `out` on success; leaves `out` untouched on failure.
+bool fetchWeather(const char *city, weatherType &out);
 
 #endif

@@ -1,7 +1,7 @@
 #pragma once
 
 #include <ctime>
-#include <ESP32Time.h>
 
-time_t parseDateTime(const char *datetimeString, const char *format);
-char *toDateTime(time_t time, const char *format);
+// Parse an ISO-8601 UTC timestamp ("2026-01-11T18:12:00.000Z") into a UTC epoch.
+// Returns 0 on parse failure.
+time_t parseIsoUtc(const char *datetimeString);

@@ -1,51 +1,22 @@
 #include "misc.h"
-#include <string>
-#include <ctime>
+#include <cstdio>
 
-// Function to parse a UTC date/time string and return UTC epoch.
-// Input is assumed to be UTC (e.g., "2026-01-11T18:12:00.000Z")
-time_t parseDateTime(const char *datetimeString, const char *format)
+// Days since 1970-01-01 for a proleptic Gregorian date (Howard Hinnant's algorithm).
+// Avoids mktime(), which interprets its input in the local timezone.
+static long daysFromCivil(int y, int m, int d)
 {
-    struct tm tmStruct = {0};
-    strptime(datetimeString, format, &tmStruct);
-    tmStruct.tm_isdst = 0;
-    
-    // mktime() treats input as local time and converts to UTC epoch.
-    // But our input IS UTC, so mktime wrongly subtracts the timezone offset.
-    // We need to add it back.
-    
-    // First, get what mktime produces (wrong epoch)
-    time_t wrong_epoch = mktime(&tmStruct);
-    
-    // Calculate the current timezone offset by comparing gmtime vs localtime
-    time_t now = time(nullptr);
-    struct tm gm_now, local_now;
-    gmtime_r(&now, &gm_now);
-    localtime_r(&now, &local_now);
-    
-    // Offset = local - UTC (in seconds)
-    int offset_secs = (local_now.tm_hour - gm_now.tm_hour) * 3600 +
-                      (local_now.tm_min - gm_now.tm_min) * 60;
-    
-    // Handle day boundary wrap
-    if (local_now.tm_mday != gm_now.tm_mday) {
-        if (local_now.tm_mday > gm_now.tm_mday || 
-            (local_now.tm_mday == 1 && gm_now.tm_mday > 1)) {
-            offset_secs += 24 * 3600;  // Local is next day
-        } else {
-            offset_secs -= 24 * 3600;  // Local is previous day
-        }
-    }
-    
-    // mktime subtracted this offset (thinking input was local), so add it back
-    return wrong_epoch + offset_secs;
+    y -= m <= 2;
+    const long era = (y >= 0 ? y : y - 399) / 400;
+    const unsigned yoe = (unsigned)(y - era * 400);
+    const unsigned doy = (153 * (m + (m > 2 ? -3 : 9)) + 2) / 5 + d - 1;
+    const unsigned doe = yoe * 365 + yoe / 4 - yoe / 100 + doy;
+    return era * 146097 + (long)doe - 719468;
 }
 
-// Function to format a time_t value into a date or time string.
-char* toDateTime(time_t time, const char *format)
+time_t parseIsoUtc(const char *datetimeString)
 {
-    static char buffer[90];
-    struct tm *timeinfo = localtime(&time);
-    strftime(buffer, sizeof(buffer), format, timeinfo);
-    return buffer;
+    if (datetimeString == nullptr) return 0;
+    int y, mo, d, h, mi, s;
+    if (sscanf(datetimeString, "%d-%d-%dT%d:%d:%d", &y, &mo, &d, &h, &mi, &s) != 6) return 0;
+    return (time_t)daysFromCivil(y, mo, d) * 86400 + h * 3600 + mi * 60 + s;
 }

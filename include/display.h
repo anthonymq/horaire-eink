@@ -7,14 +7,23 @@
 #include "types.h"
 
 // M5Paper S3 uses M5.Display (M5GFX) - no separate display object needed
-// Access via M5.Display.methodName()
 
-void displayBanner(int posx, int posy, int height, int width, String text);
-void displayDepartureBoard(int posx, int posy, int height, int width, std::vector<departureType> departures, bool showNames, String banner);
-void drawScreen(std::vector<std::vector<departureType>> allDepartures, weatherType weather, bool fullRefresh, const char* timeStr, int batteryLevel, bool isCharging, int dataAgeSecs, int wifiRssi);
-void displayWeather(int posx, int posy, int width, int height, weatherType weather);
-void displayLoader(String message);
-void displayDataFreshness(bool success, long lastSuccess, long currentEpoch);
-void updateStatusBarOnly(const char* timeStr, int batteryLevel, bool isCharging, int dataAgeSecs, int wifiRssi);
+struct BoardView {
+    const char* title;
+    const std::vector<departureType>* departures;  // Only upcoming departures, soonest first
+};
+
+struct StatusInfo {
+    const char* timeStr;
+    int batteryLevel;
+    bool isCharging;
+    int dataAgeSecs;
+    int wifiRssi;
+};
+
+// boards[0] = top (RER, shows names), boards[1]/[2] = bottom left/right
+void drawScreen(const BoardView boards[3], const weatherType& weather, const StatusInfo& status,
+                time_t now, bool fullRefresh);
+void displayLoader(const char* message);
 
 #endif

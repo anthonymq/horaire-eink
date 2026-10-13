@@ -2,16 +2,16 @@
 #define TRANSPORT_API_H
 
 #include <Arduino.h>
-#include <HTTPClient.h>
-#include <ArduinoJson.h>
 #include <vector>
-#include <string>
-#include "misc.h"
-#include "types.h" // Include the new header
-#include <config.h>
+#include "types.h"
 
-// Main function with parameters
-// Update the function declaration to match exactly with the implementation
-// Make sure the declaration matches the implementation
-std::vector<departureType> fetchDepartures(const std::string &url, const std::string &type, const std::string &filter);
+// Fetch upcoming departures for one stop. Consecutive calls reuse the same
+// TLS session (keep-alive), so call transportEnd() once all stops are fetched.
+// Returns true when the API answered and the payload parsed; `out` is only
+// written on success.
+bool fetchDepartures(const char *url, const char *type, const char *filter, std::vector<departureType> &out);
+
+// Close the shared PRIM connection.
+void transportEnd();
+
 #endif

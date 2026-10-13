@@ -1,5 +1,7 @@
 #include "display.h"
 #include "weathericons.h"
+#include <config.h>
+#include <math.h>
 #define USE_SERIAL Serial
 
 // M5Paper S3: 960x540 resolution (landscape)
@@ -23,19 +25,12 @@ static const int BUS_ROWS = 3;
 // ============================================================
 // PARTIAL REFRESH TRACKING
 // ============================================================
-static bool firstDraw = true;
-static unsigned long lastFullRefreshMs = 0;
-static const unsigned long FULL_REFRESH_INTERVAL_MS = 1800000;  // 30 minutes
-
-// Previous data for change detection
-static String prevRerSchedules[RER_ROWS];
-static String prevRerDelays[RER_ROWS];
-static String prevBus1Schedules[BUS_ROWS];
-static String prevBus1Delays[BUS_ROWS];
-static String prevBus2Schedules[BUS_ROWS];
-static String prevBus2Delays[BUS_ROWS];
-static float prevTemperature = -999;
-static int prevHumidity = -1;
+// What each row currently shows on the panel; a row is redrawn only when its
+// rendered text changes, so M5GFX only refreshes the dirty area.
+static String prevRerRows[RER_ROWS];
+static String prevBusRows[2][BUS_ROWS];
+static weatherType prevWeather;
+static bool weatherDrawn = false;
 
 // ============================================================
 // HELPER: Draw 2-bit PROGMEM icon with full 4-level grayscale
@@ -259,14 +254,18 @@ static void drawStatusBar(int x, int y, int w, int h, const char* timeStr, int b
     // Data freshness between WiFi and battery text
     M5.Display.setFont(&FreeSansBold12pt7b);  // Same size as clock
     char freshStr[16];
-    if (dataAgeSecs < 60) {
+    if (dataAgeSecs < 0) {
+        snprintf(freshStr, sizeof(freshStr), "--");
+    } else if (dataAgeSecs < 60) {
         snprintf(freshStr, sizeof(freshStr), "%ds", dataAgeSecs);
-    } else {
+    } else if (dataAgeSecs < 3600) {
         snprintf(freshStr, sizeof(freshStr), "%dm", dataAgeSecs / 60);
+    } else {
+        snprintf(freshStr, sizeof(freshStr), "%dh", dataAgeSecs / 3600);
     }
     
-    // Show warning if data is stale (>2 min)
-    if (dataAgeSecs > 120) {
+    // Show warning if data is stale (missed more than one fetch)
+    if (dataAgeSecs < 0 || dataAgeSecs > 300) {
         M5.Display.setTextColor(0x7BEF);  // Gray for stale
     } else {
         M5.Display.setTextColor(TFT_BLACK);
@@ -293,16 +292,22 @@ static void drawWeatherColumn(weatherType weather, bool forceRedraw, const char*
     int w = WEATHER_COL_WIDTH;
     int h = SCREEN_HEIGHT - TOP_MARGIN;
     
-    // Check if weather changed
-    bool changed = forceRedraw || 
-                   (abs(weather.temperature - prevTemperature) > 0.1) ||
-                   (weather.humidity != prevHumidity);
+    bool changed = forceRedraw || !weatherDrawn ||
+                   fabsf(weather.temperature - prevWeather.temperature) > 0.05f ||
+                   fabsf(weather.feels_like - prevWeather.feels_like) > 0.05f ||
+                   fabsf(weather.wind_speed - prevWeather.wind_speed) > 0.05f ||
+                   weather.humidity != prevWeather.humidity ||
+                   weather.icon != prevWeather.icon ||
+                   weather.description != prevWeather.description;
     
-    if (!changed) return;
+    if (!changed) {
+        // Weather unchanged: only the status bar needs updating
+        drawStatusBar(x, y, w, STATUS_BAR_HEIGHT, timeStr, batteryLevel, isCharging, dataAgeSecs, wifiRssi);
+        return;
+    }
     
-    // Update cache
-    prevTemperature = weather.temperature;
-    prevHumidity = weather.humidity;
+    prevWeather = weather;
+    weatherDrawn = true;
     
     // Clear region
     clearRegion(x, y, w, h);
@@ -414,7 +419,7 @@ static void drawWeatherColumn(weatherType weather, bool forceRedraw, const char*
     
     // City name at bottom (use 12pt)
     M5.Display.setFont(&FreeSansBold12pt7b);
-    const char* city = "Ivry-sur-Seine";
+    const char* city = WEATHER_CITY;
     int cityW = M5.Display.textWidth(city);
     int cityY = h - 20;
     M5.Display.setCursor(x + (w - cityW) / 2, cityY);
@@ -423,300 +428,139 @@ static void drawWeatherColumn(weatherType weather, bool forceRedraw, const char*
 
 // ============================================================
 // DRAW: Single departure row - uses textdatum for vertical centering
-// fontSize: 12 for RER (wide), 9 for Bus (narrow columns)
 // ============================================================
 static void drawDepartureRow(int x, int y, int w, int h, 
                               const char* schedule, const char* name, 
-                              const char* delay, bool showName, bool useSmallFont = false) {
+                              const char* delay) {
     // Clear row interior (keep grid lines)
     M5.Display.fillRect(x + 1, y + 1, w - 2, h - 2, TFT_WHITE);
     
-    // Use smaller font for narrow bus columns
-    if (useSmallFont) {
-        M5.Display.setFont(&FreeSansBold9pt7b);
-    } else {
-        M5.Display.setFont(&FreeSansBold12pt7b);
-    }
+    M5.Display.setFont(&FreeSansBold12pt7b);
     M5.Display.setTextColor(TFT_BLACK);
     
     int centerY = y + h / 2;
-    int pad = useSmallFont ? 8 : PADDING;
     
-    // Schedule (left aligned, vertically centered)
     M5.Display.setTextDatum(textdatum_t::middle_left);
-    M5.Display.drawString(schedule, x + pad, centerY);
+    M5.Display.drawString(schedule, x + PADDING, centerY);
     
-    // Name (center) - only for RER
-    if (showName && name != nullptr && strlen(name) > 0) {
+    if (name != nullptr && name[0] != '\0') {
         M5.Display.setTextDatum(textdatum_t::middle_center);
         M5.Display.drawString(name, x + w / 2, centerY);
     }
     
-    // Delay (right aligned, vertically centered)
-    M5.Display.setTextDatum(textdatum_t::middle_right);
-    M5.Display.drawString(delay, x + w - pad, centerY);
+    if (delay != nullptr && delay[0] != '\0') {
+        M5.Display.setTextDatum(textdatum_t::middle_right);
+        M5.Display.drawString(delay, x + w - PADDING, centerY);
+    }
     
-    // Reset datum
     M5.Display.setTextDatum(textdatum_t::top_left);
 }
 
 // ============================================================
-// DRAW: RER C board (top section)
+// DRAW: Departure board (banner + grid + rows), redrawing only changed rows
 // ============================================================
-static void drawRerBoard(std::vector<departureType>& departures, bool forceRedraw) {
-    int x = 0;
-    int y = TOP_MARGIN;  // Start below top margin to avoid bezel cutoff
-    int w = MAIN_WIDTH;
-    int h = (SCREEN_HEIGHT / 2) - TOP_MARGIN;
-    
+static void drawBoard(int x, int y, int w, int h, int rows, const BoardView& board,
+                      bool showNames, const char* emptyText, time_t now,
+                      String* prevRows, bool forceRedraw) {
     int boardY = y + BANNER_HEIGHT;
     int boardH = h - BANNER_HEIGHT;
-    int rowH = boardH / RER_ROWS;
+    int rowH = boardH / rows;
     
     if (forceRedraw) {
         clearRegion(x, y, w, h);
-        drawBanner(x, y, w, BANNER_HEIGHT, "RER C - Ivry");
+        drawBanner(x, y, w, BANNER_HEIGHT, board.title);
         M5.Display.drawRect(x, boardY, w, boardH, TFT_BLACK);
-        
-        // Draw grid lines
-        for (int i = 1; i < RER_ROWS; i++) {
+        for (int i = 1; i < rows; i++) {
             M5.Display.drawFastHLine(x, boardY + i * rowH, w, TFT_BLACK);
         }
+        for (int i = 0; i < rows; i++) prevRows[i] = "";
     }
     
-    // Draw departures
-    if (!departures.empty()) {
-        for (size_t i = 0; i < departures.size() && i < RER_ROWS; i++) {
-            char delayStr[16];
-            snprintf(delayStr, sizeof(delayStr), "%d min", departures[i].delay);
-            
-            // Check if this row changed
-            bool rowChanged = forceRedraw ||
-                              (prevRerSchedules[i] != departures[i].schedule) ||
-                              (prevRerDelays[i] != String(departures[i].delay));
-            
-            if (rowChanged) {
-                prevRerSchedules[i] = departures[i].schedule;
-                prevRerDelays[i] = String(departures[i].delay);
-                
-                drawDepartureRow(x, boardY + i * rowH, w, rowH,
-                                 departures[i].schedule.c_str(),
-                                 departures[i].name.c_str(),
-                                 delayStr, true);
-                
-                // Redraw grid line after clearing row
-                if (i > 0) {
-                    M5.Display.drawFastHLine(x, boardY + i * rowH, w, TFT_BLACK);
-                }
-            }
-        }
-    } else if (forceRedraw) {
-        M5.Display.setFont(&FreeSansBold12pt7b);
-        M5.Display.setTextColor(TFT_BLACK);
-        const char* msg = "Aucun train";
-        int msgW = M5.Display.textWidth(msg);
-        int fontH = M5.Display.fontHeight();
-        M5.Display.setCursor(x + (w - msgW) / 2, getCenteredTextY(boardY, boardH, fontH));
-        M5.Display.print(msg);
-    }
-}
-
-// ============================================================
-// DRAW: Bus board (bottom left or right)
-// ============================================================
-static void drawBusBoard(std::vector<departureType>& departures, 
-                         const char* title, int boardIndex, bool forceRedraw,
-                         String* prevSchedules, String* prevDelays) {
-    int halfW = MAIN_WIDTH / 2;
-    int x = (boardIndex == 0) ? 0 : halfW;
-    int y = SCREEN_HEIGHT / 2;
-    int w = halfW;
-    int h = SCREEN_HEIGHT / 2;
-    
-    int boardY = y + BANNER_HEIGHT;
-    int boardH = h - BANNER_HEIGHT;
-    int rowH = boardH / BUS_ROWS;
-    
-    if (forceRedraw) {
-        clearRegion(x, y, w, h);
-        drawBanner(x, y, w, BANNER_HEIGHT, title);
-        M5.Display.drawRect(x, boardY, w, boardH, TFT_BLACK);
+    const std::vector<departureType>& deps = *board.departures;
+    for (int i = 0; i < rows; i++) {
+        char schedule[8] = "";
+        char delay[16] = "";
+        const char* name = nullptr;
         
-        for (int i = 1; i < BUS_ROWS; i++) {
-            M5.Display.drawFastHLine(x, boardY + i * rowH, w, TFT_BLACK);
+        if ((size_t)i < deps.size()) {
+            struct tm local;
+            localtime_r(&deps[i].expected, &local);
+            snprintf(schedule, sizeof(schedule), "%02d:%02d", local.tm_hour, local.tm_min);
+            long mins = (long)(deps[i].expected - now) / 60;
+            if (mins < 0) mins = 0;
+            snprintf(delay, sizeof(delay), "%ld min", mins);
+            if (showNames) name = deps[i].name.c_str();
+        } else if (i == 0 && deps.empty()) {
+            snprintf(schedule, sizeof(schedule), "%s", "--:--");
+            name = showNames ? emptyText : nullptr;
         }
-    }
-    
-    if (!departures.empty()) {
-        for (size_t i = 0; i < departures.size() && i < BUS_ROWS; i++) {
-            char delayStr[16];
-            snprintf(delayStr, sizeof(delayStr), "%d min", departures[i].delay);
-            
-            bool rowChanged = forceRedraw ||
-                              (prevSchedules[i] != departures[i].schedule) ||
-                              (prevDelays[i] != String(departures[i].delay));
-            
-            if (rowChanged) {
-                prevSchedules[i] = departures[i].schedule;
-                prevDelays[i] = String(departures[i].delay);
-                
-                drawDepartureRow(x, boardY + i * rowH, w, rowH,
-                                 departures[i].schedule.c_str(),
-                                 nullptr, delayStr, false);  // Same font as RER
-                
-                if (i > 0) {
-                    M5.Display.drawFastHLine(x, boardY + i * rowH, w, TFT_BLACK);
-                }
-            }
+        
+        String key = String(schedule) + '|' + (name ? name : "") + '|' + delay;
+        if (key == prevRows[i]) continue;
+        prevRows[i] = key;
+        
+        int rowY = boardY + i * rowH;
+        drawDepartureRow(x, rowY, w, rowH, schedule, name, delay);
+        if (i > 0) {
+            M5.Display.drawFastHLine(x, rowY, w, TFT_BLACK);
         }
-    } else if (forceRedraw) {
-        // Draw placeholder rows when no data
-        M5.Display.setFont(&FreeSansBold12pt7b);  // Same font as departures
-        M5.Display.setTextColor(TFT_BLACK);
-        M5.Display.setTextDatum(textdatum_t::middle_left);
-        for (int i = 0; i < BUS_ROWS; i++) {
-            int rowCenterY = boardY + i * rowH + rowH / 2;
-            M5.Display.drawString("--:--", x + PADDING, rowCenterY);
-        }
-        M5.Display.setTextDatum(textdatum_t::top_left);
     }
 }
 
 // ============================================================
 // MAIN: Draw screen with partial refresh support
 // ============================================================
-void drawScreen(std::vector<std::vector<departureType>> allDepartures, 
-                weatherType weather, bool fullRefresh,
-                const char* timeStr, int batteryLevel, bool isCharging, int dataAgeSecs, int wifiRssi)
+void drawScreen(const BoardView boards[3], const weatherType& weather, const StatusInfo& status,
+                time_t now, bool fullRefresh)
 {
-    M5.Display.setRotation(1);  // Landscape
+    // Full refreshes use the high-quality waveform to clear ghosting; the
+    // per-minute updates use the shorter text waveform (less time driving the panel).
+    M5.Display.setEpdMode(fullRefresh ? epd_mode_t::epd_quality : epd_mode_t::epd_text);
     
-    unsigned long now = millis();
-    
-    // Determine if we need a full refresh
-    bool needsFullRefresh = fullRefresh || 
-                            firstDraw || 
-                            (now - lastFullRefreshMs > FULL_REFRESH_INTERVAL_MS);
-    
-    if (needsFullRefresh) {
-        // Full refresh: clear ghosting
+    if (fullRefresh) {
         M5.Display.fillScreen(TFT_WHITE);
-        lastFullRefreshMs = now;
-        firstDraw = false;
-        
-        // Reset all previous data to force redraw
-        for (int i = 0; i < RER_ROWS; i++) {
-            prevRerSchedules[i] = "";
-            prevRerDelays[i] = "";
-        }
-        for (int i = 0; i < BUS_ROWS; i++) {
-            prevBus1Schedules[i] = "";
-            prevBus1Delays[i] = "";
-            prevBus2Schedules[i] = "";
-            prevBus2Delays[i] = "";
-        }
-        prevTemperature = -999;
-        prevHumidity = -1;
     }
     
     M5.Display.startWrite();
     
-    // Draw RER C (top half of main area)
-    std::vector<departureType> rerDepartures;
-    if (!allDepartures.empty() && !allDepartures[0].empty()) {
-        rerDepartures = allDepartures[0];
+    const int halfH = SCREEN_HEIGHT / 2;
+    const int halfW = MAIN_WIDTH / 2;
+    drawBoard(0, TOP_MARGIN, MAIN_WIDTH, halfH - TOP_MARGIN, RER_ROWS, boards[0], true,
+              "Aucun train", now, prevRerRows, fullRefresh);
+    drawBoard(0, halfH, halfW, halfH, BUS_ROWS, boards[1], false,
+              nullptr, now, prevBusRows[0], fullRefresh);
+    drawBoard(halfW, halfH, halfW, halfH, BUS_ROWS, boards[2], false,
+              nullptr, now, prevBusRows[1], fullRefresh);
+    
+    drawWeatherColumn(weather, fullRefresh, status.timeStr, status.batteryLevel,
+                      status.isCharging, status.dataAgeSecs, status.wifiRssi);
+    
+    if (fullRefresh) {
+        M5.Display.drawFastVLine(MAIN_WIDTH, TOP_MARGIN, SCREEN_HEIGHT - TOP_MARGIN, TFT_BLACK);
+        M5.Display.drawFastHLine(0, SCREEN_HEIGHT / 2, MAIN_WIDTH, TFT_BLACK);
     }
-    drawRerBoard(rerDepartures, needsFullRefresh);
-    
-    // Draw Bus 323 Molière (bottom left)
-    std::vector<departureType> bus1Departures;
-    if (allDepartures.size() > 1 && !allDepartures[1].empty()) {
-        bus1Departures = allDepartures[1];
-    }
-    drawBusBoard(bus1Departures, "323 Moliere", 0, needsFullRefresh,
-                 prevBus1Schedules, prevBus1Delays);
-    
-    // Draw Bus 323 Jules Ferry (bottom right)
-    std::vector<departureType> bus2Departures;
-    if (allDepartures.size() > 2 && !allDepartures[2].empty()) {
-        bus2Departures = allDepartures[2];
-    }
-    drawBusBoard(bus2Departures, "323 Jules F", 1, needsFullRefresh,
-                 prevBus2Schedules, prevBus2Delays);
-    
-    // Draw weather column with status bar (right side)
-    drawWeatherColumn(weather, needsFullRefresh, timeStr, batteryLevel, isCharging, dataAgeSecs, wifiRssi);
-    
-    // Draw separators
-    M5.Display.drawFastVLine(MAIN_WIDTH, TOP_MARGIN, SCREEN_HEIGHT - TOP_MARGIN, TFT_BLACK);
-    M5.Display.drawFastHLine(0, SCREEN_HEIGHT / 2, MAIN_WIDTH, TFT_BLACK);
     
     M5.Display.endWrite();
-    
-    // Update display
     M5.Display.display();
-    USE_SERIAL.println(needsFullRefresh ? "Full refresh" : "Partial refresh");
+    USE_SERIAL.println(fullRefresh ? "Full refresh" : "Partial refresh");
 }
 
 // ============================================================
-// LOADER: Display loading message (centered on screen)
+// LOADER: Display a centered message (full screen)
+// Forces the next drawScreen() to be a full refresh.
 // ============================================================
-void displayLoader(String message)
+void displayLoader(const char* message)
 {
+    M5.Display.setEpdMode(epd_mode_t::epd_quality);
     M5.Display.setRotation(1);
     M5.Display.fillScreen(TFT_WHITE);
     
     M5.Display.setFont(&FreeSansBold12pt7b);
     M5.Display.setTextColor(TFT_BLACK);
-    
-    // Use textdatum for true center positioning
     M5.Display.setTextDatum(textdatum_t::middle_center);
-    M5.Display.drawString(message.c_str(), SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2);
-    M5.Display.setTextDatum(textdatum_t::top_left);  // Reset
+    M5.Display.drawString(message, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2);
+    M5.Display.setTextDatum(textdatum_t::top_left);
     
     M5.Display.display();
-}
-
-// ============================================================
-// DATA FRESHNESS: Visual indicator (stub for now)
-// ============================================================
-void displayDataFreshness(bool success, long lastSuccess, long currentEpoch)
-{
-    USE_SERIAL.print("Data age: ");
-    USE_SERIAL.print(currentEpoch - lastSuccess);
-    USE_SERIAL.println("s");
-}
-
-// ============================================================
-// STATUS BAR ONLY: Update just the status bar (time, battery, freshness)
-// Used for frequent updates without redrawing departure data
-// ============================================================
-void updateStatusBarOnly(const char* timeStr, int batteryLevel, bool isCharging, int dataAgeSecs, int wifiRssi) {
-    int x = MAIN_WIDTH;
-    int y = TOP_MARGIN;
-    int w = WEATHER_COL_WIDTH;
-    
-    M5.Display.startWrite();
-    drawStatusBar(x, y, w, STATUS_BAR_HEIGHT, timeStr, batteryLevel, isCharging, dataAgeSecs, wifiRssi);
-    M5.Display.endWrite();
-    M5.Display.display();
-    
-    USE_SERIAL.printf("Status bar updated: %s, %d%%, %ds\n", timeStr, batteryLevel, dataAgeSecs);
-}
-
-// ============================================================
-// BANNER: Standalone banner drawing
-// ============================================================
-void displayBanner(int posx, int posy, int height, int width, String text)
-{
-    drawBanner(posx, posy, width, height, text.c_str());
-}
-
-// ============================================================
-// WEATHER: Standalone weather display (legacy compat)
-// ============================================================
-void displayWeather(int posx, int posy, int width, int height, weatherType weather) {
-    (void)posx; (void)posy; (void)width; (void)height;  // Unused in new layout
-    // Legacy function - use default time/battery for standalone calls
-    drawWeatherColumn(weather, true, "--:--", 0, false, 0, -100);  // -100 = no WiFi
+    weatherDrawn = false;
 }

@@ -2,11 +2,11 @@
 #define TYPES_H
 
 #include <Arduino.h>
+#include <ctime>
 
 struct departureType {
     String name;
-    String schedule;
-    int delay;
+    time_t expected;  // UTC epoch of expected departure/arrival
 };
 
 struct weatherType {

@@ -1,114 +1,112 @@
 #include "transport_api.h"
+#include <HTTPClient.h>
+#include <WiFiClientSecure.h>
+#include <ArduinoJson.h>
+#include <config.h>
+#include "misc.h"
+
 #define USE_SERIAL Serial
-#include <string>
 
-std::vector<departureType> fetchDepartures(const std::string &url, const std::string &type, const std::string &filter)
+static const size_t MAX_DEPARTURES = 8;  // Keep a few spare so the list survives between fetches
+
+// One TLS connection shared by all stop requests: a TLS 1.3 handshake costs far
+// more CPU/radio time than the request itself, so we only pay it once per cycle.
+static WiFiClientSecure client;
+static HTTPClient http;
+static bool clientReady = false;
+
+// Only keep the fields we read: shrinks the JsonDocument and parsing time.
+static void buildFilter(JsonDocument &filter)
 {
-    std::vector<departureType> departures;
-    HTTPClient http;
+    JsonObject delivery = filter["Siri"]["ServiceDelivery"].to<JsonObject>();
+    delivery["ResponseTimestamp"] = true;
+    JsonObject journey = delivery["StopMonitoringDelivery"][0]["MonitoredStopVisit"][0]["MonitoredVehicleJourney"].to<JsonObject>();
+    journey["JourneyNote"] = true;
+    journey["LineRef"] = true;
+    journey["OperatorRef"] = true;
+    JsonObject call = journey["MonitoredCall"].to<JsonObject>();
+    call["ArrivalPlatformName"] = true;
+    call["ExpectedArrivalTime"] = true;
+    call["ExpectedDepartureTime"] = true;
+}
 
-    USE_SERIAL.print("[HTTP] begin...\n");
-    http.begin(url.c_str());
+bool fetchDepartures(const char *url, const char *type, const char *filter, std::vector<departureType> &out)
+{
+    if (!clientReady) {
+        client.setInsecure();  // No CA pinned (same as before); see review notes
+        http.setReuse(true);
+        http.setConnectTimeout(5000);
+        http.setTimeout(8000);
+        clientReady = true;
+    }
+
+    if (!http.begin(client, url)) {
+        USE_SERIAL.println("[PRIM] begin failed");
+        return false;
+    }
     http.addHeader("apiKey", API_TOKEN);
 
-    USE_SERIAL.print("[HTTP] GET...\n");
     int httpCode = http.GET();
+    if (httpCode != HTTP_CODE_OK) {
+        USE_SERIAL.printf("[PRIM] GET failed: %d %s\n", httpCode, httpCode < 0 ? http.errorToString(httpCode).c_str() : "");
+        http.end();
+        return false;
+    }
 
-    if (httpCode > 0)
-    {
-        USE_SERIAL.printf("[HTTP] GET... code: %d\n", httpCode);
+    String payload = http.getString();
+    http.end();  // Keeps the socket open thanks to setReuse(true)
 
-        if (httpCode == HTTP_CODE_OK)
-        {
-            String payload = http.getString();
-            USE_SERIAL.println("Response payload length: " + String(payload.length()));
-            USE_SERIAL.println("First 100 chars of payload: " + payload.substring(0, 100));
-            
-            JsonDocument doc;
-            DeserializationError error = deserializeJson(doc, payload, DeserializationOption::NestingLimit(11));
-        
-            if (error)
-            {
-                Serial.print(F("deserializeJson() failed: "));
-                Serial.println(error.f_str());
-                // Fix the type mismatch by casting both arguments to the same type
-                int lastCharsPos = (payload.length() > 100) ? (payload.length() - 100) : 0;
-                Serial.println("Last 100 chars of payload: " + payload.substring(lastCharsPos));
-                http.end();
-                return departures;
-            }
-            
-            const char *responseTimestamp = doc["Siri"]["ServiceDelivery"]["ResponseTimestamp"];
-            const char *format = "%Y-%m-%dT%H:%M:%S.000Z";
-            time_t currentTimestamp = parseDateTime(responseTimestamp, format);
-            JsonArray stops = doc["Siri"]["ServiceDelivery"]["StopMonitoringDelivery"][0]["MonitoredStopVisit"].as<JsonArray>();
+    JsonDocument filterDoc;
+    buildFilter(filterDoc);
+    JsonDocument doc;
+    DeserializationError error = deserializeJson(doc, payload,
+                                                 DeserializationOption::Filter(filterDoc),
+                                                 DeserializationOption::NestingLimit(12));
+    if (error) {
+        USE_SERIAL.printf("[PRIM] JSON error: %s (%u bytes)\n", error.c_str(), payload.length());
+        return false;
+    }
 
-            for (JsonObject stop : stops)
-            {
-                if (departures.size() > 5)
-                {
-                    break;
-                }
-                JsonObject journey = stop["MonitoredVehicleJourney"];
-                String name = journey["JourneyNote"][0]["value"];
+    JsonObject delivery = doc["Siri"]["ServiceDelivery"];
+    time_t responseTime = parseIsoUtc(delivery["ResponseTimestamp"]);
+    JsonArray stops = delivery["StopMonitoringDelivery"][0]["MonitoredStopVisit"];
 
-                const char *expectedTime = nullptr;
-                if (type == "RER")
-                {
-                    std::string voie = journey["MonitoredCall"]["ArrivalPlatformName"]["value"];
-                    expectedTime = journey["MonitoredCall"]["ExpectedArrivalTime"];
-                    if (voie != filter)
-                    {
-                        continue;
-                    }
-                }
-                else if (type == "BUS")
-                {
-                    // Filter matches LineRef (e.g. "C01287" for 323, stable) or OperatorRef (legacy, IDs change)
-                    std::string lineRef = journey["LineRef"]["value"] | "";
-                    std::string operatorRef = journey["OperatorRef"]["value"] | "";
-                    expectedTime = journey["MonitoredCall"]["ExpectedDepartureTime"];
-                    if (lineRef.find(filter) == std::string::npos && operatorRef.find(filter) == std::string::npos)
-                    {
-                        continue;
-                    }
-                }
+    const bool isRer = strcmp(type, "RER") == 0;
+    std::vector<departureType> departures;
+    for (JsonObject stop : stops) {
+        if (departures.size() >= MAX_DEPARTURES) break;
+        JsonObject journey = stop["MonitoredVehicleJourney"];
+        JsonObject call = journey["MonitoredCall"];
+        const char *expectedTime;
 
-                Serial.println(name);
-                if (expectedTime != nullptr)
-                {
-                    Serial.println(expectedTime);
-                    const char *format = "%Y-%m-%dT%H:%M:%S.000Z";
-                    const char *shortFormat = "%H:%M";
-                    time_t parsedTime = parseDateTime(expectedTime, format);
-                    String formattedTime(toDateTime(parsedTime, format));
-                    String shortFormattedTime(toDateTime(parsedTime, shortFormat));
-
-                    time_t delayInSeconds = parsedTime - currentTimestamp;
-
-                    departureType currentDeparture;
-                    currentDeparture.name = name;
-                    
-                    // Convert UTC time to local time (respects timezone set by configTzTime)
-                    tm *tm_local = localtime(&parsedTime);
-                    char scheduleBuffer[6];
-                    sprintf(scheduleBuffer, "%.2d:%.2d", tm_local->tm_hour, tm_local->tm_min);
-                    currentDeparture.schedule = scheduleBuffer;
-                    currentDeparture.delay = delayInSeconds / 60;
-
-                    if (delayInSeconds > 0)
-                    {
-                        departures.push_back(currentDeparture);
-                    }
-                }
-            }
+        if (isRer) {
+            const char *platform = call["ArrivalPlatformName"]["value"] | "";
+            if (strcmp(platform, filter) != 0) continue;
+            expectedTime = call["ExpectedArrivalTime"];
+        } else {
+            // Filter matches LineRef (e.g. "C01287" for 323, stable) or OperatorRef (legacy, IDs change)
+            const char *lineRef = journey["LineRef"]["value"] | "";
+            const char *operatorRef = journey["OperatorRef"]["value"] | "";
+            if (strstr(lineRef, filter) == nullptr && strstr(operatorRef, filter) == nullptr) continue;
+            expectedTime = call["ExpectedDepartureTime"];
         }
-    }
-    else
-    {
-        USE_SERIAL.printf("[HTTP] GET... failed, error: %s\n", http.errorToString(httpCode).c_str());
+
+        time_t expected = parseIsoUtc(expectedTime);
+        if (expected == 0 || expected <= responseTime) continue;
+
+        departureType dep;
+        dep.name = journey["JourneyNote"][0]["value"] | "";
+        dep.expected = expected;
+        departures.push_back(dep);
     }
 
+    USE_SERIAL.printf("[PRIM] %u departures (%u bytes)\n", departures.size(), payload.length());
+    out = std::move(departures);
+    return true;
+}
+
+void transportEnd()
+{
     http.end();
-    return departures;
+    client.stop();
 }
