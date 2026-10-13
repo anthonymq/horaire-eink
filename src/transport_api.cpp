@@ -13,6 +13,7 @@ static const size_t MAX_DEPARTURES = 8;  // Keep a few spare so the list survive
 static const size_t MAX_LINES = 2;       // Lines remembered per stop (for the incident lookup)
 static const size_t MAX_INCIDENTS = 4;   // Per stop
 static const size_t MAX_GZIP_BODY = 1024 * 1024;  // Compressed line report (RER C ~ 60 KB)
+static const size_t MAX_ROUTE_CACHE = 32;         // Route stop orders kept (for section incidents)
 
 static const char *NAVITIA_BASE = "https://prim.iledefrance-mobilites.fr/marketplace/v2/navitia";
 
@@ -274,9 +275,15 @@ static void buildIncidentFilter(JsonDocument &filter)
     JsonObject message = filter["messages"][0].to<JsonObject>();
     message["text"] = true;
     message["channel"]["types"] = true;
-    JsonObject object = filter["impacted_objects"][0]["pt_object"].to<JsonObject>();
-    object["id"] = true;
-    object["embedded_type"] = true;
+    JsonObject impacted = filter["impacted_objects"][0].to<JsonObject>();
+    impacted["pt_object"]["id"] = true;
+    impacted["pt_object"]["embedded_type"] = true;
+    for (const char *key : {"impacted_section", "impacted_rail_section"}) {
+        JsonObject section = impacted[key].to<JsonObject>();
+        section["from"]["id"] = true;
+        section["to"]["id"] = true;
+        section["routes"][0]["id"] = true;
+    }
 }
 
 // "STIF:Line::C01727:" -> "line:IDFM:C01727", "STIF:StopPoint:Q:39570:" ->
@@ -353,14 +360,151 @@ static int incidentLevel(const char *effect)
     return 0;  // Information only, extra service...
 }
 
-// Is this incident about the whole line, or about our stop?
-static bool concernsStop(JsonArrayConst objects, const char *stopId)
+// GET a Navitia URL into `body`, gzip-compressed when the server agrees
+static bool navitiaGet(const char *url, PsramBody &body, bool &gzipped)
+{
+    ensureClient();
+    if (!http.begin(client, url)) {
+        USE_SERIAL.println("[INCIDENTS] begin failed");
+        return false;
+    }
+    http.addHeader("apiKey", API_TOKEN);
+    http.setAcceptEncoding("gzip");
+    const char *wanted[] = {"Content-Encoding"};
+    http.collectHeaders(wanted, 1);
+
+    int httpCode = http.GET();
+    if (httpCode != HTTP_CODE_OK) {
+        USE_SERIAL.printf("[INCIDENTS] GET failed: %d %s\n", httpCode, httpCode < 0 ? http.errorToString(httpCode).c_str() : "");
+        http.end();
+        return false;
+    }
+    gzipped = http.header("Content-Encoding").equalsIgnoreCase("gzip");
+    int written = http.writeToStream(&body);
+    http.end();
+    if (written < 0) {
+        USE_SERIAL.printf("[INCIDENTS] body failed: %d\n", written);
+        return false;
+    }
+    return true;
+}
+
+static uint32_t fnv1a(const char *s)
+{
+    uint32_t h = 2166136261u;
+    for (; *s; s++) h = (h ^ (uint8_t)*s) * 16777619u;
+    return h;
+}
+
+// Stop areas of a route in travel order (hashed ids), and where our stop is on it
+struct RouteStops {
+    uint32_t route;
+    uint32_t stop;  // Hash of the station's MonitoringRef
+    int ourIndex;   // -1 when the route doesn't serve the station
+    std::vector<uint32_t> areas;
+};
+static std::vector<RouteStops> routeCache;
+
+// Is this route_schedules row our station? MonitoringRefs are quays
+// ("STIF:StopPoint:Q:N:" -> stop_point:IDFM:N) or stop places ("STIF:StopArea:SP:N:"
+// -> stop_point:IDFM:monomodalStopPlace:N, or stop_area:IDFM:N when picked in the portal).
+static bool isOurStop(const char *pointId, const char *areaId, const char *monitoringRef)
+{
+    char nav[48];
+    if (!stifToNavitia(monitoringRef, nav, sizeof(nav))) return false;
+    if (strncmp(nav, "stop_point:", 11) == 0) return strcmp(pointId, nav) == 0;
+    if (strcmp(areaId, nav) == 0) return true;
+    const char *code = nav + strlen("stop_area:IDFM:");
+    char place[64];
+    snprintf(place, sizeof(place), "stop_point:IDFM:monomodalStopPlace:%s", code);
+    return strcmp(pointId, place) == 0;
+}
+
+// Ordered stops of a route, fetched once (route_schedules lists every stop of the
+// route in order; ~90 KB for an RER route, filtered down to the ids)
+static const RouteStops *routeStops(const char *routeId, const char *monitoringRef)
+{
+    uint32_t route = fnv1a(routeId), stop = fnv1a(monitoringRef);
+    for (const auto &r : routeCache) {
+        if (r.route == route && r.stop == stop) return &r;
+    }
+
+    char url[224];
+    snprintf(url, sizeof(url), "%s/routes/%s/route_schedules?depth=0&items_per_schedule=1&disable_geojson=true",
+             NAVITIA_BASE, routeId);
+    PsramBody body;
+    bool gzipped = false;
+    if (!navitiaGet(url, body, gzipped)) return nullptr;
+
+    JsonDocument filter;
+    JsonObject point = filter["route_schedules"][0]["table"]["rows"][0]["stop_point"].to<JsonObject>();
+    point["id"] = true;
+    point["stop_area"]["id"] = true;
+    JsonDocument doc;
+    DeserializationError error;
+    if (gzipped) {
+        GzipReader reader;
+        if (!reader.begin(body.data, body.len)) return nullptr;
+        error = deserializeJson(doc, reader, DeserializationOption::Filter(filter));
+    } else {
+        error = deserializeJson(doc, (const char *)body.data, body.len, DeserializationOption::Filter(filter));
+    }
+    if (error) {
+        USE_SERIAL.printf("[INCIDENTS] route JSON error: %s\n", error.c_str());
+        return nullptr;
+    }
+
+    RouteStops r{route, stop, -1, {}};
+    for (JsonObjectConst row : doc["route_schedules"][0]["table"]["rows"].as<JsonArrayConst>()) {
+        const char *pointId = row["stop_point"]["id"] | "";
+        const char *areaId = row["stop_point"]["stop_area"]["id"] | "";
+        if (r.ourIndex < 0 && isOurStop(pointId, areaId, monitoringRef)) r.ourIndex = r.areas.size();
+        r.areas.push_back(fnv1a(areaId));
+    }
+    if (r.areas.empty()) return nullptr;
+    if (routeCache.size() >= MAX_ROUTE_CACHE) routeCache.clear();
+    routeCache.push_back(std::move(r));
+    USE_SERIAL.printf("[INCIDENTS] route %s: %u stops, station at %d\n", routeId,
+                      routeCache.back().areas.size(), routeCache.back().ourIndex);
+    return &routeCache.back();
+}
+
+// Does a section of the line (from/to stop areas, on some routes) include our
+// station? Unknown cases count as yes: better a stray alert than a missed one.
+static bool sectionCoversStop(JsonObjectConst section, const char *monitoringRef)
+{
+    JsonArrayConst routes = section["routes"];
+    if (routes.size() == 0) return true;
+    uint32_t from = fnv1a(section["from"]["id"] | "");
+    uint32_t to = fnv1a(section["to"]["id"] | "");
+    for (JsonObjectConst route : routes) {
+        const RouteStops *r = routeStops(route["id"] | "", monitoringRef);
+        if (!r) return true;
+        if (r->ourIndex < 0) continue;  // Another branch
+        int a = -1, b = -1;
+        for (size_t i = 0; i < r->areas.size(); i++) {
+            if (a < 0 && r->areas[i] == from) a = i;
+            if (b < 0 && r->areas[i] == to) b = i;
+        }
+        if (a < 0 || b < 0) return true;
+        if (min(a, b) <= r->ourIndex && r->ourIndex <= max(a, b)) return true;
+    }
+    return false;
+}
+
+// Is this incident about our part of the line, or about our stop?
+static bool concernsStop(JsonArrayConst objects, const char *stopId, const char *monitoringRef)
 {
     for (JsonObjectConst o : objects) {
         const char *type = o["pt_object"]["embedded_type"] | "";
         const char *id = o["pt_object"]["id"] | "";
-        if (strcmp(type, "line") == 0 || strcmp(type, "route") == 0 || strcmp(type, "network") == 0) return true;
-        if (stopId[0] && strcmp(id, stopId) == 0) return true;
+        if (strcmp(type, "line") == 0 || strcmp(type, "route") == 0 || strcmp(type, "network") == 0) {
+            JsonObjectConst section = o["impacted_rail_section"];
+            if (section.isNull()) section = o["impacted_section"];
+            if (section.isNull() || sectionCoversStop(section, monitoringRef)) return true;
+        } else if (stopId[0] && strcmp(id, stopId) == 0) {
+            return true;
+        }
     }
     return false;
 }
@@ -386,29 +530,12 @@ bool fetchIncidents(const char *lineRef, const char *monitoringRef, std::vector<
     snprintf(url, sizeof(url), "%s/lines/%s/line_reports?filter_status%%5B%%5D=active&disable_geojson=true",
              NAVITIA_BASE, lineId);
 
-    ensureClient();
-    if (!http.begin(client, url)) {
-        USE_SERIAL.println("[INCIDENTS] begin failed");
-        return false;
-    }
-    http.addHeader("apiKey", API_TOKEN);
     // Line reports are large (~1 MB for an RER line, mostly lift outages) but compress ~15x
-    http.setAcceptEncoding("gzip");
-    const char *wanted[] = {"Content-Encoding"};
-    http.collectHeaders(wanted, 1);
-
-    int httpCode = http.GET();
-    if (httpCode != HTTP_CODE_OK) {
-        USE_SERIAL.printf("[INCIDENTS] GET failed: %d %s\n", httpCode, httpCode < 0 ? http.errorToString(httpCode).c_str() : "");
-        http.end();
-        return false;
-    }
-    bool gzipped = http.header("Content-Encoding").equalsIgnoreCase("gzip");
     PsramBody body;
-    int written = http.writeToStream(&body);
-    http.end();
-    if (written < 0 || !gzipped) {
-        USE_SERIAL.printf("[INCIDENTS] body failed: %d (gzip %d)\n", written, gzipped);
+    bool gzipped = false;
+    if (!navitiaGet(url, body, gzipped)) return false;
+    if (!gzipped) {
+        USE_SERIAL.println("[INCIDENTS] line report not gzipped");
         return false;
     }
 
@@ -448,7 +575,7 @@ bool fetchIncidents(const char *lineRef, const char *monitoringRef, std::vector<
         }
         if (lift) continue;  // Lift outages: dozens per RER line, not about departures
         int level = incidentLevel(doc["severity"]["effect"] | "");
-        if (level == 0 || !concernsStop(doc["impacted_objects"], stopId)) continue;
+        if (level == 0 || !concernsStop(doc["impacted_objects"], stopId, monitoringRef)) continue;
 
         // Short plain-text title; "pids" (station screens) is even shorter but vaguer
         const char *title = nullptr, *notification = nullptr, *pids = nullptr;
